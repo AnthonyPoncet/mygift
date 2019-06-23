@@ -268,14 +268,17 @@ class MyWishList extends React.Component {
 
         if (errorMessage === '') {
             console.log("add " + this.state.giftModalInput.categoryId);
+            let body = undefined;
+            if (this.state.giftModalInput.categoryId) {
+                body = JSON.stringify({"name": this.state.giftModalInput.name, "categoryId": this.state.giftModalInput.categoryId});
+            } else {
+                body = JSON.stringify({"name": this.state.giftModalInput.name});
+            }
             const request = async () => {
                 const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/gifts', {
                     method: 'put',
                     headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({
-                        "name": this.state.giftModalInput.name,
-                        "categoryId": this.state.giftModalInput.categoryId,
-                    })
+                    body: body
                 });
                 if (response.status === 200) {
                     this.setState({ giftModal: false });
@@ -343,7 +346,7 @@ class MyWishList extends React.Component {
 
 
     openCatModal() {
-        this.setState( { catModal: true, catModalTitle: "Add a new category", catButton: { text: 'Add', fun: this.addCat }, giftModalInput: { name: '' }, catErrorMessage: '' });
+        this.setState( { catModal: true, catModalTitle: "Add a new category", catButton: { text: 'Add', fun: this.addCat }, catModalInput: { name: '' }, catErrorMessage: '' });
     }
 
     closeCatModal() {
@@ -463,15 +466,21 @@ class MyWishList extends React.Component {
         if (this.state.categories) {
             let out = [];
             for (const [index, value] of this.state.categories.entries()) {
-                out.push(<h2 key={index}>{value.name}</h2>);
-                out.push(<Button key={index + '_edit_cat'} color="link" onClick={() => this.editCat(value.name, value.id)}>Edit</Button>);
-                out.push(<Button key={index + '_delete_cat'} color="link" onClick={() => this.deleteCat(value.id)}>Delete</Button>);
+                out.push(<div>
+                    <h2 key={index}>{value.name}
+                    <img key={index + '_edit_cat_img'} src="edit.png" alt="Edit" width="25" height="21" onClick={() => this.editCat(value.name, value.id)}/>
+                    {' '}
+                    <img key={index + '_del_cat_img'} src="cross.png" alt="Delete" width="21" height="21" onClick={() => this.deleteCat(value.id)}/>
+                    </h2>
+                </div>);
                 let filtered = this.state.gifts.filter(g => { return g.categoryId === value.id });
                 out.push(filtered.map((gift, gIndex) => { return (
                         <li key={gIndex}>
-                            {gift.name}{' '}
-                            <Button color="link" onClick={() => this.editGift(gift.id, gift.name, gift.categoryId)}>Edit</Button>{' '}
-                            <Button color="link" onClick={() => this.deleteGift(gift.id)}>Delete</Button>
+                            {gift.name}
+                            {' '}
+                            <img key={index + '_edit_img'} className="d-inline" src="edit.png" alt="Edit" width="25" height="21" onClick={() => this.editGift(gift.id, gift.name, gift.categoryId)}/>
+                            {' '}
+                            <img key={index + '_del_img'} className="d-inline" src="cross.png" alt="Delete" width="21" height="21" onClick={() => this.deleteGift(gift.id)}/>
                         </li>);}));
             }
 
