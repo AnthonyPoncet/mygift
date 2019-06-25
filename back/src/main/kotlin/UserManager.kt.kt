@@ -1,4 +1,4 @@
-import java.lang.Exception
+import kotlin.Exception
 
 /** RETURN CLASSES **/
 data class User(val id: Long, val name: String)
@@ -16,7 +16,12 @@ data class RestCategory(val name: String?)
 class UserManager(private var databaseManager: DatabaseManager) {
 
     fun connect(connectionInformation: ConnectionInformation): User {
-        val user = databaseManager.getUser(connectionInformation) ?: throw Exception("Password or user may be wrong")
+        if (connectionInformation.name == null) throw Exception("Username could not be null")
+        if (connectionInformation.password == null) throw Exception("Password could not be null")
+
+        val user = databaseManager.getUser(connectionInformation.name) ?: throw Exception("Unknown user")
+        if (user.password != connectionInformation.password) throw Exception("Wrong password")
+
         return User(user.id, user.name)
     }
 

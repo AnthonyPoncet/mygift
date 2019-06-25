@@ -20,7 +20,7 @@ data class Error(val error: String)
 fun main(args: Array<String>) {
     mainBody {
         val arguments = ArgParser(args).parseInto(::ArgumentParser)
-        val databaseManager = DatabaseManager()
+        val databaseManager = DatabaseManager(arguments.db)
         val userManager = UserManager(databaseManager)
 
         val server = embeddedServer(Netty, port = arguments.port) {
