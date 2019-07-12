@@ -23,6 +23,7 @@ export function signin(username, password) {
 
             const json = await response.json();
             if (response.status === 200) {
+                localStorage.setItem('userId', JSON.stringify(json.id));
                 localStorage.setItem('username', JSON.stringify(json.name));
                 dispatch({ type: SIGNIN, payload: { id: json.id, username: json.name } });
                 history.push('/');
@@ -35,21 +36,39 @@ export function signin(username, password) {
 }
 
 export function logout() {
+    localStorage.removeItem('userId');
     localStorage.removeItem('username');
     return dispatch => dispatch({ type: LOGOUT });
 }
 
-export function signup(username) {
+export function signup(user) {
     return dispatch => {
-        //TODO: mock for now
-        if (username === "aa") {
-          //OK - maybe just call signin
-          localStorage.setItem('username', JSON.stringify(username));
-          dispatch({ type: SIGNIN, username });
-          history.push('/');
-        } else {
-          dispatch(error("an error"));
-        }
+      const request = async () => {
+          const response = await fetch('http://localhost:8080/users', {
+              method: 'put',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({
+                  "name": user.username,
+                  "password": user.password
+              })
+          }).catch(err => {
+            console.error("Unexpected error: " + err.message);
+            dispatch(error("Unable to reach the server. Contact support."));
+          });
+
+          if (response === undefined) return;
+
+          const json = await response.json();
+          if (response.status === 201) {
+              localStorage.setItem('userId', JSON.stringify(json.id));
+              localStorage.setItem('username', JSON.stringify(json.name));
+              dispatch({ type: SIGNIN, payload: { id: json.id, username: json.name } });
+              history.push('/');
+          } else {
+              dispatch(error(json.error));
+          }
+      };
+      request();
     };
 
 }

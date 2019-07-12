@@ -1,6 +1,9 @@
 import { SIGNIN, LOGOUT } from '../constants'
 
-const defaultState = {};
+const defaultState = {
+  id: localStorage.getItem("id"),
+  username: localStorage.getItem('username')
+};
 
 export function signin(state = defaultState, action) {
   switch (action.type) {

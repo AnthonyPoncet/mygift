@@ -3,10 +3,11 @@ import { Router, Route, Link } from 'react-router-dom';
 
 import { connect } from 'react-redux';
 import { clearError } from './redux/actions/error'
+import { logout } from './redux/actions/user'
 
 import HomePage from './component/HomePage'
-import LoginPage from './component/LoginPage'
-import RegisterPage from './component/RegisterPage'
+import SigninPage from './component/SigninPage'
+import SignupPage from './component/SignupPage'
 import { history } from './component/history'
 
 class App extends React.Component {
@@ -16,19 +17,25 @@ class App extends React.Component {
   }
 
     render() {
+        const username = this.props.username;
+        console.log(localStorage.getItem("username"));
         return (
           <Router history={history}>
               <div>
                 <nav className="navbar navbar-expand-lg navbar-light bg-light">
+                  <a className="navbar-brand" href="/">MyGift</a>
                   <ul className="navbar-nav mr-auto">
-                    <li><Link to={'/'} className="nav-link">Home</Link></li>
-                    <li><Link to={'/login'} className="nav-link">Login</Link></li>
-                    <li><Link to={'/register'} className="nav-link">Register</Link></li>
+                    { !username && <li><Link to={'/signin'} className="nav-link">Sign in</Link></li> }
+                    { !username && <li><Link to={'/signup'} className="nav-link">Sign up</Link></li> }
+                    { username && <li><a className="nav-link">Welcome {username}</a></li> }
                   </ul>
+                  { username && (<form class="form-inline">
+                    <button class="btn" type="button" onClick={() => this.props.dispatch(logout())}>Logout</button>
+                  </form>)}
                 </nav>
-                  <Route exact path="/" render={props => (localStorage.getItem('username') ? <HomePage/> : <LoginPage/>)} />
-                  <Route path="/register" component={RegisterPage} />
-                  <Route path="/login" component={LoginPage} />
+                  <Route exact path="/" render={ props => this.props.username ? <HomePage/> : <SigninPage/>} />
+                  <Route path="/signin" component={SigninPage} />
+                  <Route path="/signup" component={SignupPage} />
               </div>
           </Router>
         );
@@ -36,9 +43,6 @@ class App extends React.Component {
 }
 
 function mapStateToProps(state) {
-    const { error } = state;
-    return {
-        error
-    };
+    return { username: state.signin.username };
 }
 export default connect(mapStateToProps)(App);

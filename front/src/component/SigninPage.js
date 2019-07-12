@@ -1,11 +1,12 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import "./style.css";
 
 import { connect } from 'react-redux'
 import { error } from '../redux/actions/error'
-import { signup } from '../redux/actions/user'
+import { signin } from '../redux/actions/user'
 
-class RegisterPage extends React.Component {
+class SigninPage extends React.Component {
   constructor(props) {
     super(props);
     this.state = { username: '', password: '' };
@@ -23,7 +24,7 @@ class RegisterPage extends React.Component {
     const { username, password } = this.state;
     const { dispatch } = this.props;
     if (username && password) {
-      dispatch(signup(username, password));
+      dispatch(signin(username, password));
     } else {
       dispatch(error("Username and Password could not be empty."))
     }
@@ -33,7 +34,7 @@ class RegisterPage extends React.Component {
     const { username, password } = this.state;
     return (
         <div className="auth-form">
-          <h1 className="auth-form-header">Sign up to MyGift</h1>
+          <h1 className="auth-form-header">Sign in to MyGift</h1>
           { this.props.error && <p className="auth-error">{this.props.error}</p> }
           <div className="auth-form-body">
               <div className="form-group">
@@ -44,12 +45,15 @@ class RegisterPage extends React.Component {
                 <label>Password</label>
                 <input type="password" name="password" placeholder="password" className="form-control" value={password} onChange={this.handleChange} />
               </div>
-              <button className="btn btn-primary btn-large" onClick={this.handleSubmit}>Sign up</button>
+              <button className="btn btn-primary btn-large" onClick={this.handleSubmit}>Sign in</button>
+          </div>
+          <div className="auth-bottom">
+              New to mygift? <Link to="/signup" className="btn btn-link">Create an account</Link>
           </div>
         </div>
     );
   }
 }
 
-function mapStateToProps(state) { console.log(state); return { error: state.error.message }; }
-export default connect(mapStateToProps, null)(RegisterPage);
+function mapStateToProps(state) { return { error: state.error.message }; }
+export default connect(mapStateToProps, null)(SigninPage);
