@@ -6,6 +6,7 @@ import { clearError } from './redux/actions/error'
 import { logout } from './redux/actions/user'
 
 import HomePage from './component/HomePage'
+import MyFriends from './component/MyFriends'
 import MyWishList from './component/MyWishList'
 import SigninPage from './component/SigninPage'
 import SignupPage from './component/SignupPage'
@@ -31,6 +32,7 @@ class App extends React.Component {
                       </> }
                     { username && <>
                       <li className="nav-item"><Link to={'/mywishlist'} className="nav-link">My List</Link></li>
+                        <li className="nav-item"><Link to={'/myfriends'} className="nav-link">My Friends</Link></li>
                       <li className="nav-item"><Link to={'/'} className="nav-link">{username}</Link></li>
                       </>}
                   </ul>
@@ -42,6 +44,7 @@ class App extends React.Component {
                   <Route path="/signin" component={SigninPage} />
                   <Route path="/signup" component={SignupPage} />
                   <Route path="/mywishlist" component={MyWishList} />
+                  <Route path="/myfriends" component={MyFriends} />
               </div>
           </Router>
         );
