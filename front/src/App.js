@@ -6,6 +6,7 @@ import { clearError } from './redux/actions/error'
 import { logout } from './redux/actions/user'
 
 import HomePage from './component/HomePage'
+import MyWishList from './component/MyWishList'
 import SigninPage from './component/SigninPage'
 import SignupPage from './component/SignupPage'
 import { history } from './component/history'
@@ -18,7 +19,6 @@ class App extends React.Component {
 
     render() {
         const username = this.props.username;
-        console.log(localStorage.getItem("username"));
         return (
           <Router history={history}>
               <div>
@@ -30,23 +30,18 @@ class App extends React.Component {
                       <li className="nav-item"><Link to={'/signup'} className="nav-link">Sign up</Link></li>
                       </> }
                     { username && <>
-                      <li className="nav-item dropdown">
-                        <a className="nav-link dropdown-toggle">{username}</a>
-                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                          <a class="dropdown-item" href="#">Action</a>
-                          <a class="dropdown-item" href="#">Another action</a>
-                          <div class="dropdown-divider"></div>
-                          <a class="dropdown-item" href="#">Something else here</a>
-                        </div></li>
+                      <li className="nav-item"><Link to={'/mywishlist'} className="nav-link">My List</Link></li>
+                      <li className="nav-item"><Link to={'/'} className="nav-link">{username}</Link></li>
                       </>}
                   </ul>
-                  { username && (<form class="form-inline">
-                    <button class="btn" type="button" onClick={() => this.props.dispatch(logout())}>Logout</button>
+                  { username && (<form className="form-inline">
+                    <button className="btn" type="button" onClick={() => this.props.dispatch(logout())}>Logout</button>
                   </form>)}
                 </nav>
-                  <Route exact path="/" render={ props => this.props.username ? <HomePage/> : <SigninPage/>} />
+                  <Route exact path="/" render={ props => this.props.username ? <HomePage/> : <SignupPage/>} />
                   <Route path="/signin" component={SigninPage} />
                   <Route path="/signup" component={SignupPage} />
+                  <Route path="/mywishlist" component={MyWishList} />
               </div>
           </Router>
         );

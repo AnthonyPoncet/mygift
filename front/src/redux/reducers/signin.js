@@ -1,7 +1,7 @@
 import { SIGNIN, LOGOUT } from '../constants'
 
 const defaultState = {
-  id: localStorage.getItem("id"),
+  userId: localStorage.getItem("userId"),
   username: localStorage.getItem('username')
 };
 

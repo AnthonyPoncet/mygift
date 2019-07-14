@@ -118,7 +118,7 @@ class DatabaseManager(dbPath: String) {
         if (!giftExists(giftId)) throw Exception("Unknown gift $giftId")
         if (!giftBelongToUser(userId, giftId)) throw Exception("Gift $giftId does not belong to user $userId")
 
-        conn.executeUpdate("UPDATE gifts SET name = '" + gift.name + "', " + gift.categoryId + " WHERE id = $giftId")
+        conn.executeUpdate("UPDATE gifts SET name = '" + gift.name + "', categoryId = '" + gift.categoryId + "' WHERE id = $giftId")
     }
 
     @Synchronized fun removeGift(userId: Long, giftId: Long) {

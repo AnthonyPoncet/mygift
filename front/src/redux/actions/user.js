@@ -1,6 +1,6 @@
 import { error } from './error';
 
-import { SIGNIN, LOGOUT, SIGNUP } from '../constants'
+import { SIGNIN, LOGOUT } from '../constants'
 
 import { history } from '../../component/history'
 
@@ -23,9 +23,9 @@ export function signin(username, password) {
 
             const json = await response.json();
             if (response.status === 200) {
-                localStorage.setItem('userId', JSON.stringify(json.id));
-                localStorage.setItem('username', JSON.stringify(json.name));
-                dispatch({ type: SIGNIN, payload: { id: json.id, username: json.name } });
+                localStorage.setItem('userId', json.id);
+                localStorage.setItem('username', json.name);
+                dispatch({ type: SIGNIN, payload: { userId: json.id, username: json.name } });
                 history.push('/');
             } else {
                 dispatch(error(json.error));
@@ -60,9 +60,9 @@ export function signup(user) {
 
           const json = await response.json();
           if (response.status === 201) {
-              localStorage.setItem('userId', JSON.stringify(json.id));
-              localStorage.setItem('username', JSON.stringify(json.name));
-              dispatch({ type: SIGNIN, payload: { id: json.id, username: json.name } });
+              localStorage.setItem('userId', json.id);
+              localStorage.setItem('username', json.name);
+              dispatch({ type: SIGNIN, payload: { userId: json.id, username: json.name } });
               history.push('/');
           } else {
               dispatch(error(json.error));
