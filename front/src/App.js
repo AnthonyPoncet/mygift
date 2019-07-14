@@ -25,9 +25,20 @@ class App extends React.Component {
                 <nav className="navbar navbar-expand-lg navbar-light bg-light">
                   <a className="navbar-brand" href="/">MyGift</a>
                   <ul className="navbar-nav mr-auto">
-                    { !username && <li><Link to={'/signin'} className="nav-link">Sign in</Link></li> }
-                    { !username && <li><Link to={'/signup'} className="nav-link">Sign up</Link></li> }
-                    { username && <li><a className="nav-link">Welcome {username}</a></li> }
+                    { !username && <>
+                      <li className="nav-item"><Link to={'/signin'} className="nav-link">Sign in</Link></li>
+                      <li className="nav-item"><Link to={'/signup'} className="nav-link">Sign up</Link></li>
+                      </> }
+                    { username && <>
+                      <li className="nav-item dropdown">
+                        <a className="nav-link dropdown-toggle">{username}</a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                          <a class="dropdown-item" href="#">Action</a>
+                          <a class="dropdown-item" href="#">Another action</a>
+                          <div class="dropdown-divider"></div>
+                          <a class="dropdown-item" href="#">Something else here</a>
+                        </div></li>
+                      </>}
                   </ul>
                   { username && (<form class="form-inline">
                     <button class="btn" type="button" onClick={() => this.props.dispatch(logout())}>Logout</button>

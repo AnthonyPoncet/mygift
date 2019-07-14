@@ -1,6 +1,8 @@
 import React from 'react';
 import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup } from "reactstrap";
 
+import { connect } from 'react-redux';
+
 class HomePage extends React.Component {
   constructor(props) {
       super(props);
