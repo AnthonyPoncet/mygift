@@ -2,9 +2,19 @@ import React from 'react';
 import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup } from "reactstrap";
 
 import { connect } from 'react-redux';
+import { AppState } from '../redux/store';
 
-class MyWishList extends React.Component {
-  constructor(props) {
+interface Props {
+  userId: number | null
+}
+interface State {
+  gifts: any[],
+  categories: any[],
+  show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string
+}
+
+class MyWishList extends React.Component<Props, State> {
+  constructor(props: Props) {
       super(props);
 
       this.openAddGift = this.openAddGift.bind(this);
@@ -30,20 +40,16 @@ class MyWishList extends React.Component {
 
   componentDidMount() {
       if (this.props.userId) {
-          let getGifts = async () => this.getGifts(this.props.userId);
-          let getCategories = async () => this.getCategories(this.props.userId);
-          getGifts();
-          getCategories();
+          this.getGifts(this.props.userId);
+          this.getCategories(this.props.userId);
       }
   }
 
   //Hanle loggin, seems weird
-  componentWillReceiveProps(nextProps, nextContext) {
+  componentWillReceiveProps(nextProps: Props, nextContext: any) {
       if (nextProps.userId) {
-          let getGifts = async () => this.getGifts(nextProps.userId);
-          let getCategories = async () => this.getCategories(nextProps.userId);
-          getGifts();
-          getCategories();
+        this.getGifts(nextProps.userId);
+        this.getCategories(nextProps.userId);
       }
   }
 
@@ -52,18 +58,18 @@ class MyWishList extends React.Component {
       inputs: { name: '', categoryId: this.state.categories[0].id }, errorMessage: '' });
   }
 
-  openEditGift(giftId, name, categoryId) {
+  openEditGift(giftId: number, name: string, categoryId: number) {
       this.setState( { show: true, title: "Update gift", bodyRender: this.giftBodyRender, button: { text: 'Update', fun: () => this.updateGift(giftId) },
       inputs: { name: name, categoryId: categoryId }, errorMessage: '' });
   }
 
-  handleChangeGift = async (event) => {
+  handleChangeGift = async (event: any) => {
       const { target } = event;
       const value = target.type === 'checkbox' ? target.checked : target.value;
       await this.setState({ inputs: { name: value, categoryId: this.state.inputs.categoryId } });
   };
 
-  updateGiftModalCategory(id) {
+  updateGiftModalCategory(id: string) {
       this.setState({ inputs: { name: this.state.inputs.name, categoryId: id } });
   }
 
@@ -103,7 +109,7 @@ class MyWishList extends React.Component {
               });
               if (response.status === 200) {
                   this.setState({ show: false });
-                  this.getGifts(this.props.userId);
+                  this.props.userId !== null && this.getGifts(this.props.userId);
               } else {
                   const json = await response.json();
                   this.setState({ show: true, errorMessage: json.error });
@@ -115,7 +121,7 @@ class MyWishList extends React.Component {
       }
   }
 
-  updateGift(id) {
+  updateGift(id: number) {
       const {inputs} = this.state;
       console.log(inputs);
 
@@ -137,7 +143,7 @@ class MyWishList extends React.Component {
               });
               if (response.status === 200) {
                   that.setState({ show: false });
-                  this.getGifts(this.props.userId);
+                  this.props.userId && this.getGifts(this.props.userId);
               } else {
                   const json = await response.json();
                   that.setState({ show: true, errorMessage: json.error });
@@ -149,11 +155,11 @@ class MyWishList extends React.Component {
       }
   }
 
-  deleteGift(id) {
+  deleteGift(id: number) {
       const request = async () => {
           const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/gifts/' + id, {method: 'delete'});
           if (response.status === 202) {
-              this.getGifts(this.props.userId);
+              this.props.userId && this.getGifts(this.props.userId);
           } else {
               const json = await response.json();
               console.log(json);
@@ -168,12 +174,12 @@ class MyWishList extends React.Component {
         inputs: { name: '' }, errorMessage: '' });
   }
 
-  openEditCat(name, categoryId) {
+  openEditCat(name: string, categoryId: number) {
       this.setState( { show: true, title: "Update category", bodyRender: this.catBodyRender, button: { text: 'Update', fun: () => this.updateCat(categoryId) },
           inputs: { name: name }, errorMessage: '' });
   }
 
-  handleChangeCat = async (event) => {
+  handleChangeCat = async (event: any) => {
       const { target } = event;
       const value = target.type === 'checkbox' ? target.checked : target.value;
       const { name } = target;
@@ -205,7 +211,7 @@ class MyWishList extends React.Component {
               });
               if (response.status === 200) {
                   this.setState({ show: false });
-                  this.getCategories(this.props.userId);
+                  this.props.userId && this.getCategories(this.props.userId);
               } else {
                   const json = await response.json();
                   this.setState({ show: true, errorMessage: json.error });
@@ -217,7 +223,7 @@ class MyWishList extends React.Component {
       }
   }
 
-  updateCat(id) {
+  updateCat(id: number) {
       let errorMessage = '';
       const {name} = this.state.inputs;
       if (name === undefined || name === '') {
@@ -235,7 +241,7 @@ class MyWishList extends React.Component {
               });
               if (response.status === 200) {
                   this.setState({ show: false });
-                  this.getCategories(this.props.userId);
+                  this.props.userId && this.getCategories(this.props.userId);
               } else {
                   const json = await response.json();
                   this.setState({ show: true, errorMessage: json.error });
@@ -247,11 +253,11 @@ class MyWishList extends React.Component {
       }
   }
 
-  deleteCat(id) {
+  deleteCat(id: number) {
       const request = async () => {
           const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/categories/' + id, {method: 'delete'});
           if (response.status === 202) {
-              this.getCategories(this.props.userId);
+              this.props.userId && this.getCategories(this.props.userId);
           } else {
               const json = await response.json();
               console.log(json);
@@ -264,7 +270,7 @@ class MyWishList extends React.Component {
       this.setState({ show: false });
   }
 
-  async getGifts(userId) {
+  async getGifts(userId: number) {
       const response = await fetch('http://localhost:8080/users/' + userId + '/gifts');
       const json = await response.json();
       if (response.status === 200) {
@@ -274,7 +280,7 @@ class MyWishList extends React.Component {
       }
   };
 
-  async getCategories(userId)  {
+  async getCategories(userId: number)  {
       const response = await fetch('http://localhost:8080/users/' + userId + '/categories');
       const json = await response.json();
       if (response.status === 200) {
@@ -331,7 +337,7 @@ class MyWishList extends React.Component {
           </>
         }
 
-        <Modal isOpen={this.state.show} toggle={this.closeModal} className={this.props.className}>
+        <Modal isOpen={this.state.show} toggle={this.closeModal}>
             <ModalHeader toggle={this.closeModal}>{this.state.title}</ModalHeader>
             <ModalBody>
                 {modalBody}
@@ -343,7 +349,5 @@ class MyWishList extends React.Component {
   }
 }
 
-function mapStateToProps(state) {
-    return { userId: state.signin.userId };
-}
+function mapStateToProps(state: AppState) : Props { return { userId: state.signin.userId }; }
 export default connect(mapStateToProps)(MyWishList);

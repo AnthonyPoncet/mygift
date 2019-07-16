@@ -2,9 +2,19 @@ import React from 'react';
 import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup } from "reactstrap";
 
 import { connect } from 'react-redux';
+import { AppState } from '../redux/store';
 
-class MyFriends extends React.Component {
-  constructor(props) {
+interface Props {
+  userId: number | null
+}
+interface State {
+  initiatedRequests: any[],
+  receivedRequests: any[],
+  show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string
+}
+
+class MyFriends extends React.Component<Props, State> {
+  constructor(props: Props) {
       super(props);
 
       this.openAddFriend = this.openAddFriend.bind(this);
@@ -22,20 +32,16 @@ class MyFriends extends React.Component {
 
   componentDidMount() {
       if (this.props.userId) {
-          let getInitiated = async () => this.getInitiated(this.props.userId);
-          let getReceived = async () => this.getReceived(this.props.userId); //this one should be scheduled
-          getInitiated();
-          getReceived();
+          this.getInitiated(this.props.userId);
+          this.getReceived(this.props.userId); //this one should be scheduled
       }
   }
 
   //Hanle loggin, seems weird
-  componentWillReceiveProps(nextProps, nextContext) {
+  componentWillReceiveProps(nextProps: Props, nextContext: any) {
       if (nextProps.userId) {
-          let getInitiated = async () => this.getInitiated(nextProps.userId);
-          let getReceived = async () => this.getReceived(nextProps.userId);
-          getInitiated();
-          getReceived();
+          this.getInitiated(nextProps.userId);
+          this.getReceived(nextProps.userId);
       }
   }
 
@@ -44,7 +50,7 @@ class MyFriends extends React.Component {
       inputs: { name: '' }, errorMessage: '' });
   }
 
-  handleChangeName = async (event) => {
+  handleChangeName = async (event: any) => {
       const { target } = event;
       const value = target.type === 'checkbox' ? target.checked : target.value;
       await this.setState({ inputs: { name: value } });
@@ -61,7 +67,7 @@ class MyFriends extends React.Component {
         this.setState({ show: false });
     }
 
-  async getInitiated(userId) {
+  async getInitiated(userId: number) {
       const response = await fetch('http://localhost:8080/users/' + userId + '/friend-requests/sent');
       const json = await response.json();
       if (response.status === 200) {
@@ -71,7 +77,7 @@ class MyFriends extends React.Component {
       }
   };
 
-  async getReceived(userId) {
+  async getReceived(userId: number) {
       const response = await fetch('http://localhost:8080/users/' + userId + '/friend-requests/received');
       const json = await response.json();
       if (response.status === 200) {
@@ -97,7 +103,7 @@ class MyFriends extends React.Component {
               });
               if (response.status === 200) {
                   this.setState({ show: false });
-                  this.getInitiated(this.props.userId);
+                  this.props.userId !== null && this.getInitiated(this.props.userId);
               } else {
                   const json = await response.json();
                   this.setState({ show: true, errorMessage: json.error });
@@ -109,11 +115,11 @@ class MyFriends extends React.Component {
       }
   }
 
-  cancelRequest(id) {
+  cancelRequest(id: number) {
     const request = async () => {
         const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/friend-requests/' + id, {method: 'delete'});
         if (response.status === 202) {
-            this.getInitiated(this.props.userId);
+            this.props.userId && this.getInitiated(this.props.userId);
         } else {
             const json = await response.json();
             console.log(json);
@@ -122,12 +128,12 @@ class MyFriends extends React.Component {
     request();
   };
 
-  acceptRequest(id) {
+  acceptRequest(id: number ) {
     const request = async () => {
         const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/friend-requests/' + id + '/accept',
         {method: 'get'});
         if (response.status === 202) {
-            this.getInitiated(this.props.userId);
+            this.props.userId && this.getReceived(this.props.userId);
         } else {
             const json = await response.json();
             console.log(json);
@@ -136,12 +142,12 @@ class MyFriends extends React.Component {
     request();
   };
 
-  declineRequest(id) {
+  declineRequest(id: number ) {
     const request = async () => {
         const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/friend-requests/' + id + '/decline',
         {method: 'get'});
         if (response.status === 202) {
-            this.getInitiated(this.props.userId);
+            this.props.userId && this.getReceived(this.props.userId);
         } else {
             const json = await response.json();
             console.log(json);
@@ -212,7 +218,7 @@ class MyFriends extends React.Component {
             </>
           }
 
-          <Modal isOpen={this.state.show} toggle={this.closeModal} className={this.props.className}>
+          <Modal isOpen={this.state.show} toggle={this.closeModal}>
               <ModalHeader toggle={this.closeModal}>{this.state.title}</ModalHeader>
               <ModalBody>
                   {modalBody}
@@ -224,7 +230,5 @@ class MyFriends extends React.Component {
   }
 }
 
-function mapStateToProps(state) {
-    return { userId: state.signin.userId };
-}
+function mapStateToProps(state: AppState): Props {return { userId: state.signin.userId };}
 export default connect(mapStateToProps)(MyFriends);
