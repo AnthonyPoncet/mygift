@@ -16,6 +16,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 
 data class Error(val error: String)
+data class FriendRequestConflict(val ownRequest: Boolean, val status: RequestStatus, val message: String)
 
 fun main(args: Array<String>) {
     mainBody {
@@ -289,6 +290,8 @@ fun main(args: Array<String>) {
                         try {
                             userManager.createFriendRequest(id, friendRequest)
                             call.respond(HttpStatusCode.OK)
+                        } catch (e: FriendRequestAlreadyExistException) {
+                            call.respond(HttpStatusCode.Conflict, FriendRequestConflict(id == e.dbFriendRequest.userOne, e.dbFriendRequest.status, e.message!!))
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }
@@ -328,7 +331,7 @@ fun main(args: Array<String>) {
                         }
 
                         try {
-                            userManager.declineFriendRequest(id, fid)
+                            userManager.declineFriendRequest(id, fid, false)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))

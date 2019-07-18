@@ -1,8 +1,11 @@
 import React from 'react';
-import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup } from "reactstrap";
+import { Modal, ModalHeader, ModalBody, Button, Input, Label, Form, FormGroup, FormFeedback } from "reactstrap";
 
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
+
+import Octicon, {Check, X, CircleSlash} from '@primer/octicons-react'
+
 
 interface Props {
   userId: number | null
@@ -47,25 +50,29 @@ class MyFriends extends React.Component<Props, State> {
 
   openAddFriend() {
     this.setState( { show: true, title: "Add a new friend", bodyRender: this.friendBodyRender, button: { text: 'Add', fun: this.addFriend },
-      inputs: { name: '' }, errorMessage: '' });
+      inputs: { name: '', nameValidity: true }, errorMessage: '' });
   }
 
   handleChangeName = async (event: any) => {
       const { target } = event;
       const value = target.type === 'checkbox' ? target.checked : target.value;
-      await this.setState({ inputs: { name: value } });
+      await this.setState({ inputs: { name: value, nameValidity: (value.length !== 0) } });
   };
 
   friendBodyRender() {
-    return (<FormGroup>
-        <Label>Name</Label>
-        <Input name="name" placeholder="name" value={this.state.inputs.name} onChange={(e) => this.handleChangeName(e)}/>
-    </FormGroup>);
+    return (<Form inline>
+      <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
+        <Label className="mr-sm-2">Name</Label>
+        <Input name="name" placeholder="name" value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChangeName(e)}/>
+        <FormFeedback>Name is mandatory</FormFeedback>
+      </FormGroup>
+      <Button color="primary" onClick={this.state.button.fun}>{this.state.button.text}</Button>
+  </Form>);
   }
 
-    closeModal() {
-        this.setState({ show: false });
-    }
+  closeModal() {
+      this.setState({ show: false });
+  }
 
   async getInitiated(userId: number) {
       const response = await fetch('http://localhost:8080/users/' + userId + '/friend-requests/sent');
@@ -87,32 +94,46 @@ class MyFriends extends React.Component<Props, State> {
       }
   };
 
+  generateMessage(json: any, friendName: string): string {
+    console.log(json);
+    switch(json.status) {
+      case "ACCEPTED":
+        return 'You are already friend with ' + friendName;
+      case "PENDING":
+        if (json.ownRequest) {
+          return 'Your friend ' + friendName + ' has still not accepted your request';
+        } else {
+          return 'Your friend ' + friendName + ' has already sent you a request';
+        }
+      case "REJECTED":
+        return 'User ' + friendName + ' blocked you. You cannot sent him request.'
+    }
+
+    return '';
+  }
+
   addFriend() {
-      let errorMessage = '';
       const {name} = this.state.inputs;
       if (name === undefined || name === '') {
-          errorMessage = "Name is mandatory";
+          this.setState({inputs: {nameValidity: false}});
+          return;
       }
 
-      if (errorMessage === '') {
-          const request = async () => {
-              const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/friend-requests', {
-                  method: 'put',
-                  headers: {'Content-Type':'application/json'},
-                  body: JSON.stringify({"name": name})
-              });
-              if (response.status === 200) {
-                  this.setState({ show: false });
-                  this.props.userId !== null && this.getInitiated(this.props.userId);
-              } else {
-                  const json = await response.json();
-                  this.setState({ show: true, errorMessage: json.error });
-              }
-          };
-          request();
-      } else {
-          this.setState({ show: true, errorMessage: errorMessage })
-      }
+      const request = async () => {
+          const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/friend-requests', {
+              method: 'put',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({"name": name})
+          });
+          if (response.status === 200) {
+              this.setState({ show: false });
+              this.props.userId !== null && this.getInitiated(this.props.userId);
+          } else {
+              const json = await response.json();
+              this.setState({ show: true, errorMessage: this.generateMessage(json, name) });
+          }
+      };
+      request();
   }
 
   cancelRequest(id: number) {
@@ -180,7 +201,7 @@ class MyFriends extends React.Component<Props, State> {
                 {' '}
                 {req.status}
                 {' '}
-                <img key={i + '_del_img'} className="d-inline" src="cross.png" alt="Delete" width="21" height="21" onClick={() => this.cancelRequest(req.id)}/>
+                <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
             </li>);})}
       <h2>Received requests</h2>
       {received.map((req, i) => { return (
@@ -189,9 +210,9 @@ class MyFriends extends React.Component<Props, State> {
                 {' '}
                 {req.status}
                 {' '}
-                <img key={i + '_accept_img'} className="d-inline" src="accept.png" alt="Accept" width="21" height="21" onClick={() => this.acceptRequest(req.id)}/>
+                <span style={{cursor: "pointer"}} onClick={() => this.acceptRequest(req.id)}><Octicon icon={Check}/></span>
                 {' '}
-                <img key={i + '_decline_img'} className="d-inline" src="cross.png" alt="Decline" width="21" height="21" onClick={() => this.declineRequest(req.id)}/>
+                <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(req.id)}><Octicon icon={X}/></span>
             </li>);})}
       <h2>Friends</h2>
       {friendsI.map((req, i) => { return (<li key={i + 'friendI' + req.to.name}>{req.from.name}</li>);})}
@@ -205,10 +226,9 @@ class MyFriends extends React.Component<Props, State> {
   //  Manage blocked people (possibility to unblock them)
 
   render() {
-    const {button} = this.state;
     let modalBody = [];
     if (this.state.bodyRender !== undefined) {
-      modalBody.push(this.state.bodyRender());
+        modalBody.push(this.state.bodyRender());
     }
     return (
       <div>
@@ -221,8 +241,8 @@ class MyFriends extends React.Component<Props, State> {
           <Modal isOpen={this.state.show} toggle={this.closeModal}>
               <ModalHeader toggle={this.closeModal}>{this.state.title}</ModalHeader>
               <ModalBody>
+                  { this.state.errorMessage && <p className="auth-error">{this.state.errorMessage}</p> }
                   {modalBody}
-                  <Button color="primary" onClick={button.fun}>{button.text}</Button>{' '} {this.state.errorMessage}
               </ModalBody>
           </Modal>
       </div>

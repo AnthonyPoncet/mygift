@@ -92,8 +92,8 @@ class UserManager(private var databaseManager: DatabaseManager) {
         databaseManager.acceptFriendRequest(userId, friendRequestId)
     }
 
-    fun declineFriendRequest(userId: Long, friendRequestId: Long) {
-        databaseManager.declineFriendRequest(userId, friendRequestId)
+    fun declineFriendRequest(userId: Long, friendRequestId: Long, blockUser: Boolean) {
+        databaseManager.declineFriendRequest(userId, friendRequestId, blockUser)
     }
 
     private fun toFriendRequest(dbRequest: DbFriendRequest) : FriendRequest {

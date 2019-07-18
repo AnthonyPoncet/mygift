@@ -28,6 +28,7 @@ data class DbFriendRequest(val id: Long, val userOne: Long, val userTwo: Long, v
 // check if request authorized by id to id2     select * from X where user1id = id and user2id = id2 does not exist
 //                                              Any status means ok, waiting for other or blocked
 
+class FriendRequestAlreadyExistException(val dbFriendRequest: DbFriendRequest) : Exception("Friend request already exists and is ${dbFriendRequest.status}.")
 
 class DbConnection(dbPath: String) {
     private var conn: Connection
@@ -74,6 +75,9 @@ class DatabaseManager(dbPath: String) {
         conn.execute("CREATE TABLE IF NOT EXISTS friendRequest (id INTEGER PRIMARY KEY AUTOINCREMENT, userOne INTEGER NOT NULL, userTwo INTEGER NOT NULL, status TEXT NOT NULL)")
     }
 
+    /**
+     * Users
+     */
     @Synchronized fun addUser(userInformation: UserInformation): DbUser {
         if (userInformation.name == null) {
             throw Exception("Name could not be null")
@@ -111,6 +115,9 @@ class DatabaseManager(dbPath: String) {
         }
     }
 
+    /**
+     * Gift
+     */
     @Synchronized fun addGift(userId: Long, gift: RestGift) {
         if (gift.name == null) {
             throw Exception("Name could not be null")
@@ -161,6 +168,9 @@ class DatabaseManager(dbPath: String) {
         conn.executeUpdate("DELETE FROM gifts WHERE id = $giftId")
     }
 
+    /**
+     * Category
+     */
     @Synchronized fun addCategory(userId: Long, category: RestCategory) {
         if (category.name == null) {
             throw Exception("Name could not be null")
@@ -205,12 +215,24 @@ class DatabaseManager(dbPath: String) {
         conn.executeUpdate("DELETE FROM categories WHERE id = $categoryId")
     }
 
+    /**
+     * Friend request
+     */
     @Synchronized fun createFriendRequest(userOne: Long, userTwo: Long) {
+        if (userOne == userTwo) throw Exception("You cannot be friend with yourself")
         if (!userExists(userOne)) throw Exception("Unknown user $userOne")
         if (!userExists(userTwo)) throw Exception("Unknown user $userTwo")
 
         val friendRequest = getFriendRequest(userOne, userTwo)
-        if (friendRequest != null) throw Exception("Friend request from users $userOne and $userTwo exists and is ${friendRequest.status}")
+        if (friendRequest != null) throw FriendRequestAlreadyExistException(friendRequest)
+
+        val receivedRequest = getFriendRequest(userTwo, userOne)
+        if (receivedRequest != null) {
+            when {
+                receivedRequest.status == RequestStatus.REJECTED -> deleteFriendRequest(userTwo, receivedRequest.id)
+                else -> throw FriendRequestAlreadyExistException(receivedRequest)
+            }
+        }
 
         conn.execute("INSERT INTO friendRequest(userOne,userTwo,status) VALUES ($userOne, $userTwo, '${RequestStatus.PENDING}')")
     }
@@ -261,11 +283,15 @@ class DatabaseManager(dbPath: String) {
         conn.executeUpdate("UPDATE friendRequest SET status = '${RequestStatus.ACCEPTED}' WHERE id = $friendRequestId")
     }
 
-    @Synchronized fun declineFriendRequest(userId: Long, friendRequestId: Long) {
+    @Synchronized fun declineFriendRequest(userId: Long, friendRequestId: Long, blockUser: Boolean) {
         if (!userExists(userId)) throw Exception("Unknown user $userId")
         if (!friendRequestIsNotForUser(userId, friendRequestId)) throw Exception("Friend request $friendRequestId is not targeting user $userId")
 
-        conn.executeUpdate("UPDATE friendRequest SET status = '${RequestStatus.REJECTED}' WHERE id = $friendRequestId")
+        if (blockUser) {
+            conn.executeUpdate("UPDATE friendRequest SET status = '${RequestStatus.REJECTED}' WHERE id = $friendRequestId")
+        } else {
+            conn.executeUpdate("DELETE FROM friendRequest WHERE id = $friendRequestId")
+        }
     }
 
     private fun userExists(userId: Long): Boolean {
