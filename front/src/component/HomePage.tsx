@@ -1,9 +1,13 @@
 import React from 'react';
-import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup } from "reactstrap";
 
 import { connect } from 'react-redux';
+import { AppState } from '../redux/store';
 
-class HomePage extends React.Component {
+interface Props {
+  username: String | null
+}
+
+class HomePage extends React.Component<Props> {
   render() {
       return (
     <div>
@@ -13,7 +17,7 @@ class HomePage extends React.Component {
   }
 }
 
-function mapStateToProps(state) {
+function mapStateToProps(state: AppState) {
     return { username: state.signin.username };
 }
 export default connect(mapStateToProps)(HomePage);

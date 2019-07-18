@@ -2,23 +2,33 @@ import React from 'react';
 import { Router, Route, Link } from 'react-router-dom';
 
 import { connect } from 'react-redux';
-import { clearError } from './redux/actions/error'
-import { logout } from './redux/actions/user'
+import { AppState } from './redux/store'
+import { clearError } from './redux/actions/error';
+import { logout } from './redux/actions/user';
 
-import HomePage from './component/HomePage'
-import MyWishList from './component/MyWishList'
-import SigninPage from './component/SigninPage'
-import SignupPage from './component/SignupPage'
-import { history } from './component/history'
+import HomePage from './component/HomePage';
+import MyFriends from './component/MyFriends';
+import MyWishList from './component/MyWishList';
+import SigninPage from './component/SigninPage';
+import SignupPage from './component/SignupPage';
+import { history } from './component/history';
 
-class App extends React.Component {
-  constructor(props) {
-    super(props);
-    history.listen((location, action) => {this.props.dispatch(clearError())})
-  }
+interface AppProps {
+    clearError: typeof clearError,
+    logout: typeof logout,
+
+    username: String | null
+}
+
+class App extends React.Component<AppProps> {
+    constructor(props: AppProps) {
+        super(props);
+        history.listen((location, action) => {this.props.clearError()})
+    }
 
     render() {
         const username = this.props.username;
+        console.log(username)
         return (
           <Router history={history}>
               <div>
@@ -31,24 +41,26 @@ class App extends React.Component {
                       </> }
                     { username && <>
                       <li className="nav-item"><Link to={'/mywishlist'} className="nav-link">My List</Link></li>
+                        <li className="nav-item"><Link to={'/myfriends'} className="nav-link">My Friends</Link></li>
                       <li className="nav-item"><Link to={'/'} className="nav-link">{username}</Link></li>
                       </>}
                   </ul>
                   { username && (<form className="form-inline">
-                    <button className="btn" type="button" onClick={() => this.props.dispatch(logout())}>Logout</button>
+                    <button className="btn" type="button" onClick={() => this.props.logout()}>Logout</button>
                   </form>)}
                 </nav>
-                  <Route exact path="/" render={ props => this.props.username ? <HomePage/> : <SignupPage/>} />
+                  {this.props.username ? <Route exact path="/" component={HomePage}/> : <Route exact path="/" component={SignupPage}/>}
                   <Route path="/signin" component={SigninPage} />
                   <Route path="/signup" component={SignupPage} />
                   <Route path="/mywishlist" component={MyWishList} />
+                  <Route path="/myfriends" component={MyFriends} />
               </div>
           </Router>
         );
     }
 }
 
-function mapStateToProps(state) {
+function mapStateToProps(state: AppState) {
     return { username: state.signin.username };
 }
-export default connect(mapStateToProps)(App);
+export default connect(mapStateToProps, {clearError, logout})(App);

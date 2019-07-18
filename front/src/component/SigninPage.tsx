@@ -3,11 +3,28 @@ import { Link } from 'react-router-dom';
 import "./style.css";
 
 import { connect } from 'react-redux'
+import { ThunkDispatch } from 'redux-thunk'
+import { AppState } from '../redux/store'
 import { error } from '../redux/actions/error'
 import { signin } from '../redux/actions/user'
 
-class SigninPage extends React.Component {
-  constructor(props) {
+
+interface DispatchProps {
+  signin: (username: String, password: String) => void,
+  error: (message: String) => void
+}
+interface StateProps {
+  errorMessage: String | null
+}
+type Props = DispatchProps & StateProps
+
+interface State {
+  username: string,
+  password: string
+}
+
+class SigninPage extends React.Component<Props, State> {
+  constructor(props: Props) {
     super(props);
     this.state = { username: '', password: '' };
 
@@ -15,18 +32,21 @@ class SigninPage extends React.Component {
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
-  handleChange(e) {
+  handleChange(e: any) {
     const { name, value } = e.target;
-    this.setState({ [name]: value });
+    if (name === "username") {
+      this.setState({username: value, password: this.state.password});
+    } else if (name === "password") {
+      this.setState({username: this.state.username, password: value});
+    }
   }
 
   handleSubmit() {
     const { username, password } = this.state;
-    const { dispatch } = this.props;
     if (username && password) {
-      dispatch(signin(username, password));
+      this.props.signin(username, password);
     } else {
-      dispatch(error("Username and Password could not be empty."))
+      this.props.error("Username and Password could not be empty.")
     }
   }
 
@@ -35,7 +55,7 @@ class SigninPage extends React.Component {
     return (
         <div className="auth-form">
           <h1 className="auth-form-header">Sign in to MyGift</h1>
-          { this.props.error && <p className="auth-error">{this.props.error}</p> }
+          { this.props.errorMessage && <p className="auth-error">{this.props.errorMessage}</p> }
           <div className="auth-form-body">
               <div className="form-group">
                 <label>Username</label>
@@ -55,5 +75,12 @@ class SigninPage extends React.Component {
   }
 }
 
-function mapStateToProps(state) { return { error: state.error.message }; }
-export default connect(mapStateToProps, null)(SigninPage);
+function mapStateToProps(state: AppState): StateProps { return { errorMessage: state.error.message }; }
+const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>, ownProps: Props): DispatchProps => {
+  return {
+    signin: async (username, password) => await dispatch(signin(username, password)),
+    error: (message) => dispatch(error(message))
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(SigninPage);

@@ -16,6 +16,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 
 data class Error(val error: String)
+data class FriendRequestConflict(val ownRequest: Boolean, val status: RequestStatus, val message: String)
 
 fun main(args: Array<String>) {
     mainBody {
@@ -237,6 +238,121 @@ fun main(args: Array<String>) {
 
                         try {
                             userManager.removeCategory(id, gid)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+
+                    /** FRIEND REQUEST **/
+                    get("/friend-requests/sent") {
+                        val id = call.parameters["id"]!!.toLongOrNull()
+                        if (id == null) {
+                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
+                            return@get
+                        }
+
+                        try {
+                            val requests = userManager.getInitiatedFriendRequest(id)
+                            call.respond(HttpStatusCode.OK, requests)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+                    get("/friend-requests/received") {
+                        val id = call.parameters["id"]!!.toLongOrNull()
+                        if (id == null) {
+                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
+                            return@get
+                        }
+
+                        try {
+                            val requests = userManager.getReceivedFriendRequest(id)
+                            call.respond(HttpStatusCode.OK, requests)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+                    put("/friend-requests") {
+                        val id = call.parameters["id"]!!.toLongOrNull()
+                        if (id == null) {
+                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
+                            return@put
+                        }
+
+                        val receiveText = call.receiveText()
+                        val friendRequest = Gson().fromJson(receiveText, RestCreateFriendRequest::class.java)
+                        if (friendRequest.name == null) {
+                            call.respond(HttpStatusCode.BadRequest, Error("missing name node in json"))
+                            return@put
+                        }
+
+                        try {
+                            userManager.createFriendRequest(id, friendRequest)
+                            call.respond(HttpStatusCode.OK)
+                        } catch (e: FriendRequestAlreadyExistException) {
+                            call.respond(HttpStatusCode.Conflict, FriendRequestConflict(id == e.dbFriendRequest.userOne, e.dbFriendRequest.status, e.message!!))
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+                    delete("/friend-requests/{fid}") {
+                        val id = call.parameters["id"]!!.toLongOrNull()
+                        if (id == null) {
+                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
+                            return@delete
+                        }
+
+                        val fid = call.parameters["fid"]!!.toLongOrNull()
+                        if (fid == null) {
+                            call.respond(HttpStatusCode.BadRequest, Error("Provided Friend Request ID must be a number."))
+                            return@delete
+                        }
+
+                        try {
+                            userManager.deleteFriendRequest(id, fid)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+                    //not convince by get
+                    get("/friend-requests/{fid}/decline") {
+                        val id = call.parameters["id"]!!.toLongOrNull()
+                        if (id == null) {
+                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
+                            return@get
+                        }
+
+                        val fid = call.parameters["fid"]!!.toLongOrNull()
+                        if (fid == null) {
+                            call.respond(HttpStatusCode.BadRequest, Error("Provided Friend Request ID must be a number."))
+                            return@get
+                        }
+
+                        try {
+                            userManager.declineFriendRequest(id, fid, false)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+                    //not convince by get
+                    get("/friend-requests/{fid}/accept") {
+                        val id = call.parameters["id"]!!.toLongOrNull()
+                        if (id == null) {
+                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
+                            return@get
+                        }
+
+                        val fid = call.parameters["fid"]!!.toLongOrNull()
+                        if (fid == null) {
+                            call.respond(HttpStatusCode.BadRequest, Error("Provided Friend Request ID must be a number."))
+                            return@get
+                        }
+
+                        try {
+                            userManager.acceptFriendRequest(id, fid)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
