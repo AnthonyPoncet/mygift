@@ -220,11 +220,6 @@ class MyFriends extends React.Component<Props, State> {
     </>);
   }
 
-  //Next:
-  //  While decline, add possibility to block people (prevent to resent) = put declined in DB or remove inline
-  //  Remove friend with prevent to re-add = decline just above
-  //  Manage blocked people (possibility to unblock them)
-
   render() {
     let modalBody = [];
     if (this.state.bodyRender !== undefined) {

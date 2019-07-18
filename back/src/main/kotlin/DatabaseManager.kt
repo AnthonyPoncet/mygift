@@ -8,26 +8,6 @@ data class DbCategory(val id: Long, val userId: Long, val name: String)
 enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
 data class DbFriendRequest(val id: Long, val userOne: Long, val userTwo: Long, val status: RequestStatus)
 
-//User isPrivate? need to be friend to see, automatically accept friend request (later, need to keep
-//track of request accepted or not)
-
-//On website generate a random userid --> generate random to share not logged list. Will be
-//deleted after X time without any request on it.
-//  --> could not have friend ?
-//  --> could not join event ?
-
-//NTH = nice to have
-
-//Guess everybody is private
-//Friend request USER1 -> USER2 (status = ACCEPTED, PENDING, REJECTED)
-//If rejected, keep track that USER2 has already been rejected and then prevent him to ask again
-
-//DBFriend(id, user1id, user2id, status) --> mean 1 initiate request
-// pending request initiated by id              select * from X where user1id = id
-// pending request to validate by id            select * from X where user2id = id
-// check if request authorized by id to id2     select * from X where user1id = id and user2id = id2 does not exist
-//                                              Any status means ok, waiting for other or blocked
-
 class FriendRequestAlreadyExistException(val dbFriendRequest: DbFriendRequest) : Exception("Friend request already exists and is ${dbFriendRequest.status}.")
 
 class DbConnection(dbPath: String) {
