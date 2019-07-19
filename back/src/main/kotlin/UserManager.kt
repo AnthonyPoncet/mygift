@@ -36,6 +36,10 @@ class UserManager(private var databaseManager: DatabaseManager) {
         return Gifts(databaseManager.getUserGifts(userId).map { g -> Gift(g.id, g.name, g.categoryId) })
     }
 
+    fun getFriendGifts(userId: Long, friendName: String): Gifts {
+        return Gifts(databaseManager.getFriendGifts(userId, friendName).map { g -> Gift(g.id, g.name, g.categoryId) })
+    }
+
     fun addGift(userId: Long, gift: RestGift) {
         databaseManager.addGift(userId, gift)
     }
@@ -50,6 +54,10 @@ class UserManager(private var databaseManager: DatabaseManager) {
 
     fun getUserCategories(userId: Long): Categories {
         return Categories(databaseManager.getUserCategories(userId).map { c -> Category(c.id, c.name) })
+    }
+
+    fun getFriendCategories(userId: Long, friendName: String): Categories {
+        return Categories(databaseManager.getFriendCategories(userId, friendName).map { c -> Category(c.id, c.name) })
     }
 
     fun addCategory(userId: Long, category: RestCategory) {

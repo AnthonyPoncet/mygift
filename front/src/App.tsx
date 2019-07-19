@@ -6,6 +6,7 @@ import { AppState } from './redux/store'
 import { clearError } from './redux/actions/error';
 import { logout } from './redux/actions/user';
 
+import FriendWishList from './component/FriendWishList'
 import HomePage from './component/HomePage';
 import MyFriends from './component/MyFriends';
 import MyWishList from './component/MyWishList';
@@ -54,6 +55,7 @@ class App extends React.Component<AppProps> {
                   <Route path="/signup" component={SignupPage} />
                   <Route path="/mywishlist" component={MyWishList} />
                   <Route path="/myfriends" component={MyFriends} />
+                  <Route path="/friend/:friendName?" component={FriendWishList} />
               </div>
           </Router>
         );

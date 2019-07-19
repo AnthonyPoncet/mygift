@@ -6,17 +6,22 @@ import io.ktor.application.install
 import io.ktor.features.CORS
 import io.ktor.features.Compression
 import io.ktor.features.ContentNegotiation
+import io.ktor.features.StatusPages
 import io.ktor.gson.gson
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Parameters
 import io.ktor.request.receiveText
 import io.ktor.response.respond
 import io.ktor.routing.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import java.lang.NumberFormatException
 
 data class Error(val error: String)
 data class FriendRequestConflict(val ownRequest: Boolean, val status: RequestStatus, val message: String)
+
+data class NotANumberException(val target: String) : Exception()
 
 fun main(args: Array<String>) {
     mainBody {
@@ -36,6 +41,10 @@ fun main(args: Array<String>) {
             install(Compression)
             install(ContentNegotiation) {
                 gson { setPrettyPrinting() }
+            }
+
+            install(StatusPages) {
+                exception<NotANumberException> { e -> call.respond(HttpStatusCode.BadRequest, Error("Provided ${e.target} must be a number.")) }
             }
 
             routing {
@@ -79,11 +88,7 @@ fun main(args: Array<String>) {
                 route("users/{id}") {
                     /** GIFT **/
                     get("/gifts") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@get
-                        }
+                        val id = getUserId(call.parameters)
 
                         try {
                             val userGifts = userManager.getUserGifts(id)
@@ -92,12 +97,19 @@ fun main(args: Array<String>) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }
                     }
-                    put("/gifts") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@put
+                    get("/gifts/{friendName}") {
+                        val id = getUserId(call.parameters)
+                        val friendName = call.parameters["friendName"]!!
+
+                        try {
+                            val userGifts = userManager.getFriendGifts(id, friendName)
+                            call.respond(HttpStatusCode.OK, userGifts)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }
+                    }
+                    put("/gifts") {
+                        val id = getUserId(call.parameters)
 
                         val receiveText = call.receiveText()
                         val gift = Gson().fromJson(receiveText, RestGift::class.java)
@@ -114,17 +126,8 @@ fun main(args: Array<String>) {
                         }
                     }
                     patch("/gifts/{gid}") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@patch
-                        }
-
-                        val gid = call.parameters["gid"]!!.toLongOrNull()
-                        if (gid == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided Gift ID must be a number."))
-                            return@patch
-                        }
+                        val id = getUserId(call.parameters)
+                        val gid = call.parameters["gid"]!!.toLongOrNull() ?: throw NotANumberException("Gift id")
 
                         val gift = Gson().fromJson(call.receiveText(), RestGift::class.java)
                         if (gift.name == null) {
@@ -140,17 +143,8 @@ fun main(args: Array<String>) {
                         }
                     }
                     delete("/gifts/{gid}") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@delete
-                        }
-
-                        val gid = call.parameters["gid"]!!.toLongOrNull()
-                        if (gid == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided Gift ID must be a number."))
-                            return@delete
-                        }
+                        val id = getUserId(call.parameters)
+                        val gid = call.parameters["gid"]!!.toLongOrNull() ?: throw NotANumberException("Gift id")
 
                         try {
                             userManager.removeGift(id, gid)
@@ -161,13 +155,8 @@ fun main(args: Array<String>) {
                     }
 
                     /** CATEGORIES **/
-
                     get("/categories") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@get
-                        }
+                        val id = getUserId(call.parameters)
 
                         try {
                             val userCategories = userManager.getUserCategories(id)
@@ -176,12 +165,19 @@ fun main(args: Array<String>) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }
                     }
-                    put("/categories") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@put
+                    get("/categories/{friendName}") {
+                        val id = getUserId(call.parameters)
+                        val friendName = call.parameters["friendName"]!!
+
+                        try {
+                            val userCategories = userManager.getFriendCategories(id, friendName)
+                            call.respond(HttpStatusCode.OK, userCategories)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }
+                    }
+                    put("/categories") {
+                        val id = getUserId(call.parameters)
 
                         val category = Gson().fromJson(call.receiveText(), RestCategory::class.java)
                         if (category.name == null) {
@@ -197,17 +193,8 @@ fun main(args: Array<String>) {
                         }
                     }
                     patch("/categories/{cid}") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@patch
-                        }
-
-                        val gid = call.parameters["cid"]!!.toLongOrNull()
-                        if (gid == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided Category ID must be a number."))
-                            return@patch
-                        }
+                        val id = getUserId(call.parameters)
+                        val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException("Category id")
 
                         val category = Gson().fromJson(call.receiveText(), RestCategory::class.java)
                         if (category.name == null) {
@@ -216,7 +203,7 @@ fun main(args: Array<String>) {
                         }
 
                         try {
-                            userManager.modifyCategory(id, gid, category)
+                            userManager.modifyCategory(id, cid, category)
                             call.respond(HttpStatusCode.OK)
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
@@ -224,20 +211,11 @@ fun main(args: Array<String>) {
                     }
 
                     delete("/categories/{cid}") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@delete
-                        }
-
-                        val gid = call.parameters["cid"]!!.toLongOrNull()
-                        if (gid == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided Category ID must be a number."))
-                            return@delete
-                        }
+                        val id = getUserId(call.parameters)
+                        val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException("Category id")
 
                         try {
-                            userManager.removeCategory(id, gid)
+                            userManager.removeCategory(id, cid)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
@@ -246,11 +224,7 @@ fun main(args: Array<String>) {
 
                     /** FRIEND REQUEST **/
                     get("/friend-requests/sent") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@get
-                        }
+                        val id = getUserId(call.parameters)
 
                         try {
                             val requests = userManager.getInitiatedFriendRequest(id)
@@ -260,11 +234,7 @@ fun main(args: Array<String>) {
                         }
                     }
                     get("/friend-requests/received") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@get
-                        }
+                        val id = getUserId(call.parameters)
 
                         try {
                             val requests = userManager.getReceivedFriendRequest(id)
@@ -274,11 +244,7 @@ fun main(args: Array<String>) {
                         }
                     }
                     put("/friend-requests") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@put
-                        }
+                        val id = getUserId(call.parameters)
 
                         val receiveText = call.receiveText()
                         val friendRequest = Gson().fromJson(receiveText, RestCreateFriendRequest::class.java)
@@ -297,17 +263,8 @@ fun main(args: Array<String>) {
                         }
                     }
                     delete("/friend-requests/{fid}") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@delete
-                        }
-
-                        val fid = call.parameters["fid"]!!.toLongOrNull()
-                        if (fid == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided Friend Request ID must be a number."))
-                            return@delete
-                        }
+                        val id = getUserId(call.parameters)
+                        val fid = call.parameters["fid"]!!.toLongOrNull() ?: throw NumberFormatException("Friend Request id")
 
                         try {
                             userManager.deleteFriendRequest(id, fid)
@@ -317,42 +274,24 @@ fun main(args: Array<String>) {
                         }
                     }
                     //not convince by get
-                    get("/friend-requests/{fid}/decline") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@get
-                        }
-
-                        val fid = call.parameters["fid"]!!.toLongOrNull()
-                        if (fid == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided Friend Request ID must be a number."))
-                            return@get
-                        }
+                    get("/friend-requests/{fid}/accept") {
+                        val id = getUserId(call.parameters)
+                        val fid = call.parameters["fid"]!!.toLongOrNull() ?: throw NumberFormatException("Friend Request id")
 
                         try {
-                            userManager.declineFriendRequest(id, fid, false)
+                            userManager.acceptFriendRequest(id, fid)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }
                     }
-                    //not convince by get
-                    get("/friend-requests/{fid}/accept") {
-                        val id = call.parameters["id"]!!.toLongOrNull()
-                        if (id == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided User ID must be a number."))
-                            return@get
-                        }
-
-                        val fid = call.parameters["fid"]!!.toLongOrNull()
-                        if (fid == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Provided Friend Request ID must be a number."))
-                            return@get
-                        }
+                    post("/friend-requests/{fid}/decline") {
+                        val id = getUserId(call.parameters)
+                        val fid = call.parameters["fid"]!!.toLongOrNull() ?: throw NumberFormatException("Friend Request id")
 
                         try {
-                            userManager.acceptFriendRequest(id, fid)
+                            val blockUser = (call.request.queryParameters["blockUser"] ?: "false").toBoolean()
+                            userManager.declineFriendRequest(id, fid, blockUser)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
@@ -364,4 +303,9 @@ fun main(args: Array<String>) {
 
         server.start(wait = true)
     }
+}
+
+
+fun getUserId(parameters: Parameters) : Long {
+    return parameters["id"]!!.toLongOrNull() ?: throw NotANumberException("User id")
 }
