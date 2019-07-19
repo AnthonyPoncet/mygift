@@ -125,6 +125,15 @@ class DatabaseManager(dbPath: String) {
         return gifts
     }
 
+    @Synchronized fun getFriendGifts(userId: Long, friendName: String): List<DbGift> {
+        if (!userExists(userId)) throw Exception("Unknown user $userId")
+
+        val friend = getUser(friendName) ?: throw Exception("Unknown user name $friendName")
+        getFriendRequest(userId, friend.id) ?: getFriendRequest(friend.id, userId) ?: throw Exception("You are not friend with $friendName")
+
+        return getUserGifts(friend.id)
+    }
+
     @Synchronized fun modifyGift(userId: Long, giftId: Long, gift: RestGift) {
         if (gift.name == null) {
             throw Exception("Name could not be null")
@@ -171,6 +180,15 @@ class DatabaseManager(dbPath: String) {
         }
 
         return categories
+    }
+
+    @Synchronized fun getFriendCategories(userId: Long, friendName: String): List<DbCategory> {
+        if (!userExists(userId)) throw Exception("Unknown user $userId")
+
+        val friend = getUser(friendName) ?: throw Exception("Unknown user name $friendName")
+        getFriendRequest(userId, friend.id) ?: getFriendRequest(friend.id, userId) ?: throw Exception("You are not friend with $friendName")
+
+        return getUserCategories(friend.id)
     }
 
     @Synchronized fun modifyCategory(userId: Long, categoryId: Long, category: RestCategory) {
@@ -319,4 +337,5 @@ class DatabaseManager(dbPath: String) {
         val res = conn.executeQuery("SELECT * FROM friendRequest WHERE id = $friendRequestId AND userTwo = $userId")
         return res.next()
     }
+
 }
