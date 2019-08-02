@@ -64,9 +64,10 @@ class MyWishList extends React.Component<Props, State> {
             inputs: { name: '', nameValidity: true, description: null, price: null, whereToBuy: null, categoryId: this.state.categories[0].id }, errorMessage: '' });
     }
 
+    //TODO: inputs should be loaded with all old values
     openEditGift(giftId: number, name: string, categoryId: number) {
         this.setState( { show: true, title: "Update gift", bodyRender: this.giftBodyRender, button: { text: 'Update', fun: () => this.updateGift(giftId) },
-            inputs: { name: name, nameValidity: true, description: null, price: null, whereToBuy: null, categoryId: this.state.categories[0].id }, errorMessage: '' });
+            inputs: { name: name, nameValidity: true, description: '', price: 0, whereToBuy: '', categoryId: categoryId }, errorMessage: '' });
     }
 
     handleChangeGift = async (event: any) => {
@@ -87,7 +88,12 @@ class MyWishList extends React.Component<Props, State> {
 
     giftBodyRender() {
         const options = this.state.categories && this.state.categories.map( (value, index) => {
-            return <option key={index} value={value.id}>{value.name}</option>});
+          if (this.state.inputs.categoryId === value.id) {
+            return <option key={index} value={value.id} selected>{value.name}</option>
+          } else {
+            return <option key={index} value={value.id}>{value.name}</option>
+          }
+        });
 
         return (<>
             <FormGroup>
@@ -116,6 +122,7 @@ class MyWishList extends React.Component<Props, State> {
     }
 
     giftRestCall(url: string, method: string) {
+      console.log(url);
         const {inputs} = this.state;
 
         if (inputs.name === '') {

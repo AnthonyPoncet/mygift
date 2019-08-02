@@ -51,7 +51,7 @@ class FriendWishList extends React.Component<Props, State> {
             console.log(json.error);
         }
     };
-    
+
     handleEnter(cat: number, gift: number) {
       this.setState({ hoverId: cat + "-" + gift});
     }
@@ -98,7 +98,11 @@ class FriendWishList extends React.Component<Props, State> {
     }
 
     render() {
-        return (<div>{this.renderGifts()}</div>);
+        return (
+        <div>
+          <h1 className="friend-wishlist-title">Wish list de {this.friendName}</h1>
+          <div>{this.renderGifts()}</div>
+        </div>);
     }
 }
 
