@@ -6,13 +6,16 @@ import Octicon, {Pencil, X} from '@primer/octicons-react'
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
 
+import './card-gift.css';
+
 interface Props {
   userId: number | null
 }
 interface State {
   gifts: any[],
   categories: any[],
-  show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string
+  show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string,
+  hoverId: string
 }
 
 class MyWishList extends React.Component<Props, State> {
@@ -36,7 +39,8 @@ class MyWishList extends React.Component<Props, State> {
         this.state = {
             gifts: [],
             categories: [],
-            show: false, title: '', bodyRender: null, button: { text: '', fun: null }, inputs: { }, errorMessage: ''
+            show: false, title: '', bodyRender: null, button: { text: '', fun: null }, inputs: { }, errorMessage: '',
+            hoverId: ''
         }
     }
 
@@ -113,7 +117,6 @@ class MyWishList extends React.Component<Props, State> {
 
     giftRestCall(url: string, method: string) {
         const {inputs} = this.state;
-        console.log(inputs);
 
         if (inputs.name === '') {
             this.setState({ show: true, errorMessage: "Name is mandatory." })
@@ -144,7 +147,7 @@ class MyWishList extends React.Component<Props, State> {
 
     addGift() { this.giftRestCall('http://localhost:8080/users/' + this.props.userId + '/gifts', 'PUT'); }
 
-    updateGift(id: number) { this.giftRestCall('http://localhost:8080/users/' + this.props.userId + '/gifts' + id, 'PATCH'); }
+    updateGift(id: number) { this.giftRestCall('http://localhost:8080/users/' + this.props.userId + '/gifts/' + id, 'PATCH'); }
 
     deleteGift(id: number) {
         const request = async () => {
@@ -185,7 +188,6 @@ class MyWishList extends React.Component<Props, State> {
 
     catRestCall(url: string, method: string) {
         const {inputs} = this.state;
-        console.log(inputs);
         if (inputs.name === '') {
             this.setState({ show: true, errorMessage: "Name is mandatory." })
             return;
@@ -247,39 +249,53 @@ class MyWishList extends React.Component<Props, State> {
         }
     };
 
+    handleEnter(cat: number, gift: number) {
+      this.setState({ hoverId: cat + "-" + gift});
+    }
+
+    handleOut() {
+      this.setState({ hoverId: '' });
+    }
+
     renderGifts() {
         if (this.state.categories) {
             let out = [];
             for (const [index, value] of this.state.categories.entries()) {
                 const cat = (
-                    <h3 key={index + value.name}>{value.name}
+                    <h5 key={index + value.name}>{value.name}
+                    {' '}
                     <span style={{cursor: "pointer"}} onClick={() => this.openEditCat(value.name, value.id)}><Octicon icon={Pencil}/></span>
                     {' '}
                     <span style={{cursor: "pointer"}} onClick={() => this.deleteCat(value.id)}><Octicon icon={X}/></span>
-                    </h3>);
+                    </h5>);
                 let filtered = this.state.gifts.filter(g => { return g.categoryId === value.id });
                 if (filtered.length === 0) {
                     out.push(<>{cat}<p key={index + 'no_gift'}>No gift</p></>);
                 }
                 else {
-                    let giftsOut = filtered.map((gift, gIndex) => { return (
-                        <Col key={index + gIndex + gift.name} className="col-2">
-                            <Card>
-                                <CardBody>
-                                    <CardTitle>
-                                        {gift.name}{' '}
-                                        <span className="text-right" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.categoryId)}><Octicon icon={Pencil}/></span>{' '}
-                                        <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
-                                    </CardTitle>
-                                    <CardText>
-                                        <p>Description: {gift.description}</p>
-                                        <p>Price: {gift.price}</p>
-                                        <p>Where to buy: {gift.whereToBuy}</p>
-                                    </CardText>
-                                </CardBody>
-                            </Card>
-                        </Col>);});
-                    out.push(<>{cat}<Row>{giftsOut}</Row></>)
+                    let giftsOut = filtered.map((gift, gIndex) => {
+                      if (index+'-'+gIndex === this.state.hoverId) {
+                        return (
+                            <div className="mycard" onMouseEnter={() => this.handleEnter(index, gIndex)} onMouseLeave={() => this.handleOut()}>
+                                <div className="card-edit-close">
+                                  <span className="text-right" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.categoryId)}><Octicon icon={Pencil}/></span>{' '}
+                                  <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
+                                </div>
+                                <div className="card-name">{gift.name}</div>
+                                <div className="card-description">{gift.description}</div>
+                                <div className="mycard-footer">
+                                  <div className="card-wtb">{gift.whereToBuy}</div>
+                                  <div className="card-price">{gift.price}</div>
+                                </div>
+                            </div>);
+                        } else {
+                          return (
+                              <div className="mycard" onMouseEnter={() => this.handleEnter(index, gIndex)} onMouseLeave={() => this.handleOut()}>
+                                    <div className="card-name-only">{gift.name}</div>
+                              </div>);
+                        }
+                      });
+                    out.push(<>{cat}<div className="mycard-row">{giftsOut}</div></>)
                 }
             }
 
