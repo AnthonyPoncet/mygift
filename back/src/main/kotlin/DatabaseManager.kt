@@ -3,7 +3,7 @@ import java.sql.DriverManager
 import java.sql.ResultSet
 
 data class DbUser(val id: Long, val name: String, val password: String)
-data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: Double?, val whereToBuy: String?, val categoryId: Long)
+data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long)
 data class DbCategory(val id: Long, val userId: Long, val name: String)
 enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
 data class DbFriendRequest(val id: Long, val userOne: Long, val userTwo: Long, val status: RequestStatus)
@@ -63,7 +63,7 @@ class DatabaseManager(dbPath: String) {
                 "userId         INTEGER NOT NULL, " +
                 "name           TEXT NOT NULL, " +
                 "description    TEXT, " +
-                "price          DOUBLE, " +
+                "price          TEXT, " +
                 "whereToBuy     TEXT, " +
                 "categoryId     INTEGER NOT NULL, " +
                 "FOREIGN KEY(userId) REFERENCES users(id), " +
@@ -133,7 +133,7 @@ class DatabaseManager(dbPath: String) {
         if (!categoryBelongToUser(userId, gift.categoryId)) throw Exception("Category " + gift.categoryId + " does not belong to user $userId")
 
         conn.execute("INSERT INTO gifts(userId,name,description,price,whereToBuy,categoryId) VALUES " +
-                "($userId, '${gift.name}', '${gift.description ?: ""}', ${gift.price ?: -1}, '${gift.whereToBuy ?: ""}', ${gift.categoryId})")
+                "($userId, '${gift.name}', '${gift.description ?: ""}', '${gift.price ?: ""}', '${gift.whereToBuy ?: ""}', ${gift.categoryId})")
         //API return 0 instead of null for price...
         //Maybe this query should be dynamic
     }
@@ -149,7 +149,7 @@ class DatabaseManager(dbPath: String) {
                 res.getLong("userId"),
                 res.getString("name"),
                 res.getString("description"),
-                if (res.getDouble("price") == -1.0) null else res.getDouble("price"),
+                res.getString("price"),
                 res.getString("whereToBuy"),
                 res.getLong("categoryId")))
         }
@@ -178,7 +178,7 @@ class DatabaseManager(dbPath: String) {
         if (!giftExists(giftId)) throw Exception("Unknown gift $giftId")
         if (!giftBelongToUser(userId, giftId)) throw Exception("Gift $giftId does not belong to user $userId")
 
-        conn.executeUpdate("UPDATE gifts SET name = '${gift.name}', description = '${gift.description}', price = ${gift.price}, whereToBuy = '${gift.whereToBuy}', categoryId = '${gift.categoryId}' WHERE id = $giftId")
+        conn.executeUpdate("UPDATE gifts SET name = '${gift.name}', description = '${gift.description}', price = '${gift.price}', whereToBuy = '${gift.whereToBuy}', categoryId = '${gift.categoryId}' WHERE id = $giftId")
     }
 
     @Synchronized fun removeGift(userId: Long, giftId: Long) {

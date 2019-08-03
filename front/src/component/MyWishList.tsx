@@ -64,10 +64,9 @@ class MyWishList extends React.Component<Props, State> {
             inputs: { name: '', nameValidity: true, description: null, price: null, whereToBuy: null, categoryId: this.state.categories[0].id }, errorMessage: '' });
     }
 
-    //TODO: inputs should be loaded with all old values
-    openEditGift(giftId: number, name: string, categoryId: number) {
+    openEditGift(giftId: number, name: string, description: string, price: string, whereToBuy: string, categoryId: number) {
         this.setState( { show: true, title: "Update gift", bodyRender: this.giftBodyRender, button: { text: 'Update', fun: () => this.updateGift(giftId) },
-            inputs: { name: name, nameValidity: true, description: '', price: 0, whereToBuy: '', categoryId: categoryId }, errorMessage: '' });
+            inputs: { name: name, nameValidity: true, description: description, price: price, whereToBuy: whereToBuy, categoryId: categoryId }, errorMessage: '' });
     }
 
     handleChangeGift = async (event: any) => {
@@ -285,7 +284,7 @@ class MyWishList extends React.Component<Props, State> {
                         return (
                             <div className="mycard" onMouseEnter={() => this.handleEnter(index, gIndex)} onMouseLeave={() => this.handleOut()}>
                                 <div className="card-edit-close">
-                                  <span className="text-right" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.categoryId)}><Octicon icon={Pencil}/></span>{' '}
+                                  <span className="text-right" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId)}><Octicon icon={Pencil}/></span>{' '}
                                   <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
                                 </div>
                                 <div className="card-name">{gift.name}</div>

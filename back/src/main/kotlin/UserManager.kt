@@ -2,7 +2,7 @@ import kotlin.Exception
 
 /** RETURN CLASSES **/
 data class User(val id: Long, val name: String)
-data class Gift(val id: Long, val name: String, val description: String?, val price: Double?, val whereToBuy: String?, val categoryId: Long)
+data class Gift(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long)
 data class Gifts(val gifts: List<Gift>)
 data class Category(val id: Long, val name: String)
 data class Categories(val categories: List<Category>)
@@ -11,7 +11,7 @@ data class FriendRequest(val id: Long, val from: User, val to: User, val status:
 /** INPUT CLASSES **/
 data class ConnectionInformation(val name: String?, val password: String?)
 data class UserInformation(val name: String?, val password: String?)
-data class RestGift(val name: String?, val description: String?, val price: Double?, val whereToBuy: String?, val categoryId: Long?)
+data class RestGift(val name: String?, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long?)
 data class RestCategory(val name: String?)
 data class RestCreateFriendRequest(val name: String?)
 
