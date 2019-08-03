@@ -3,7 +3,7 @@ import java.sql.DriverManager
 import java.sql.ResultSet
 
 data class DbUser(val id: Long, val name: String, val password: String)
-data class DbGift(val id: Long, val userId: Long, val name: String, val categoryId: Long)
+data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long)
 data class DbCategory(val id: Long, val userId: Long, val name: String)
 enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
 data class DbFriendRequest(val id: Long, val userOne: Long, val userTwo: Long, val status: RequestStatus)
@@ -49,10 +49,32 @@ class DatabaseManager(dbPath: String) {
     }
 
     private fun createDataModelIfNeeded() {
-        conn.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, password TEXT NOT NULL)")
-        conn.execute("CREATE TABLE IF NOT EXISTS gifts (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER NOT NULL, name TEXT NOT NULL, categoryId INTEGER NOT NULL)")
-        conn.execute("CREATE TABLE IF NOT EXISTS categories (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER NOT NULL, name TEXT NOT NULL)")
-        conn.execute("CREATE TABLE IF NOT EXISTS friendRequest (id INTEGER PRIMARY KEY AUTOINCREMENT, userOne INTEGER NOT NULL, userTwo INTEGER NOT NULL, status TEXT NOT NULL)")
+        conn.execute("CREATE TABLE IF NOT EXISTS users (" +
+                "id         INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "name       TEXT NOT NULL, " +
+                "password   TEXT NOT NULL)")
+        conn.execute("CREATE TABLE IF NOT EXISTS categories (" +
+                "id         INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "userId     INTEGER NOT NULL, " +
+                "name       TEXT NOT NULL, " +
+                "FOREIGN KEY(userId) REFERENCES users(id))")
+        conn.execute("CREATE TABLE IF NOT EXISTS gifts (" +
+                "id             INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "userId         INTEGER NOT NULL, " +
+                "name           TEXT NOT NULL, " +
+                "description    TEXT, " +
+                "price          TEXT, " +
+                "whereToBuy     TEXT, " +
+                "categoryId     INTEGER NOT NULL, " +
+                "FOREIGN KEY(userId) REFERENCES users(id), " +
+                "FOREIGN KEY(categoryId) REFERENCES categories(id))")
+        conn.execute("CREATE TABLE IF NOT EXISTS friendRequest (" +
+                "id         INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "userOne    INTEGER NOT NULL, " +
+                "userTwo    INTEGER NOT NULL, " +
+                "status     TEXT NOT NULL, " +
+                "FOREIGN KEY(userOne) REFERENCES users(id), " +
+                "FOREIGN KEY(userTwo) REFERENCES users(id))")
     }
 
     /**
@@ -110,7 +132,10 @@ class DatabaseManager(dbPath: String) {
         if (!categoryExists(gift.categoryId)) throw Exception("Unknown category " + gift.categoryId)
         if (!categoryBelongToUser(userId, gift.categoryId)) throw Exception("Category " + gift.categoryId + " does not belong to user $userId")
 
-        conn.execute("INSERT INTO gifts(userId,name,categoryId) VALUES ($userId, '" + gift.name + "', " + gift.categoryId + ")")
+        conn.execute("INSERT INTO gifts(userId,name,description,price,whereToBuy,categoryId) VALUES " +
+                "($userId, '${gift.name}', '${gift.description ?: ""}', '${gift.price ?: ""}', '${gift.whereToBuy ?: ""}', ${gift.categoryId})")
+        //API return 0 instead of null for price...
+        //Maybe this query should be dynamic
     }
 
     @Synchronized fun getUserGifts(userId: Long) : List<DbGift> {
@@ -119,7 +144,14 @@ class DatabaseManager(dbPath: String) {
         val gifts = arrayListOf<DbGift>()
         val res = conn.executeQuery("SELECT * FROM gifts WHERE gifts.userId=$userId")
         while (res.next()) {
-            gifts.add(DbGift(res.getLong("id"), userId, res.getString("name"), res.getLong("categoryId")))
+            gifts.add(DbGift(
+                res.getLong("id"),
+                res.getLong("userId"),
+                res.getString("name"),
+                res.getString("description"),
+                res.getString("price"),
+                res.getString("whereToBuy"),
+                res.getLong("categoryId")))
         }
 
         return gifts
@@ -146,7 +178,7 @@ class DatabaseManager(dbPath: String) {
         if (!giftExists(giftId)) throw Exception("Unknown gift $giftId")
         if (!giftBelongToUser(userId, giftId)) throw Exception("Gift $giftId does not belong to user $userId")
 
-        conn.executeUpdate("UPDATE gifts SET name = '" + gift.name + "', categoryId = '" + gift.categoryId + "' WHERE id = $giftId")
+        conn.executeUpdate("UPDATE gifts SET name = '${gift.name}', description = '${gift.description}', price = '${gift.price}', whereToBuy = '${gift.whereToBuy}', categoryId = '${gift.categoryId}' WHERE id = $giftId")
     }
 
     @Synchronized fun removeGift(userId: Long, giftId: Long) {

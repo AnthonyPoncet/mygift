@@ -29,7 +29,6 @@ class App extends React.Component<AppProps> {
 
     render() {
         const username = this.props.username;
-        console.log(username)
         return (
           <Router history={history}>
               <div>

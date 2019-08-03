@@ -5,12 +5,15 @@ import { RouteComponentProps } from "react-router";
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
 
+import './card-gift.css';
+
 interface PathParam { friendName: string };
 interface ConnectProps { userId: number | null };
 interface Props extends RouteComponentProps<PathParam>, ConnectProps {}
 interface State {
     gifts: any[],
-    categories: any[]
+    categories: any[],
+    hoverId: string
 }
 
 class FriendWishList extends React.Component<Props, State> {
@@ -19,7 +22,7 @@ class FriendWishList extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
         this.friendName = this.props.match.params.friendName;
-        this.state = {gifts: [], categories: []};
+        this.state = {gifts: [], categories: [], hoverId: ''};
     }
 
     componentDidMount() {
@@ -49,24 +52,57 @@ class FriendWishList extends React.Component<Props, State> {
         }
     };
 
-    renderGifts() {
-        if (this.state.categories) {
-            let out = [];
-            for (const [index, value] of this.state.categories.entries()) {
-                out.push(<h3 key={index + value.name}>{value.name}</h3>);
-                let filtered = this.state.gifts.filter(g => { return g.categoryId === value.id });
-                if (filtered.length === 0)
-                    out.push(<p key={index + 'no_gift'}>No gift</p>);
-                else
-                    out.push(filtered.map((gift, gIndex) => { return (<li key={index + gIndex + gift.name }>{gift.name}</li>);}));
-            }
+    handleEnter(cat: number, gift: number) {
+      this.setState({ hoverId: cat + "-" + gift});
+    }
 
-            return (<div>{out}</div>);
+    handleOut() {
+      this.setState({ hoverId: '' });
+    }
+
+    renderGifts() {
+      if (this.state.categories) {
+        let out = [];
+        for (const [index, value] of this.state.categories.entries()) {
+          const cat = (
+              <h5 key={index + value.name}>{value.name}</h5>);
+          let filtered = this.state.gifts.filter(g => { return g.categoryId === value.id });
+          if (filtered.length === 0) {
+              out.push(<>{cat}<p key={index + 'no_gift'}>No gift</p></>);
+          }
+          else {
+              let giftsOut = filtered.map((gift, gIndex) => {
+                if (index+'-'+gIndex === this.state.hoverId) {
+                  return (
+                      <div className="mycard" onMouseEnter={() => this.handleEnter(index, gIndex)} onMouseLeave={() => this.handleOut()}>
+                          <div className="card-name">{gift.name}</div>
+                          <div className="card-description">{gift.description}</div>
+                          <div className="mycard-footer">
+                            <div className="card-wtb">{gift.whereToBuy}</div>
+                            <div className="card-price">{gift.price}</div>
+                          </div>
+                      </div>);
+                  } else {
+                    return (
+                        <div className="mycard" onMouseEnter={() => this.handleEnter(index, gIndex)} onMouseLeave={() => this.handleOut()}>
+                              <div className="card-name-only">{gift.name}</div>
+                        </div>);
+                  }
+                });
+              out.push(<>{cat}<div className="mycard-row">{giftsOut}</div></>)
+          }
         }
+        return (<div>{out}</div>);
+      }
+
     }
 
     render() {
-        return (<div>{this.renderGifts()}</div>);
+        return (
+        <div>
+          <h1 className="friend-wishlist-title">Wish list de {this.friendName}</h1>
+          <div>{this.renderGifts()}</div>
+        </div>);
     }
 }
 
