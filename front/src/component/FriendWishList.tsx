@@ -56,6 +56,44 @@ class FriendWishList extends React.Component<Props, State> {
         }
     }
 
+    async wantToBuy(userId: number | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
+        if (userId === null) return; //Impossible
+
+        if (iBought) await this.bought(userId, giftId, false, true); //Remove ibought
+
+        let response = null;
+        if (iWantToBuy === true) {
+            response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId, {method: "DELETE"});
+        } else {
+            response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId + '&action=WANT_TO_BUY', {method: "POST"});
+        }
+        if (response.status === 202) {
+            this.getGifts(userId, this.friendName);
+        } else {
+            const json = await response.json();
+            console.log(json.error);
+        }
+    }
+
+    async bought(userId: number | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
+        if (userId === null) return; //Impossible
+
+        if (iWantToBuy) await this.wantToBuy(userId, giftId, true, false); //Remove ibought
+
+        let response = null;
+        if (iBought === true) {
+            response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId, {method: "DELETE"});
+        } else {
+            response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId + '&action=BOUGHT', {method: "POST"});
+        }
+        if (response.status === 202) {
+            this.getGifts(userId, this.friendName);
+        } else {
+            const json = await response.json();
+            console.log(json.error);
+        }
+    }
+
     async getCategories(userId: number, friendName: string)  {
         const response = await fetch('http://localhost:8080/users/' + userId + '/categories/' + friendName);
         const json = await response.json();
@@ -86,20 +124,30 @@ class FriendWishList extends React.Component<Props, State> {
           else {
               let giftsOut = filtered.map((fGift, gIndex) => {
                 const { gift, interestedUser, buyActionUser } = fGift;
-                //let wantToBuy = buyActionUser.filter(a => { return a.second === "wantToBuy" });
-                //let bought = buyActionUser.filter(a => { return a.second === "bought" });
+                let wantToBuy: string[] = [];
+                let bought: string[] = [];
+                Object.keys(buyActionUser).forEach(key => {
+                    if (buyActionUser[key] === "WANT_TO_BUY") wantToBuy.push(key);
+                    if (buyActionUser[key] === "BOUGHT") bought.push(key);
+                });
                 if (index+'-'+gIndex === this.state.hoverId) {
                   let imInterested = false;
+                  let iWantToBuy = false;
+                  let iBought = false;
                   if (this.props.username !== null) {
                       for (const [index, value] of interestedUser.entries()) { if (value === this.props.username) imInterested = true; }
+                      for (const [index, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
+                      for (const [index, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
                   }
                   return (
                       <div className="mycard" onMouseEnter={() => this.handleEnter(index, gIndex)} onMouseLeave={() => this.handleOut()}>
                           <div className="card-edit-close">
-                            <span className="text-right" style={{cursor: "pointer"}} onClick={() => this.interested(this.props.userId, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
+                            <span className={imInterested ? "text-right icon-selected" : "text-right"} style={{cursor: "pointer"}} onClick={() => this.interested(this.props.userId, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
                             {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
-                            <span style={{cursor: "pointer"}}><Octicon icon={Checklist}/></span>{' '}
-                            <span style={{cursor: "pointer"}}><Octicon icon={Gift}/></span>
+                            <span className={iWantToBuy ? "icon-selected" : ""} style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
+                            {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
+                            <span className={iBought ? "icon-selected" : ""} style={{cursor: "pointer"}} onClick={() => this.bought(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Gift}/></span>{' '}
+                            {bought.length !== 0 && <><span>{bought.length}</span>{' '}</>}
                           </div>
                           <div className="card-name">{gift.name}</div>
                           <div className="card-description">{gift.description}</div>

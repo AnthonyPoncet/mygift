@@ -20,6 +20,11 @@
 
   /*border: 1px solid;*/
 }
+
+.icon-selected {
+  color: #007bff;
+}
+
 .card-name {
   text-align: center;
   padding: 0 5px 5px;

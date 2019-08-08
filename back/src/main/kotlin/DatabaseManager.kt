@@ -242,7 +242,7 @@ class DatabaseManager(dbPath: String) {
                 conn.executeUpdate("DELETE FROM friendActionOnGift WHERE giftId = $giftId AND userId = $userId")
             }
         } else if (buy != BuyAction.NONE) {
-            conn.execute("INSERT INTO friendActionOnGift(giftId,userId,interested,buy) VALUES ($giftId, $userId, ${true}, '$buy')")
+            conn.execute("INSERT INTO friendActionOnGift(giftId,userId,interested,buy) VALUES ($giftId, $userId, ${false}, '$buy')")
         } else {
             //Nothing to do.
         }

@@ -17,25 +17,29 @@ As now, the website is quite limited but allows you to:
 - Create and manage your own wishlist
 - Add friend and manage your friend list
 - Access to your friend wishlist
+- As a friend, be able to say I am interested, I want to bought or I have bought a given gift
 
 ## More to come
 In the future, I plan to add (in that order):
-- As a friend, be able to say I am interested or I have bought a given gift
 - Events (birthday, christmas...)
-- A bought list that summurize all you have to buy
+- A bought list that summarize all you have to buy
 - As a friend, add/propose secretly a gift
 - In Home page once connected, what's new or coming next or...
+- A chat
 - Mobile App
 - A real deployment (all in server)
 - UT/IT/...
+- Security
+- Offline profile (Doodle like)
 - ...
 
 ## Things that need upgrade
-Everithing right now but my next work will be:
+Everything right now but my next work will be:
 - Friend list UI (be able to unblock and better UI in general)
 - Manage profile (such as modify password)
 - Gift panel, if no gift proper UI
 - At some stage, think if page should refresh on new gift/friend request/...
+- A doc for REST end point and once all done, refactor them in meaningful way
 
 ## Known bug
 - Nothing is encoded so no special char are supported
