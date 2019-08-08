@@ -16,7 +16,6 @@ import io.ktor.response.respond
 import io.ktor.routing.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import java.lang.NumberFormatException
 
 data class Error(val error: String)
 data class FriendRequestConflict(val ownRequest: Boolean, val status: RequestStatus, val message: String)
@@ -28,6 +27,8 @@ fun main(args: Array<String>) {
         val arguments = ArgParser(args).parseInto(::ArgumentParser)
         val databaseManager = DatabaseManager(arguments.db)
         val userManager = UserManager(databaseManager)
+
+        println("Start server on port ${arguments.port}")
 
         val server = embeddedServer(Netty, port = arguments.port) {
             install(CORS) {
@@ -127,7 +128,7 @@ fun main(args: Array<String>) {
                     }
                     patch("/gifts/{gid}") {
                         val id = getUserId(call.parameters)
-                        val gid = call.parameters["gid"]!!.toLongOrNull() ?: throw NotANumberException("Gift id")
+                        val gid = getGiftId(call.parameters)
 
                         val gift = Gson().fromJson(call.receiveText(), RestGift::class.java)
                         if (gift.name == null) {
@@ -144,10 +145,57 @@ fun main(args: Array<String>) {
                     }
                     delete("/gifts/{gid}") {
                         val id = getUserId(call.parameters)
-                        val gid = call.parameters["gid"]!!.toLongOrNull() ?: throw NotANumberException("Gift id")
+                        val gid = getGiftId(call.parameters)
 
                         try {
                             userManager.removeGift(id, gid)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+
+                    //These end points should be without the owner id or else the owner id should be used
+                    post("/gifts/{gid}/interested") {
+                        val gid = getGiftId(call.parameters)
+
+                        try {
+                            val userId = (call.request.queryParameters["userId"] ?: throw Exception("userId query parameter is mandatory")).toLong()
+                            userManager.interested(gid, userId)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+                    delete("/gifts/{gid}/interested") {
+                        val gid = getGiftId(call.parameters)
+
+                        try {
+                            val userId = (call.request.queryParameters["userId"] ?: throw Exception("userId query parameter is mandatory")).toLong()
+                            userManager.notInterested(gid, userId)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+                    post("/gifts/{gid}/buy-action") {
+                        val gid = getGiftId(call.parameters)
+
+                        try {
+                            val userId = (call.request.queryParameters["userId"] ?: throw Exception("userId query parameter is mandatory")).toLong()
+                            val action = BuyAction.valueOf(call.request.queryParameters["action"] ?: throw Exception("action query parameter is mandatory"))
+                            userManager.buy(gid, userId, action)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+                    delete("/gifts/{gid}/buy-action") {
+                        val gid = getGiftId(call.parameters)
+
+                        try {
+                            val userId = (call.request.queryParameters["userId"] ?: throw Exception("userId query parameter is mandatory")).toLong()
+                            userManager.stopBuy(gid, userId)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
@@ -305,6 +353,9 @@ fun main(args: Array<String>) {
     }
 }
 
+fun getGiftId(parameters: Parameters) : Long {
+    return parameters["gid"]!!.toLongOrNull() ?: throw NotANumberException("Gift id")
+}
 
 fun getUserId(parameters: Parameters) : Long {
     return parameters["id"]!!.toLongOrNull() ?: throw NotANumberException("User id")

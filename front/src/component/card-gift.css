@@ -16,8 +16,9 @@
 .card-edit-close {
   text-align: right;
   padding: 5px;
+  font-size: 12px;
 
-    /*border: 1px solid;*/
+  /*border: 1px solid;*/
 }
 .card-name {
   text-align: center;

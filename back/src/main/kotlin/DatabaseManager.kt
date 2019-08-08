@@ -3,8 +3,10 @@ import java.sql.DriverManager
 import java.sql.ResultSet
 
 data class DbUser(val id: Long, val name: String, val password: String)
-data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long)
 data class DbCategory(val id: Long, val userId: Long, val name: String)
+data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long)
+enum class BuyAction { NONE, WANT_TO_BUY, BOUGHT }
+data class DbFriendActionOnGift(val id: Long, val giftId: Long, val userId: Long, val interested: Boolean, val buy: BuyAction)
 enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
 data class DbFriendRequest(val id: Long, val userOne: Long, val userTwo: Long, val status: RequestStatus)
 
@@ -68,6 +70,14 @@ class DatabaseManager(dbPath: String) {
                 "categoryId     INTEGER NOT NULL, " +
                 "FOREIGN KEY(userId) REFERENCES users(id), " +
                 "FOREIGN KEY(categoryId) REFERENCES categories(id))")
+        conn.execute("CREATE TABLE IF NOT EXISTS friendActionOnGift (" +
+                "id             INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "giftId         INTEGER NOT NULL, " +
+                "userId         INTEGER NOT NULL, " +
+                "interested     INTEGER NOT NULL, " +
+                "buy            TEXT NOT NULL, " +
+                "FOREIGN KEY(userId) REFERENCES users(id), " +
+                "FOREIGN KEY(giftId) REFERENCES gifts(id))")
         conn.execute("CREATE TABLE IF NOT EXISTS friendRequest (" +
                 "id         INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "userOne    INTEGER NOT NULL, " +
@@ -108,10 +118,10 @@ class DatabaseManager(dbPath: String) {
         }
     }
 
-    @Synchronized fun getUser(userId: Long): DbUser? {
+    @Synchronized fun getUser(userId: Long): String? {
         val res = conn.executeQuery("SELECT * FROM users WHERE users.id='$userId'")
         return if (res.next()) {
-            DbUser(res.getLong("id"), res.getString("name"), res.getString("password"))
+            res.getString("name")
         } else {
             null
         }
@@ -187,6 +197,87 @@ class DatabaseManager(dbPath: String) {
         if (!giftBelongToUser(userId, giftId)) throw Exception("Gift $giftId does not belong to user $userId")
 
         conn.executeUpdate("DELETE FROM gifts WHERE id = $giftId")
+    }
+
+    /**
+     * Gift Actions
+     */
+    @Synchronized fun interested(giftId: Long, userId: Long, interested: Boolean) {
+        if (!giftExists(giftId)) throw Exception("Unknown gift $giftId")
+        if (!userExists(userId)) throw Exception("Unknown user $userId")
+        if (giftBelongToUser(userId, giftId)) throw Exception("Gift $giftId belong to you. I hope you are interested in.")
+
+        val res = conn.executeQuery("SELECT * FROM friendActionOnGift WHERE giftId = $giftId AND userId = $userId")
+        if (res.next()) {
+            val currentInterested = res.getBoolean("interested")
+            val currentBuy = BuyAction.valueOf(res.getString("buy"))
+
+            if (currentInterested == interested) return
+            else if (interested || currentBuy != BuyAction.NONE) {
+                conn.executeUpdate("UPDATE friendActionOnGift SET interested=$interested WHERE giftId = $giftId AND userId = $userId")
+            } else {
+                conn.executeUpdate("DELETE FROM friendActionOnGift WHERE giftId = $giftId AND userId = $userId")
+            }
+        } else if (interested) {
+            conn.execute("INSERT INTO friendActionOnGift(giftId,userId,interested,buy) VALUES ($giftId, $userId, $interested, '${BuyAction.NONE}')")
+        } else {
+            //Nothing to do.
+        }
+    }
+
+    @Synchronized fun buyAction(giftId: Long, userId: Long, buy: BuyAction) {
+        if (!giftExists(giftId)) throw Exception("Unknown gift $giftId")
+        if (!userExists(userId)) throw Exception("Unknown user $userId")
+        if (giftBelongToUser(userId, giftId)) throw Exception("Gift $giftId belong to you. You cannot buy something at yourself.")
+
+        val res = conn.executeQuery("SELECT * FROM friendActionOnGift WHERE giftId = $giftId AND userId = $userId")
+        if (res.next()) {
+            val currentInterested = res.getBoolean("interested")
+            val currentBuy = BuyAction.valueOf(res.getString("buy"))
+
+            if (currentBuy == buy) return
+            else if (currentInterested || buy != BuyAction.NONE) {
+                conn.executeUpdate("UPDATE friendActionOnGift SET buy='$buy' WHERE giftId = $giftId AND userId = $userId")
+            } else {
+                conn.executeUpdate("DELETE FROM friendActionOnGift WHERE giftId = $giftId AND userId = $userId")
+            }
+        } else if (buy != BuyAction.NONE) {
+            conn.execute("INSERT INTO friendActionOnGift(giftId,userId,interested,buy) VALUES ($giftId, $userId, ${true}, '$buy')")
+        } else {
+            //Nothing to do.
+        }
+    }
+
+    @Synchronized fun getFriendActionOnGift(giftId: Long) : List<DbFriendActionOnGift> {
+        if (!giftExists(giftId)) throw Exception("Unknown gift $giftId")
+
+        val res = conn.executeQuery("SELECT * FROM friendActionOnGift WHERE giftId = $giftId")
+        return queryAnswerToDbFriendActionOnGift(res)
+    }
+
+
+    @Synchronized fun getFriendActionOnGiftsUserHasActionOn(userId: Long) : List<DbFriendActionOnGift> {
+        if (!userExists(userId)) throw Exception("Unknown user $userId")
+
+        val res = conn.executeQuery("SELECT * FROM friendActionOnGift WHERE userId = $userId")
+        return queryAnswerToDbFriendActionOnGift(res)
+    }
+
+    private fun queryAnswerToDbFriendActionOnGift(res: ResultSet): ArrayList<DbFriendActionOnGift> {
+        val out = arrayListOf<DbFriendActionOnGift>()
+        while (res.next()) {
+            out.add(
+                DbFriendActionOnGift(
+                    res.getLong("id"),
+                    res.getLong("giftId"),
+                    res.getLong("userId"),
+                    res.getBoolean("interested"),
+                    BuyAction.valueOf(res.getString("buy"))
+                )
+            )
+        }
+
+        return out
     }
 
     /**
@@ -323,6 +414,10 @@ class DatabaseManager(dbPath: String) {
             conn.executeUpdate("DELETE FROM friendRequest WHERE id = $friendRequestId")
         }
     }
+
+    /**
+     * Private
+     */
 
     private fun userExists(userId: Long): Boolean {
         val res = conn.executeQuery("SELECT * FROM users WHERE users.id=$userId")

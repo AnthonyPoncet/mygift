@@ -8,7 +8,7 @@ import { history } from '../../component/history';
 
 interface UserSignIn {
   userId: number,
-  username: String
+  username: string
 }
 interface SignIn {
   type: typeof SIGNIN,
