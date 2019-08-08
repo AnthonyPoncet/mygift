@@ -16,9 +16,15 @@
 .card-edit-close {
   text-align: right;
   padding: 5px;
+  font-size: 12px;
 
-    /*border: 1px solid;*/
+  /*border: 1px solid;*/
 }
+
+.icon-selected {
+  color: #007bff;
+}
+
 .card-name {
   text-align: center;
   padding: 0 5px 5px;
