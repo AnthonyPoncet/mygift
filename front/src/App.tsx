@@ -6,7 +6,9 @@ import { AppState } from './redux/store'
 import { clearError } from './redux/actions/error';
 import { logout } from './redux/actions/user';
 
-import FriendWishList from './component/FriendWishList'
+import Event from './component/Event';
+import Events from './component/Events';
+import FriendWishListRoute from './component/FriendWishListRoute'
 import HomePage from './component/HomePage';
 import MyFriends from './component/MyFriends';
 import MyWishList from './component/MyWishList';
@@ -41,7 +43,8 @@ class App extends React.Component<AppProps> {
                       </> }
                     { username && <>
                       <li className="nav-item"><Link to={'/mywishlist'} className="nav-link">My List</Link></li>
-                        <li className="nav-item"><Link to={'/myfriends'} className="nav-link">My Friends</Link></li>
+                      <li className="nav-item"><Link to={'/myfriends'} className="nav-link">My Friends</Link></li>
+                      <li className="nav-item"><Link to={'/events'} className="nav-link">Events</Link></li>
                       <li className="nav-item"><Link to={'/'} className="nav-link">{username}</Link></li>
                       </>}
                   </ul>
@@ -54,7 +57,9 @@ class App extends React.Component<AppProps> {
                   <Route path="/signup" component={SignupPage} />
                   <Route path="/mywishlist" component={MyWishList} />
                   <Route path="/myfriends" component={MyFriends} />
-                  <Route path="/friend/:friendName?" component={FriendWishList} />
+                  <Route path="/friend/:friendName?" component={FriendWishListRoute} />
+                  <Route path="/events" component={Events} />
+                  <Route path="/event/:eventId?" component={Event} />
               </div>
           </Router>
         );
