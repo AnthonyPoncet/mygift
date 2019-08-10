@@ -32,6 +32,11 @@ fun main(args: Array<String>) {
         val databaseManager = DatabaseManager(arguments.db)
         val userManager = UserManager(databaseManager)
 
+        if (arguments.resetDB) {
+            println("Reset DB with default values")
+            val dbInitializerForTest = DbInitializerForTest(databaseManager)
+        }
+
         println("Start server on port ${arguments.port}")
 
         val server = embeddedServer(Netty, port = arguments.port) {
@@ -369,6 +374,17 @@ fun main(args: Array<String>) {
                         try {
                             userManager.deleteEvent(eid)
                             call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+
+                    get("/events/{eid}") {
+                        val eid = getEventId(call.parameters)
+
+                        try {
+                            val event = userManager.getEvent(eid)
+                            call.respond(HttpStatusCode.OK, event)
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }

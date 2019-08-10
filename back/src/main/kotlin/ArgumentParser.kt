@@ -14,4 +14,10 @@ class ArgumentParser(parser: ArgParser) {
         "-d", "--database",
         help = "path to database")
         .default("mygift.db")
+
+    val resetDB : Boolean by parser.storing(
+        "-r", "--resetDB",
+        help = "Reset db with some default values") {
+            toBoolean()
+        }.default(false)
 }

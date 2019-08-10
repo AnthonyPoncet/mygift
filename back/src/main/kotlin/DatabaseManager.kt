@@ -53,6 +53,17 @@ class DatabaseManager(dbPath: String) {
         createDataModelIfNeeded()
     }
 
+    //Here only for test purpose
+    fun cleanTables() {
+        conn.execute("delete from users")
+        conn.execute("delete from categories")
+        conn.execute("delete from gifts")
+        conn.execute("delete from friendActionOnGift")
+        conn.execute("delete from friendRequest")
+        conn.execute("delete from events")
+        conn.execute("delete from participants")
+    }
+
     private fun createDataModelIfNeeded() {
         conn.execute("CREATE TABLE IF NOT EXISTS users (" +
                 "id         INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -447,7 +458,7 @@ class DatabaseManager(dbPath: String) {
         val eventId = conn.executeQuery("SELECT last_insert_rowid()").getLong(1)
 
         addParticipants(eventId, participantIds)
-        acceptEventInvitation(creatorId, eventId)
+        if (target != creatorId) acceptEventInvitation(creatorId, eventId)
     }
 
     fun deleteEvent(eventId: Long) {
