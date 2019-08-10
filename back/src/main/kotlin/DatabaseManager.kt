@@ -1,6 +1,7 @@
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.ResultSet
+import java.time.LocalDate
 
 data class DbUser(val id: Long, val name: String, val password: String)
 data class DbCategory(val id: Long, val userId: Long, val name: String)
@@ -9,6 +10,8 @@ enum class BuyAction { NONE, WANT_TO_BUY, BOUGHT }
 data class DbFriendActionOnGift(val id: Long, val giftId: Long, val userId: Long, val interested: Boolean, val buy: BuyAction)
 enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
 data class DbFriendRequest(val id: Long, val userOne: Long, val userTwo: Long, val status: RequestStatus)
+data class DbEvent(val id: Long, val name: String, val creatorId: Long, val description: String, val endDate: LocalDate, val target: Long?) //target = -1 if ALL, userId other
+data class DbParticipant(val id: Long, val eventId: Long, val userId: Long, val status: RequestStatus)
 
 class FriendRequestAlreadyExistException(val dbFriendRequest: DbFriendRequest) : Exception("Friend request already exists and is ${dbFriendRequest.status}.")
 
@@ -50,6 +53,17 @@ class DatabaseManager(dbPath: String) {
         createDataModelIfNeeded()
     }
 
+    //Here only for test purpose
+    fun cleanTables() {
+        conn.execute("delete from users")
+        conn.execute("delete from categories")
+        conn.execute("delete from gifts")
+        conn.execute("delete from friendActionOnGift")
+        conn.execute("delete from friendRequest")
+        conn.execute("delete from events")
+        conn.execute("delete from participants")
+    }
+
     private fun createDataModelIfNeeded() {
         conn.execute("CREATE TABLE IF NOT EXISTS users (" +
                 "id         INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -85,6 +99,21 @@ class DatabaseManager(dbPath: String) {
                 "status     TEXT NOT NULL, " +
                 "FOREIGN KEY(userOne) REFERENCES users(id), " +
                 "FOREIGN KEY(userTwo) REFERENCES users(id))")
+
+        conn.execute("CREATE TABLE IF NOT EXISTS events (" +
+                "id             INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "name           TEXT NOT NULL, " +
+                "creatorId      INTEGER NOT NULL, " +
+                "description    TEXT, " +
+                "endDate        INTEGER NOT NULL, " +
+                "target         INTEGER NOT NULL)")
+        conn.execute("CREATE TABLE IF NOT EXISTS participants (" +
+                "id         INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "eventId    INTEGER NOT NULL, " +
+                "userId     INTEGER NOT NULL, " +
+                "status     TEXT NOT NULL, " +
+                "FOREIGN KEY(eventId) REFERENCES events(id), " +
+                "FOREIGN KEY(userId) REFERENCES users(id))")
     }
 
     /**
@@ -362,7 +391,7 @@ class DatabaseManager(dbPath: String) {
         if (!userExists(userId)) throw Exception("Unknown user $userId")
 
         val requests = arrayListOf<DbFriendRequest>()
-        val res = conn.executeQuery("SELECT * FROM friendRequest WHERE friendRequest.userOne=$userId")
+        val res = conn.executeQuery("SELECT * FROM friendRequest WHERE userOne=$userId")
         while (res.next()) {
             requests.add(DbFriendRequest(
                 res.getLong("id"),
@@ -378,7 +407,7 @@ class DatabaseManager(dbPath: String) {
         if (!userExists(userId)) throw Exception("Unknown user $userId")
 
         val requests = arrayListOf<DbFriendRequest>()
-        val res = conn.executeQuery("SELECT * FROM friendRequest WHERE friendRequest.userTwo=$userId")
+        val res = conn.executeQuery("SELECT * FROM friendRequest WHERE userTwo=$userId")
         while (res.next()) {
             requests.add(DbFriendRequest(
                 res.getLong("id"),
@@ -416,31 +445,149 @@ class DatabaseManager(dbPath: String) {
     }
 
     /**
+     * Events
+     */
+    @Synchronized fun createEventAllForAll(name: String, creatorId: Long, description: String?, endDate: LocalDate, participantIds: Set<Long>) {
+        createEventAllForOne(name, creatorId, description, endDate, -1, participantIds)
+    }
+
+    @Synchronized fun createEventAllForOne(name: String, creatorId: Long, description: String?, endDate: LocalDate, target: Long, participantIds: Set<Long>) {
+        if (target != -1L && !userExists(target)) throw Exception("Unknown target user $target")
+
+        conn.execute("INSERT INTO events(name,creatorId,description,endDate,target) VALUES ('$name', $creatorId, '${description ?: ""}', ${endDate.toEpochDay()}, $target)")
+        val eventId = conn.executeQuery("SELECT last_insert_rowid()").getLong(1)
+
+        addParticipants(eventId, participantIds)
+        if (target != creatorId) acceptEventInvitation(creatorId, eventId)
+    }
+
+    fun deleteEvent(eventId: Long) {
+        if (!eventExists(eventId)) throw Exception("Unknown event $eventId")
+
+        //FOREIGN_KEY should delete participants?
+        conn.executeUpdate("DELETE FROM events WHERE id = $eventId")
+    }
+
+    @Synchronized fun addParticipants(eventId: Long, participantIds: Set<Long>) {
+        if (!eventExists(eventId)) throw Exception("Unknown event $eventId")
+
+        val unknownParticipantIds = arrayListOf<Long>()
+        for (participantId: Long in participantIds) {
+            if (!userExists(participantId)) {
+                unknownParticipantIds.add(participantId)
+                continue
+            }
+            conn.execute("INSERT INTO participants(eventId,userId,status) VALUES($eventId,$participantId,'${RequestStatus.PENDING}')")
+        }
+
+        if (unknownParticipantIds.isNotEmpty()) throw Exception("Unknown participants $participantIds")
+    }
+
+    @Synchronized fun acceptEventInvitation(userId: Long, eventId: Long) {
+        if (!userExists(userId)) throw Exception("Unknown user $userId")
+        if (!eventExists(eventId)) throw Exception("Unknown event $eventId")
+        if (!userInvitedToEvent(eventId, userId)) throw Exception("User $userId not invited to event $eventId")
+
+        conn.executeUpdate("UPDATE participants SET status = '${RequestStatus.ACCEPTED}' WHERE eventId = $eventId AND userId = $userId")
+    }
+
+    @Synchronized fun declineEventInvitation(userId: Long, eventId: Long, blockInvites: Boolean) {
+        if (!userExists(userId)) throw Exception("Unknown user $userId")
+        if (!eventExists(eventId)) throw Exception("Unknown event $eventId")
+        if (!userInvitedToEvent(eventId, userId)) throw Exception("User $userId not invited to event $eventId")
+
+        if (blockInvites) {
+            conn.executeUpdate("UPDATE participants SET status = '${RequestStatus.REJECTED}' WHERE eventId = $eventId AND userId = $userId")
+        } else {
+            conn.executeUpdate("DELETE FROM participants WHERE eventId = $eventId AND userId = $userId")
+        }
+    }
+
+    @Synchronized fun getEventsById(eventId: Long) : DbEvent? {
+        val res = conn.executeQuery("SELECT * FROM events WHERE id=$eventId")
+        val resToDbEvents = resToDbEvents(res)
+        return if (resToDbEvents.isEmpty()) null else resToDbEvents[0]
+    }
+
+    @Synchronized fun getEventsCreateBy(userId: Long) : List<DbEvent> {
+        if (!userExists(userId)) throw Exception("Unknown user $userId")
+
+        val res = conn.executeQuery("SELECT * FROM events WHERE creatorId=$userId")
+        return resToDbEvents(res)
+    }
+
+    @Synchronized fun getEventsNamed(name: String) : List<DbEvent> {
+        val res = conn.executeQuery("SELECT * FROM events WHERE name=$name")
+        return resToDbEvents(res)
+    }
+
+    private fun resToDbEvents(res: ResultSet): ArrayList<DbEvent> {
+        val events = arrayListOf<DbEvent>()
+        while (res.next()) {
+            events.add(DbEvent(
+                    res.getLong("id"),
+                    res.getString("name"),
+                    res.getLong("creatorId"),
+                    res.getString("description"),
+                    LocalDate.ofEpochDay(res.getLong("endDate")),
+                    if (res.getLong("target") == -1L) null else res.getLong("target")
+                )
+            )
+        }
+
+        return events
+    }
+
+    @Synchronized fun getEventsAsParticipants(userId: Long) : List<DbParticipant>{
+        if (!userExists(userId)) throw Exception("Unknown user $userId")
+
+        val participants = arrayListOf<DbParticipant>()
+        val res = conn.executeQuery("SELECT * FROM participants WHERE userId=$userId")
+        while (res.next()) {
+            participants.add(DbParticipant(res.getLong("id"), res.getLong("eventId"), res.getLong("userId"), RequestStatus.valueOf(res.getString("status"))))
+        }
+
+        return participants
+    }
+
+    @Synchronized fun getParticipants(eventId: Long) : List<DbParticipant> {
+        if (!eventExists(eventId)) throw Exception("Unknown event $eventId")
+
+        val participants = arrayListOf<DbParticipant>()
+        val res = conn.executeQuery("SELECT * FROM participants WHERE eventId=$eventId")
+        while (res.next()) {
+            participants.add(DbParticipant(res.getLong("id"), res.getLong("eventId"), res.getLong("userId"), RequestStatus.valueOf(res.getString("status"))))
+        }
+
+        return  participants
+    }
+
+    /**
      * Private
      */
 
     private fun userExists(userId: Long): Boolean {
-        val res = conn.executeQuery("SELECT * FROM users WHERE users.id=$userId")
+        val res = conn.executeQuery("SELECT * FROM users WHERE id=$userId")
         return res.next()
     }
 
     private fun giftExists(giftId: Long): Boolean {
-        val res = conn.executeQuery("SELECT * FROM gifts WHERE gifts.id=$giftId")
+        val res = conn.executeQuery("SELECT * FROM gifts WHERE id=$giftId")
         return res.next()
     }
 
     private fun giftBelongToUser(userId: Long, giftId: Long): Boolean {
-        val res = conn.executeQuery("SELECT * FROM gifts WHERE gifts.id=$giftId AND gifts.userId=$userId")
+        val res = conn.executeQuery("SELECT * FROM gifts WHERE id=$giftId AND userId=$userId")
         return res.next()
     }
 
     private fun categoryExists(categoryId: Long): Boolean {
-        val res = conn.executeQuery("SELECT * FROM categories WHERE categories.id=$categoryId")
+        val res = conn.executeQuery("SELECT * FROM categories WHERE id=$categoryId")
         return res.next()
     }
 
     private fun categoryBelongToUser(userId: Long, categoryId: Long): Boolean {
-        val res = conn.executeQuery("SELECT * FROM categories WHERE categories.id=$categoryId AND categories.userId=$userId")
+        val res = conn.executeQuery("SELECT * FROM categories WHERE id=$categoryId AND userId=$userId")
         return res.next()
     }
 
@@ -465,4 +612,13 @@ class DatabaseManager(dbPath: String) {
         return res.next()
     }
 
+    private fun eventExists(eventId: Long): Boolean {
+        val res = conn.executeQuery("SELECT * FROM events WHERE id=$eventId")
+        return res.next()
+    }
+
+    private fun userInvitedToEvent(eventId: Long, userId: Long): Boolean {
+        val res = conn.executeQuery("SELECT * FROM participants WHERE eventId = $eventId AND userId = $userId")
+        return res.next()
+    }
 }

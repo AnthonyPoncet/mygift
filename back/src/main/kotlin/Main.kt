@@ -16,6 +16,10 @@ import io.ktor.response.respond
 import io.ktor.routing.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import java.util.ArrayList
+import com.google.gson.reflect.TypeToken
+
+
 
 data class Error(val error: String)
 data class FriendRequestConflict(val ownRequest: Boolean, val status: RequestStatus, val message: String)
@@ -27,6 +31,11 @@ fun main(args: Array<String>) {
         val arguments = ArgParser(args).parseInto(::ArgumentParser)
         val databaseManager = DatabaseManager(arguments.db)
         val userManager = UserManager(databaseManager)
+
+        if (arguments.resetDB) {
+            println("Reset DB with default values")
+            val dbInitializerForTest = DbInitializerForTest(databaseManager)
+        }
 
         println("Start server on port ${arguments.port}")
 
@@ -345,6 +354,106 @@ fun main(args: Array<String>) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }
                     }
+
+                    /** EVENTS **/
+                    put("/events") {
+                        val id = getUserId(call.parameters)
+
+                        try {
+                            val event = Gson().fromJson(call.receiveText(), RestCreateEvent::class.java)
+                            userManager.createEvent(event, id)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+
+                    delete("/events/{eid}") {
+                        val eid = getEventId(call.parameters)
+
+                        try {
+                            userManager.deleteEvent(eid)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+
+                    get("/events/{eid}") {
+                        val eid = getEventId(call.parameters)
+
+                        try {
+                            val event = userManager.getEvent(eid)
+                            call.respond(HttpStatusCode.OK, event)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+
+                    get("/events") {
+                        val id = getUserId(call.parameters)
+
+                        try {
+                            val name = call.request.queryParameters["name"]
+                            val events = if (name == null) {
+                                userManager.getEventsCreateBy(id)
+                            } else {
+                                userManager.getEventsNamed(name)
+                            }
+                            call.respond(HttpStatusCode.OK, events)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+
+                    get("/events-as-participant") {
+                        val id = getUserId(call.parameters)
+
+                        try {
+                            val events = userManager.getEventsAsParticipants(id)
+                            call.respond(HttpStatusCode.OK, events)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+
+                    post("/events/{eid}/add-participants") {
+                        val eid = getEventId(call.parameters)
+
+                        try {
+                            val listType = object : TypeToken<Set<String>>() { }.type
+                            val participants: Set<String> = Gson().fromJson(call.receiveText(), listType)
+                            userManager.addParticipants(eid, participants)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+
+                    get("/events/{eid}/accept") {
+                        val id = getUserId(call.parameters)
+                        val eid = getEventId(call.parameters)
+
+                        try {
+                            userManager.acceptEventInvitation(id, eid)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+
+                    post("/events/{eid}/decline") {
+                        val id = getUserId(call.parameters)
+                        val eid = getEventId(call.parameters)
+
+                        try {
+                            val blockEvent = (call.request.queryParameters["blockEvent"] ?: "false").toBoolean()
+                            userManager.declineEventInvitation(id, eid, blockEvent)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
                 }
             }
         }
@@ -353,10 +462,14 @@ fun main(args: Array<String>) {
     }
 }
 
+fun getUserId(parameters: Parameters) : Long {
+    return parameters["id"]!!.toLongOrNull() ?: throw NotANumberException("User id")
+}
+
 fun getGiftId(parameters: Parameters) : Long {
     return parameters["gid"]!!.toLongOrNull() ?: throw NotANumberException("Gift id")
 }
 
-fun getUserId(parameters: Parameters) : Long {
-    return parameters["id"]!!.toLongOrNull() ?: throw NotANumberException("User id")
+fun getEventId(parameters: Parameters) : Long {
+    return parameters["eid"]!!.toLongOrNull() ?: throw NotANumberException("Event id")
 }

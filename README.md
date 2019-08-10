@@ -1,15 +1,15 @@
 # MyGift
 
 ## Disclaimer
-Other websites already exist and do exactly what I plan to do. The idea here 
-is to develop it for training purpose. There is nothing serious behind. Feel 
+Other websites already exist and do exactly what I plan to do. The idea here
+is to develop it for training purpose. There is nothing serious behind. Feel
 free to contact me if you want to participate in some way.
 
 ## Purpose
 I want to have a website that allow to create a wishlist, share it with friends.
 On top of that, I plan to have "events" that allow either some people to buy stuff
-to one people (birthday) or people to offer gifts each other (christmas). Basically 
-you can say "I or we want to buy this" and avoid two people buying it. Of course 
+to one people (birthday) or people to offer gifts each other (christmas). Basically
+you can say "I or we want to buy this" and avoid two people buying it. Of course
 what you will receive will be hide to you. As a buyer, you will also have the possibility
 to have a "buy list" (no good name in mind right now).
 
@@ -18,10 +18,11 @@ As now, the website is quite limited but allows you to:
 - Add friend and manage your friend list
 - Access to your friend wishlist
 - As a friend, be able to say I am interested, I want to bought or I have bought a given gift
+- Possibility to create and manage events
 
 ## More to come
 In the future, I plan to add (in that order):
-- Events (birthday, christmas...)
+- In event, participants should come from friends name. 
 - A bought list that summarize all you have to buy
 - As a friend, add/propose secretly a gift
 - In Home page once connected, what's new or coming next or...
@@ -44,4 +45,3 @@ Everything right now but my next work will be:
 ## Known bug
 - Nothing is encoded so no special char are supported
 - Issue while two gift share same name in two different list (weird)
-

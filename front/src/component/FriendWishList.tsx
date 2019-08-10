@@ -1,6 +1,5 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
-import { RouteComponentProps } from "react-router";
 
 import Octicon, {Heart, Checklist, Gift} from '@primer/octicons-react'
 
@@ -9,9 +8,8 @@ import { AppState } from '../redux/store';
 
 import './card-gift.css';
 
-interface PathParam { friendName: string };
 interface ConnectProps { userId: number | null, username: String | null };
-interface Props extends RouteComponentProps<PathParam>, ConnectProps {}
+interface Props extends ConnectProps { friendName: string }
 interface State {
     gifts: any[],
     categories: any[],
@@ -19,18 +17,16 @@ interface State {
 }
 
 class FriendWishList extends React.Component<Props, State> {
-    private friendName: string;
 
     constructor(props: Props) {
         super(props);
-        this.friendName = this.props.match.params.friendName;
         this.state = {gifts: [], categories: [], hoverId: ''};
     }
 
     componentDidMount() {
         if (this.props.userId) {
-            this.getGifts(this.props.userId, this.friendName);
-            this.getCategories(this.props.userId, this.friendName);
+            this.getGifts(this.props.userId, this.props.friendName);
+            this.getCategories(this.props.userId, this.props.friendName);
         }
     }
 
@@ -49,7 +45,7 @@ class FriendWishList extends React.Component<Props, State> {
 
         const response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + giftId + '/interested?userId=' + userId, {method: imInterested ? "DELETE" : "POST"});
         if (response.status === 202) {
-            this.getGifts(userId, this.friendName);
+            this.getGifts(userId, this.props.friendName);
         } else {
             const json = await response.json();
             console.log(json.error);
@@ -68,7 +64,7 @@ class FriendWishList extends React.Component<Props, State> {
             response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId + '&action=WANT_TO_BUY', {method: "POST"});
         }
         if (response.status === 202) {
-            this.getGifts(userId, this.friendName);
+            this.getGifts(userId, this.props.friendName);
         } else {
             const json = await response.json();
             console.log(json.error);
@@ -87,7 +83,7 @@ class FriendWishList extends React.Component<Props, State> {
             response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId + '&action=BOUGHT', {method: "POST"});
         }
         if (response.status === 202) {
-            this.getGifts(userId, this.friendName);
+            this.getGifts(userId, this.props.friendName);
         } else {
             const json = await response.json();
             console.log(json.error);
@@ -174,11 +170,11 @@ class FriendWishList extends React.Component<Props, State> {
     render() {
         return (
         <div>
-          <h1 className="friend-wishlist-title">Wish list de {this.friendName}</h1>
+          <h1 className="friend-wishlist-title">Wish list de {this.props.friendName}</h1>
           <div>{this.renderGifts()}</div>
         </div>);
     }
 }
 
 function mapStateToProps(state: AppState): ConnectProps {return { userId: state.signin.userId, username: state.signin.username };}
-export default withRouter(connect(mapStateToProps)(FriendWishList));
+export default connect(mapStateToProps)(FriendWishList);
