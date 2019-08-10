@@ -1,7 +1,5 @@
 import React from 'react';
-import { Modal, ModalHeader, ModalBody, Button, Input, Label, Form, FormGroup, FormFeedback, NavItem, Nav } from "reactstrap";
-import DatePicker from 'react-datepicker'
-import moment from 'moment'
+import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
 import { Link } from 'react-router-dom';
 
 import { connect } from 'react-redux';

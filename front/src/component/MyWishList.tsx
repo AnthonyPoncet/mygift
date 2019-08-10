@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup, FormFeedback, Card, CardBody, CardTitle, CardText, Col, Row } from "reactstrap";
+import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
 
 import Octicon, {Pencil, X} from '@primer/octicons-react'
 

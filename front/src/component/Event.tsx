@@ -1,9 +1,7 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from "react-router";
-import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup, FormFeedback, Card, CardBody, CardTitle, CardText, Col, Row } from "reactstrap";
-
-import Octicon, {Heart, Checklist, Gift} from '@primer/octicons-react'
+import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
 
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';

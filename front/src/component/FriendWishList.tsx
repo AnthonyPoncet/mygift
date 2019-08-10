@@ -1,5 +1,4 @@
 import React from 'react';
-import { withRouter } from 'react-router-dom';
 
 import Octicon, {Heart, Checklist, Gift} from '@primer/octicons-react'
 
