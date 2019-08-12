@@ -1,0 +1,32 @@
+.sidebar {
+  height: 100%;
+  width: 95px;
+  position: fixed;
+  left: 0;
+  background-color: #f8f9fa;
+  overflow-x: hidden;
+  padding-top: 20px;
+  margin-right: 30px;
+  margin-top: 2px;
+}
+
+.sidebar span {
+  padding: 0.5rem;
+  text-decoration: none;
+  color: rgba(0, 0, 0, 0.5);
+  display: block;
+  cursor: pointer;
+}
+
+.sidebar span:hover {
+  color: #111;
+}
+
+.main-after-sidebar {
+  margin-left: 100px; /* Same as the width of the sidenav */
+}
+
+@media screen and (max-height: 450px) {
+  .sidebar {padding-top: 15px;}
+  .sidebar a {font-size: 18px;}
+}
