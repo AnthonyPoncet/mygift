@@ -6,11 +6,11 @@ import Octicon, {Pencil, X} from '@primer/octicons-react'
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
 
+import { MyWishListMessage } from '../translation/itrans';
+
 import './card-gift.css';
 
-interface Props {
-  userId: number | null
-}
+interface Props { userId: number | null, mywishlist: MyWishListMessage }
 interface State {
   gifts: any[],
   categories: any[],
@@ -60,12 +60,14 @@ class MyWishList extends React.Component<Props, State> {
     }
 
     openAddGift() {
-        this.setState( { show: true, title: "Add a new gift", bodyRender: this.giftBodyRender, button: { text: 'Add', fun: this.addGift },
+        const { mywishlist } = this.props;
+        this.setState( { show: true, title: mywishlist.addGiftModalTitle, bodyRender: this.giftBodyRender, button: { text: mywishlist.addModalButton, fun: this.addGift },
             inputs: { name: '', nameValidity: true, description: null, price: null, whereToBuy: null, categoryId: this.state.categories[0].id }, errorMessage: '' });
     }
 
     openEditGift(giftId: number, name: string, description: string, price: string, whereToBuy: string, categoryId: number) {
-        this.setState( { show: true, title: "Update gift", bodyRender: this.giftBodyRender, button: { text: 'Update', fun: () => this.updateGift(giftId) },
+        const { mywishlist } = this.props;
+        this.setState( { show: true, title: mywishlist.updateGiftModalTitle, bodyRender: this.giftBodyRender, button: { text: mywishlist.updateModalButton, fun: () => this.updateGift(giftId) },
             inputs: { name: name, nameValidity: true, description: description, price: price, whereToBuy: whereToBuy, categoryId: categoryId }, errorMessage: '' });
     }
 
@@ -94,26 +96,28 @@ class MyWishList extends React.Component<Props, State> {
           }
         });
 
+        const { mywishlist } = this.props;
+
         return (<>
             <FormGroup>
-                <Label>Name</Label>
-                <Input name="name" placeholder="name" value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChangeGift(e)}/>
-                <FormFeedback>Name is mandatory</FormFeedback>
+                <Label>{mywishlist.name}</Label>
+                <Input name="name" placeholder={mywishlist.name} value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChangeGift(e)}/>
+                <FormFeedback>{mywishlist.nameErrorMessage}</FormFeedback>
             </FormGroup>
             <FormGroup>
-                <Label>Description</Label>
-                <Input name="description" placeholder="description" value={this.state.inputs.description} onChange={(e) => this.handleChangeGift(e)}/>
+                <Label>{mywishlist.description}</Label>
+                <Input name="description" placeholder={mywishlist.description} value={this.state.inputs.description} onChange={(e) => this.handleChangeGift(e)}/>
             </FormGroup>
             <FormGroup>
-                <Label>Price</Label>
+                <Label>{mywishlist.price}</Label>
                 <Input name="price" placeholder="10" value={this.state.inputs.price} onChange={(e) => this.handleChangeGift(e)}/>
             </FormGroup>
             <FormGroup>
-                <Label>Where to buy</Label>
-                <Input name="whereToBuy" placeholder="Amazon link, local shop..." value={this.state.inputs.whereToBuy} onChange={(e) => this.handleChangeGift(e)}/>
+                <Label>{mywishlist.whereToBuy}</Label>
+                <Input name="whereToBuy" placeholder={mywishlist.whereToBuyPlaceholder} value={this.state.inputs.whereToBuy} onChange={(e) => this.handleChangeGift(e)}/>
             </FormGroup>
             <FormGroup>
-                <Label>Category</Label>
+                <Label>{mywishlist.category}</Label>
                 <Input type="select" name="categoryId" onChange={(e) => this.updateGiftModalCategory(e.target.value)}>
                     {options}
                 </Input>
@@ -121,11 +125,10 @@ class MyWishList extends React.Component<Props, State> {
     }
 
     giftRestCall(url: string, method: string) {
-      console.log(url);
         const {inputs} = this.state;
 
         if (inputs.name === '') {
-            this.setState({ show: true, errorMessage: "Name is mandatory." })
+            this.setState({ show: true, errorMessage: this.props.mywishlist.nameErrorMessage })
             return;
         }
 
@@ -170,12 +173,14 @@ class MyWishList extends React.Component<Props, State> {
 
 
     openAddCat() {
-        this.setState( { show: true, title: "Add a new category", bodyRender: this.catBodyRender, button: { text: 'Add', fun: this.addCat },
+        const { mywishlist } = this.props;
+        this.setState( { show: true, title: mywishlist.addCategoryModalTitle, bodyRender: this.catBodyRender, button: { text: mywishlist.addModalButton, fun: this.addCat },
             inputs: { name: '', nameValidity: true }, errorMessage: '' });
     }
 
     openEditCat(name: string, categoryId: number) {
-        this.setState( { show: true, title: "Update category", bodyRender: this.catBodyRender, button: { text: 'Update', fun: () => this.updateCat(categoryId) },
+        const { mywishlist } = this.props;
+        this.setState( { show: true, title: mywishlist.updateCategoryModalTitle, bodyRender: this.catBodyRender, button: { text: mywishlist.updateModalButton, fun: () => this.updateCat(categoryId) },
             inputs: { name: name, nameValidity: true }, errorMessage: '' });
     }
 
@@ -184,18 +189,19 @@ class MyWishList extends React.Component<Props, State> {
     };
 
     catBodyRender() {
+        const { mywishlist } = this.props;
         return (
             <FormGroup>
-                <Label>Name</Label>
-                <Input name="name" placeholder="name" value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChangeCat(e)}/>
-                <FormFeedback>Name is mandatory</FormFeedback>
+                <Label>{mywishlist.name}</Label>
+                <Input name="name" placeholder={mywishlist.name} value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChangeCat(e)}/>
+                <FormFeedback>{mywishlist.nameErrorMessage}</FormFeedback>
             </FormGroup>);
     }
 
     catRestCall(url: string, method: string) {
         const {inputs} = this.state;
         if (inputs.name === '') {
-            this.setState({ show: true, errorMessage: "Name is mandatory." })
+            this.setState({ show: true, errorMessage: this.props.mywishlist.nameErrorMessage })
             return;
         }
 
@@ -310,7 +316,8 @@ class MyWishList extends React.Component<Props, State> {
     }
 
     render() {
-        const {button} = this.state;
+        const { button } = this.state;
+        const { mywishlist } = this.props
         let modalBody = [];
         if (this.state.bodyRender !== null) {
             modalBody.push(this.state.bodyRender());
@@ -319,8 +326,8 @@ class MyWishList extends React.Component<Props, State> {
         return (
             <div>
                 {this.props.userId && <>
-                    <Button color="link" onClick={this.openAddGift}>Add gift</Button>
-                    <Button color="link" onClick={this.openAddCat}>Add Category</Button>
+                    <Button color="link" onClick={this.openAddGift}>{mywishlist.addGiftButton}</Button>
+                    <Button color="link" onClick={this.openAddCat}>{mywishlist.addCategoryButton}</Button>
                     {this.renderGifts()}</>}
 
                 <Modal isOpen={this.state.show} toggle={this.closeModal}>
@@ -335,5 +342,5 @@ class MyWishList extends React.Component<Props, State> {
     }
 }
 
-function mapStateToProps(state: AppState) : Props { return { userId: state.signin.userId }; }
+function mapStateToProps(state: AppState) : Props { return { userId: state.signin.userId, mywishlist: state.locale.messages.mywishlist }; }
 export default connect(mapStateToProps)(MyWishList);
