@@ -7,13 +7,13 @@ import { AppState } from '../redux/store'
 import { error } from '../redux/actions/error'
 import { signup, UserSignUp } from '../redux/actions/user'
 
+import { Connection } from '../translation/itrans';
+
 interface DispatchProps {
   signup: (user: UserSignUp) => void,
   error: (message: String) => void
 }
-interface StateProps {
-  errorMessage: String | null
-}
+interface StateProps { errorMessage: String | null, connection: Connection }
 type Props = DispatchProps & StateProps
 
 interface State {
@@ -44,33 +44,34 @@ class SignupPage extends React.Component<Props, State> {
     if (username && password) {
       this.props.signup({username: username, password: password});
     } else {
-      this.props.error("Username and Password could not be empty.");
+      this.props.error(this.props.connection.emptyErrorMessage);
     }
   }
 
   render() {
     const { username, password } = this.state;
+    const { connection } = this.props;
     return (
         <div className="auth-form">
-          <h1 className="auth-form-header">Sign up to MyGift</h1>
+          <h1 className="auth-form-header">{connection.signUpTitle}</h1>
           { this.props.errorMessage && <p className="auth-error">{this.props.errorMessage}</p> }
           <div className="auth-form-body">
               <div className="form-group">
-                <label>Username</label>
-                <input type="text" name="username" placeholder="username" className="form-control" value={username} onChange={this.handleChange} />
+                <label>{connection.username}</label>
+                <input type="text" name="username" placeholder={connection.username} className="form-control" value={username} onChange={this.handleChange} />
               </div>
               <div className="form-group">
-                <label>Password</label>
-                <input type="password" name="password" placeholder="password" className="form-control" value={password} onChange={this.handleChange} />
+                <label>{connection.password}</label>
+                <input type="password" name="password" placeholder={connection.password} className="form-control" value={password} onChange={this.handleChange} />
               </div>
-              <button className="btn btn-primary btn-large" onClick={this.handleSubmit}>Sign up</button>
+              <button className="btn btn-primary btn-large" onClick={this.handleSubmit}>{connection.signInButton}</button>
           </div>
         </div>
     );
   }
 }
 
-function mapStateToProps(state: AppState): StateProps { return { errorMessage: state.error.message }; }
+function mapStateToProps(state: AppState): StateProps { return { errorMessage: state.error.message, connection: state.locale.messages.connection }; }
 const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>, ownProps: Props): DispatchProps => {
   return {
     signup: async (user) => await dispatch(signup(user)),

@@ -11,12 +11,15 @@
     "@types/react-redux": "^7.1.0",
     "@types/react-router-dom": "^4.3.4",
     "@types/reactstrap": "^8.0.0",
+    "babel-plugin-react-intl": "^4.1.11",
     "bootstrap": "^4.3.1",
     "jquery": "^3.4.1",
     "moment": "^2.24.0",
     "react": "^16.8.6",
     "react-datepicker": "^2.8.0",
     "react-dom": "^16.8.6",
+    "react-intl": "^3.1.6",
+    "react-intl-translations-manager": "^5.0.3",
     "react-redux": "^7.1.0",
     "react-router-dom": "^5.0.1",
     "react-scripts": "3.0.1",
@@ -46,6 +49,7 @@
     ]
   },
   "devDependencies": {
+    "@types/react-intl": "^3.0.0",
     "awesome-typescript-loader": "^5.2.1",
     "source-map-loader": "^0.2.4",
     "tslint": "^5.15.0",

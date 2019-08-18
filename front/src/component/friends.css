@@ -1,0 +1,45 @@
+.friend-card-row {
+  display: flex;
+  width: 100%;
+}
+
+.friend-card {
+  position: relative;
+  border-radius: 5px;
+  height: 250px;
+  width: 150px;
+  margin: 10px;
+}
+
+.friend-card-delete {
+  position: absolute;
+  top: 0;
+  right: 7px;
+}
+.friend-card-delete span {
+  cursor: "pointer";
+}
+
+.friend-image {
+  background-color: #DFDFDF;
+  height: 150px;
+  width: 150px;
+  text-align: center;
+  padding-top: 60px;
+}
+
+.friend-footer {
+  /*background-color: #F1F1F1;*/
+  width: inherit;
+  padding: 5px;
+  position: absolute;
+  overflow: hidden;
+}
+
+.friend-name {
+  text-align: center;
+  font-size: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}

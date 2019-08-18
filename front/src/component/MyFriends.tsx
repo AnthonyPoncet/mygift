@@ -5,16 +5,27 @@ import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
 
-import Octicon, {Check, X, CircleSlash} from '@primer/octicons-react'
+import Octicon, {Check, X, CircleSlash, ListUnordered} from '@primer/octicons-react';
 
+import { MyFriendsMessage } from '../translation/itrans';
+import './friends.css'
 
-interface Props {
-  userId: number | null
+class Friend {
+    reqId: number;
+    name: string;
+
+    constructor(reqId: number, name: string) {
+        this.reqId = reqId;
+        this.name = name;
+    }
 }
+
+interface Props { userId: number | null, myfriends: MyFriendsMessage }
 interface State {
   initiatedRequests: any[],
   receivedRequests: any[],
-  show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string
+  show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string,
+  hoverId: string
 }
 
 class MyFriends extends React.Component<Props, State> {
@@ -30,7 +41,8 @@ class MyFriends extends React.Component<Props, State> {
         this.state = {
             initiatedRequests: [],
             receivedRequests: [],
-            show: false, title: '', bodyRender: undefined, button: { text: '', fun: undefined }, inputs: { }, errorMessage: ''
+            show: false, title: '', bodyRender: undefined, button: { text: '', fun: undefined }, inputs: { }, errorMessage: '',
+            hoverId: ''
         }
     }
 
@@ -50,7 +62,8 @@ class MyFriends extends React.Component<Props, State> {
     }
 
     openAddFriend() {
-        this.setState( { show: true, title: "Add a new friend", bodyRender: this.friendBodyRender, button: { text: 'Add', fun: this.addFriend },
+        const { myfriends } = this.props;
+        this.setState( { show: true, title: myfriends.addFriendModalTitle, bodyRender: this.friendBodyRender, button: { text: myfriends.addModalButton, fun: this.addFriend },
             inputs: { name: '', nameValidity: true }, errorMessage: '' });
     }
 
@@ -61,11 +74,12 @@ class MyFriends extends React.Component<Props, State> {
     };
 
     friendBodyRender() {
+        const { myfriends } = this.props;
         return (<Form inline>
             <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
-                <Label className="mr-sm-2">Name</Label>
-                <Input name="name" placeholder="name" value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChangeName(e)}/>
-                <FormFeedback>Name is mandatory</FormFeedback>
+                <Label className="mr-sm-2">{myfriends.name}</Label>
+                <Input name="name" placeholder={myfriends.name} value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChangeName(e)}/>
+                <FormFeedback>{myfriends.nameErrorMessage}</FormFeedback>
             </FormGroup>
             <Button color="primary" onClick={this.state.button.fun}>{this.state.button.text}</Button>
         </Form>);
@@ -177,34 +191,35 @@ class MyFriends extends React.Component<Props, State> {
         request();
     };
 
+    handleEnter(index: number) {
+      this.setState({ hoverId: index.toString()});
+    }
+
+    handleOut() {
+      this.setState({ hoverId: '' });
+    }
+
     renderRequests() {
-        let friendsI = [];
-        let friendsR = [];
+        let friends: Friend[] = [];
         let initiated = [];
         let received = [];
         if (this.state.initiatedRequests.length > 0) {
-            const ok = this.state.initiatedRequests.filter(i => i.status === "ACCEPTED");
-            if (ok.length > 0) friendsI = ok;
-            initiated = this.state.initiatedRequests.filter(i => i.status !== "ACCEPTED");
+            const ok = this.state.initiatedRequests.filter(i => i.status === "ACCEPTED").map(i => new Friend(i.id, i.to.name));
+            if (ok.length > 0) friends = ok;
+            initiated = this.state.initiatedRequests.filter(i => i.status === "PENDING");
         }
         if (this.state.receivedRequests.length > 0) {
-            const ok = this.state.receivedRequests.filter(i => i.status === "ACCEPTED");
-            if (ok.length > 0) friendsR = ok;
+            const ok = this.state.receivedRequests.filter(i => i.status === "ACCEPTED").map(i => new Friend(i.id, i.from.name));
+            if (ok.length > 0) friends = ok.concat(friends);
             received = this.state.receivedRequests.filter(i => i.status === "PENDING");
         }
 
+        const { myfriends } = this.props;
+
         return (<>
-            <h2>My requests</h2>
-            {initiated.map((req, i) => { return (
-                <li key={i + 'initiated' + req.to.name }>
-                    {req.to.name}
-                    {' '}
-                    {req.status}
-                    {' '}
-                    <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
-                </li>);})}
-            <h2>Received requests</h2>
-            {received.map((req, i) => { return (
+            <h2>{myfriends.requests}</h2>
+            {received.length > 0 ?
+              received.map((req, i) => { return (
                 <li key={i + 'received' + req.to.name }>
                     {req.from.name}
                     {' '}
@@ -215,22 +230,44 @@ class MyFriends extends React.Component<Props, State> {
                     <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(req.id, false)}><Octicon icon={X}/></span>
                     {' '}
                     <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(req.id, true)}><Octicon icon={CircleSlash}/></span>
-                </li>);})}
-            <h2>Friends</h2>
-            {friendsI.map((req, i) => { return (
-                <li key={i + 'friendI' + req.to.name}>
+                </li>);}) :
+              <span>{myfriends.noPendingRequest}</span>}
+
+            <h2>{myfriends.myRequests}</h2>
+            {initiated.length > 0 ?
+              initiated.map((req, i) => { return (
+                <li key={i + 'initiated' + req.to.name }>
                     {req.to.name}
                     {' '}
-                    <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
-                    <Link to={'/friend/' + req.to.name} className="btn btn-link">Show list</Link>
-                </li>);})}
-            {friendsR.map((req, i) => { return (
-                <li key={i + 'friendR' + req.from.name}>
-                    {req.from.name}
+                    {req.status}
                     {' '}
                     <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
-                    <Link to={'/friend/' + req.from.name} className="btn btn-link">Show list</Link>
-                </li>);})}
+                </li>);}) :
+              <span>{myfriends.allRequestsAccepted}</span>}
+
+            <h2>{myfriends.friends}</h2>
+            {friends.map((req, i) => {
+              if (i.toString() === this.state.hoverId) {
+                return (
+                  <div key={i + 'friends-' + req.reqId} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
+                    <div className="friend-image">No image</div>
+                    <div className="friend-card-delete" >
+                      <Link to={'/friend/' + req.name} className="btn btn-link"><Octicon icon={ListUnordered}/></Link>
+                      <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.reqId)}><Octicon icon={X}/></span>
+                    </div>
+                    <div className="friend-footer">
+                      <div className="friend-name">{req.name}</div>
+                    </div>
+                  </div>);
+              } else {
+                return (
+                  <div key={i + 'friends-' + req.reqId} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
+                    <div className="friend-image">No image</div>
+                    <div className="friend-footer">
+                      <div className="friend-name">{req.name}</div>
+                    </div>
+                  </div>);
+              }})}
         </>);
     }
 
@@ -240,22 +277,24 @@ class MyFriends extends React.Component<Props, State> {
             modalBody.push(this.state.bodyRender());
         }
         return (<div>
-            {this.props.userId && <>
-                <Button color="link" onClick={this.openAddFriend}>Add Friend</Button>
-                {this.renderRequests()}
-            </>}
+            <div className="main-friend">
+              {this.props.userId && <>
+                  <Button color="link" onClick={this.openAddFriend}>{this.props.myfriends.addFriendButton}</Button>
+                  {this.renderRequests()}
+              </>}
 
-            <Modal isOpen={this.state.show} toggle={this.closeModal}>
-                <ModalHeader toggle={this.closeModal}>{this.state.title}</ModalHeader>
-                <ModalBody>
-                    { this.state.errorMessage && <p className="auth-error">{this.state.errorMessage}</p> }
-                    {modalBody}
-                    </ModalBody>
-            </Modal>
+              <Modal isOpen={this.state.show} toggle={this.closeModal}>
+                  <ModalHeader toggle={this.closeModal}>{this.state.title}</ModalHeader>
+                  <ModalBody>
+                      { this.state.errorMessage && <p className="auth-error">{this.state.errorMessage}</p> }
+                      {modalBody}
+                      </ModalBody>
+              </Modal>
+            </div>
         </div>
         );
     }
 }
 
-function mapStateToProps(state: AppState): Props {return { userId: state.signin.userId };}
+function mapStateToProps(state: AppState): Props {return { userId: state.signin.userId, myfriends: state.locale.messages.myfriends };}
 export default connect(mapStateToProps)(MyFriends);

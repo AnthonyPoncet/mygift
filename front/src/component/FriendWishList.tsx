@@ -5,9 +5,10 @@ import Octicon, {Heart, Checklist, Gift} from '@primer/octicons-react'
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
 
+import { FriendWishListMessage } from '../translation/itrans';
 import './card-gift.css';
 
-interface ConnectProps { userId: number | null, username: String | null };
+interface ConnectProps { userId: number | null, username: String | null, friendwishlist: FriendWishListMessage };
 interface Props extends ConnectProps { friendName: string }
 interface State {
     gifts: any[],
@@ -169,11 +170,12 @@ class FriendWishList extends React.Component<Props, State> {
     render() {
         return (
         <div>
-          <h1 className="friend-wishlist-title">Wish list de {this.props.friendName}</h1>
+          <h1 className="friend-wishlist-title">{this.props.friendwishlist.title} {this.props.friendName}</h1>
           <div>{this.renderGifts()}</div>
         </div>);
     }
 }
 
-function mapStateToProps(state: AppState): ConnectProps {return { userId: state.signin.userId, username: state.signin.username };}
+function mapStateToProps(state: AppState): ConnectProps {return {
+  userId: state.signin.userId, username: state.signin.username, friendwishlist: state.locale.messages.friendwishlist };}
 export default connect(mapStateToProps)(FriendWishList);

@@ -5,16 +5,18 @@ import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
 
-import Octicon, {Check, X, CircleSlash} from '@primer/octicons-react'
+import Octicon, {Check, X, CircleSlash, ListUnordered} from '@primer/octicons-react';
 
+import { MyEventsMessage } from '../translation/itrans';
 import "react-datepicker/dist/react-datepicker.css";
 
-interface Props {userId: number | null, username: String | null}
+interface Props {userId: number | null, username: String | null, myevents: MyEventsMessage}
 interface State {
   eventsCreated: any[],
   eventsAsParticipant: any[],
   testDate: any,
-  show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string
+  show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string,
+  hoverId: string
 }
 
 class Events extends React.Component<Props, State> {
@@ -25,9 +27,9 @@ class Events extends React.Component<Props, State> {
             eventsCreated: [],
             eventsAsParticipant: [],
             testDate: Date.now(),
-            show: false, title: '', bodyRender: undefined, button: { text: '', fun: undefined }, inputs: { }, errorMessage: ''
+            show: false, title: '', bodyRender: undefined, button: { text: '', fun: undefined }, inputs: { }, errorMessage: '',
+            hoverId: ''
         }
-
 
         this.closeModal = this.closeModal.bind(this);
     }
@@ -48,7 +50,9 @@ class Events extends React.Component<Props, State> {
     }
 
     openAddEvent() {
-        this.setState( { show: true, title: "Create a new event", bodyRender: () => this.eventBodyRender(), button: { text: 'Create', fun: () => this.createEvent() },
+        const { myevents } = this.props;
+        this.setState( { show: true, title: myevents.createEventModalTitle, bodyRender: () => this.eventBodyRender(),
+            button: { text: myevents.createEventModalButton, fun: () => this.createEvent() },
             inputs: { type: 'ALL_FOR_ALL', name: '', nameValidity: true, description: null, endDate: '', endDateValidity: true, target: '', targetValidity: true }, errorMessage: '' });
     }
 
@@ -90,6 +94,7 @@ class Events extends React.Component<Props, State> {
     }
 
     eventBodyRender() {
+        const { myevents } = this.props;
         return (<>
             <FormGroup tag="fieldset">
                 <FormGroup check inline>
@@ -104,23 +109,23 @@ class Events extends React.Component<Props, State> {
                 </FormGroup>
             </FormGroup>
             <FormGroup>
-                <Label>Name</Label>
-                <Input name="name" placeholder="name" value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChange(e)}/>
-                <FormFeedback>Name is mandatory</FormFeedback>
+                <Label>{myevents.name}</Label>
+                <Input name="name" placeholder={myevents.name} value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChange(e)}/>
+                <FormFeedback>{myevents.nameErrorMessage}</FormFeedback>
             </FormGroup>
             <FormGroup>
-                <Label>Description</Label>
-                <Input name="description" placeholder="description" value={this.state.inputs.description} onChange={(e) => this.handleChange(e)}/>
+                <Label>{myevents.description}</Label>
+                <Input name="description" placeholder={myevents.description} value={this.state.inputs.description} onChange={(e) => this.handleChange(e)}/>
             </FormGroup>
             <FormGroup>
-                <Label>End Date</Label>
-                <Input name="endDate" placeholder="end date in format dd/mm/yyyy" value={this.state.inputs.endDate} invalid={!this.state.inputs.endDateValidity} onChange={(e) => this.handleChange(e)}/>
-                <FormFeedback>End date is mandatory and its format is dd/mm/yyyy</FormFeedback>
+                <Label>{myevents.endDate}</Label>
+                <Input name="endDate" placeholder={myevents.endDatePlaceholder} value={this.state.inputs.endDate} invalid={!this.state.inputs.endDateValidity} onChange={(e) => this.handleChange(e)}/>
+                <FormFeedback>{myevents.endDateErrorMessage}</FormFeedback>
             </FormGroup>
             {this.state.inputs.type === "ALL_FOR_ONE" && <FormGroup>
-                <Label>Target</Label>
-                <Input name="target" placeholder="target user" value={this.state.inputs.target} invalid={!this.state.inputs.targetValidity} onChange={(e) => this.handleChange(e)}/>
-                <FormFeedback>Target is mandatory</FormFeedback>
+                <Label>{myevents.target}</Label>
+                <Input name="target" placeholder={myevents.target} value={this.state.inputs.target} invalid={!this.state.inputs.targetValidity} onChange={(e) => this.handleChange(e)}/>
+                <FormFeedback>{myevents.targetErrorMessage}</FormFeedback>
             </FormGroup>}
             </>);
     }
@@ -247,6 +252,14 @@ class Events extends React.Component<Props, State> {
         request();
     };
 
+    handleEnter(type: string, event: number) {
+      this.setState({ hoverId: type + "-" + event});
+    }
+
+    handleOut() {
+      this.setState({ hoverId: '' });
+    }
+
     renderEvents() {
         let coming = [];
         let pending = [];
@@ -258,34 +271,83 @@ class Events extends React.Component<Props, State> {
             if (g.length > 0) pending = g;
         }
 
+        const { myevents } = this.props;
         return (<>
-            <h2>My events</h2>
-            {this.state.eventsCreated.map((e, i) => { return (
-                <li key={i + 'created' + e.name }>
-                    {'name: '}{e.name}{' - creator: '}{e.creatorName}{' - description: '}{e.description}{' - end date: '}{e.endDate.day}/{e.endDate.month}/{e.endDate.year}
-                    {' '}
-                    <Link to={'/event/' + e.id} className="btn btn-link">Show event</Link>
-                    {' '}
-                    <span style={{cursor: "pointer"}} onClick={() => this.deleteEvent(e.id)}><Octicon icon={X}/></span>
-                </li>);})}
-            <h2>Coming events</h2>
-            {coming.map((e, i) => { return (
-                <li key={i + 'participant' + e.name }>
-                    {'name: '}{e.name}{' - creator: '}{e.creatorName}{' - description: '}{e.description}{' - end date: '}{e.endDate.day}/{e.endDate.month}/{e.endDate.year}
-                    {' '}
-                    <Link to={'/event/' + e.id} className="btn btn-link">Show event</Link>
-                </li>);})}
-            <h2>Pending answer events</h2>
-            {pending.map((e, i) => { return (
-                <li key={i + 'participant' + e.name }>
-                    {'name: '}{e.name}{' - creator: '}{e.creatorName}{' - description: '}{e.description}{' - end date: '}{e.endDate.day}/{e.endDate.month}/{e.endDate.year}
-                    {' '}
-                    <span style={{cursor: "pointer"}} onClick={() => this.acceptRequest(e.id)}><Octicon icon={Check}/></span>
-                    {' '}
-                    <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(e.id, false)}><Octicon icon={X}/></span>
-                    {' '}
-                    <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(e.id, true)}><Octicon icon={CircleSlash}/></span>
-                </li>);})}
+            <h2>{myevents.myEvents}</h2>
+            <div className="mycard-row">
+              {this.state.eventsCreated.map((e, i) => {
+                  if ('my-'+i === this.state.hoverId) {
+                    return (
+                        <div className="mycard" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
+                            <div className="card-edit-close">
+                              <Link to={'/event/' + e.id} className="btn btn-link"><Octicon icon={ListUnordered}/></Link>
+                              <span style={{cursor: "pointer"}} onClick={() => this.deleteEvent(e.id)}><Octicon icon={X}/></span>
+                            </div>
+                            <div className="card-name">{e.name}</div>
+                            <div className="card-description">{e.description}</div>
+                            <div className="mycard-footer">
+                              <div className="card-wtb">{e.endDate.day}/{e.endDate.month}/{e.endDate.year}</div>
+                              <div className="card-price">{e.type === "ALL_FOR_ALL" ? "All" : e.target}</div>
+                            </div>
+                        </div>);
+                    } else {
+                      return (
+                          <div className="mycard" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
+                                <div className="card-name-only">{e.name}</div>
+                          </div>);
+                    }
+              })}
+            </div>
+            <h2>{myevents.comingEvents}</h2>
+            <div className="mycard-row">
+              {coming.map((e, i) => {
+                  if ('coming-'+i === this.state.hoverId) {
+                    return (
+                        <div className="mycard" onMouseEnter={() => this.handleEnter("coming", i)} onMouseLeave={() => this.handleOut()}>
+                            <div className="card-edit-close">
+                              <Link to={'/event/' + e.id} className="btn btn-link"><Octicon icon={ListUnordered}/></Link>
+                            </div>
+                            <div className="card-name">{e.name}</div>
+                            <div className="card-description">{e.description}</div>
+                            <div className="mycard-footer">
+                              <div className="card-wtb">{e.endDate.day}/{e.endDate.month}/{e.endDate.year}</div>
+                              <div className="card-price">{e.type === "ALL_FOR_ALL" ? "All" : e.target}</div>
+                            </div>
+                        </div>);
+                    } else {
+                      return (
+                          <div className="mycard" onMouseEnter={() => this.handleEnter("coming", i)} onMouseLeave={() => this.handleOut()}>
+                                <div className="card-name-only">{e.name}</div>
+                          </div>);
+                    }
+              })}
+            </div>
+            <h2>{myevents.pendingEvents}</h2>
+            <div className="mycard-row">
+              {pending.map((e, i) => {
+                if ('my-'+i === this.state.hoverId) {
+                  return (
+                      <div className="mycard" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
+                          <div className="card-edit-close">
+                            <span style={{cursor: "pointer"}} onClick={() => this.acceptRequest(e.id)}><Octicon icon={Check}/></span>
+                            <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(e.id, false)}><Octicon icon={X}/></span>
+                            <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(e.id, true)}><Octicon icon={CircleSlash}/></span>
+                          </div>
+                          <div className="card-name">{e.name}</div>
+                          <div className="card-description">{e.description}</div>
+                          <div className="mycard-footer">
+                            <div className="card-wtb">{e.endDate.day}/{e.endDate.month}/{e.endDate.year}</div>
+                            <div className="card-price">{e.type === "ALL_FOR_ALL" ? "All" : e.target}</div>
+                          </div>
+                      </div>);
+                  } else {
+                    return (
+                        <div className="mycard" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
+                              <div className="card-name-only">{e.name}</div>
+                        </div>);
+                  }
+              })}
+            </div>
         </>);
     }
 
@@ -296,7 +358,7 @@ class Events extends React.Component<Props, State> {
         }
         return (<div>
             {this.props.userId && <>
-                <Button color="link" onClick={() => this.openAddEvent()}>Create Event</Button>
+                <Button color="link" onClick={() => this.openAddEvent()}>{this.props.myevents.createEventButton}</Button>
                 {this.renderEvents()}
             </>}
 
@@ -313,5 +375,6 @@ class Events extends React.Component<Props, State> {
     }
 }
 
-function mapStateToProps(state: AppState): Props {return { userId: state.signin.userId, username: state.signin.username };}
+function mapStateToProps(state: AppState): Props {
+  return { userId: state.signin.userId, username: state.signin.username, myevents: state.locale.messages.myevents };}
 export default connect(mapStateToProps)(Events);

@@ -17,8 +17,10 @@
   text-align: right;
   padding: 5px;
   font-size: 12px;
-
   /*border: 1px solid;*/
+}
+.card-edit-close span {
+  cursor: "pointer";
 }
 
 .icon-selected {
@@ -54,7 +56,7 @@
 
     /*border: 1px solid;*/
 }
-.card-wtb {
+.card-wtb { /*want to buy*/
   float: left;
   width: 66%;
 
