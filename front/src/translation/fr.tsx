@@ -45,7 +45,35 @@ class Fr implements Itrans {
             allRequestsAccepted: "Toutes vos demandes d'amis ont été accepté ou refusé.",
             friends: "Amis"
           },
-          friendwishlist: { title: "Liste de " }
+          friendwishlist: { title: "Liste de " },
+          myevents: {
+            createEventButton: "Créer un évènement",
+            createEventModalTitle: "Créer un nouveau évènement",
+            createEventModalButton: "Créer",
+            name: "Nom",
+            nameErrorMessage: "Le Nom est obligatoire",
+            description: "Description",
+            endDate: "Date de fin",
+            endDatePlaceholder: "Date de fin au format jj/mm/aaaa",
+            endDateErrorMessage: "Date de fin est obligatoire et doit être au format jj/mm/aaaa",
+            target: "Utilisateur concerné",
+            targetErrorMessage: "Utilisateur est obligatoire",
+            myEvents: "Mes Evènements",
+            comingEvents: "Evènements à venir",
+            pendingEvents: "Evènements en attente"
+          },
+          event: {
+            addParticipantButton: "Ajouter un participant",
+            addParticipantModalTitle: "Ajouter un nouveau participant",
+            addParticipantModalButton: "Ajouter",
+            name: "Nom",
+            nameErrorMessage: "Le nom est obligatoire",
+            description: "Description",
+            creator: "Createur",
+            endDate: "Date de fin",
+            participantsTitle: "Participants",
+            targetIsTitle: "Utilisateur concerné",
+          }
         };
     }
 }

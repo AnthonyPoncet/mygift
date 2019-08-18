@@ -30,32 +30,62 @@ export interface MyWishListMessage {
 }
 
 export interface MyFriendsMessage {
-  addFriendButton: string,
-  addFriendModalTitle: string,
-  addModalButton: string,
-  name: string,
-  nameErrorMessage: string,
-  requests: string,
-  noPendingRequest: string,
-  myRequests: string,
-  allRequestsAccepted: string,
-  friends: string
+    addFriendButton: string,
+    addFriendModalTitle: string,
+    addModalButton: string,
+    name: string,
+    nameErrorMessage: string,
+    requests: string,
+    noPendingRequest: string,
+    myRequests: string,
+    allRequestsAccepted: string,
+    friends: string
 }
 
 export interface FriendWishListMessage {
-  title: string
+    title: string
 }
 
 export interface Connection {
-  signUpTitle: string,
-  signUpButton: string,
-  signInTitle: string,
-  signInButton: string,
-  username: string,
-  password: string,
-  emptyErrorMessage: string,
-  newToMygift: string,
-  createAnAccount: string
+    signUpTitle: string,
+    signUpButton: string,
+    signInTitle: string,
+    signInButton: string,
+    username: string,
+    password: string,
+    emptyErrorMessage: string,
+    newToMygift: string,
+    createAnAccount: string
+}
+
+export interface MyEventsMessage {
+    createEventButton: string,
+    createEventModalTitle: string,
+    createEventModalButton: string,
+    name: string,
+    nameErrorMessage: string,
+    description: string,
+    endDate: string,
+    endDatePlaceholder: string,
+    endDateErrorMessage: string,
+    target: string,
+    targetErrorMessage: string,
+    myEvents: string,
+    comingEvents: string,
+    pendingEvents: string
+}
+
+export interface EventMessage {
+    addParticipantButton: string,
+    addParticipantModalTitle: string,
+    addParticipantModalButton: string,
+    name: string,
+    nameErrorMessage: string,
+    description: string,
+    creator: string,
+    endDate: string,
+    participantsTitle: string,
+    targetIsTitle: string,
 }
 
 export interface Translations {
@@ -64,7 +94,9 @@ export interface Translations {
     home: HomeMessage,
     mywishlist: MyWishListMessage,
     myfriends: MyFriendsMessage,
-    friendwishlist: FriendWishListMessage
+    friendwishlist: FriendWishListMessage,
+    myevents: MyEventsMessage,
+    event: EventMessage
 }
 
 interface Itrans {

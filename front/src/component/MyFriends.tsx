@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
 
-import Octicon, {Check, X, CircleSlash, ListUnordered} from '@primer/octicons-react'
+import Octicon, {Check, X, CircleSlash, ListUnordered} from '@primer/octicons-react';
 
 import { MyFriendsMessage } from '../translation/itrans';
 import './friends.css'

@@ -45,7 +45,35 @@ class En implements Itrans {
             allRequestsAccepted: "All requests has been accepted or declined.",
             friends: "Friends"
           },
-          friendwishlist: { title: "Wish list of " }
+          friendwishlist: { title: "Wish list of " },
+          myevents: {
+            createEventButton: "Create event",
+            createEventModalTitle: "Create a new event",
+            createEventModalButton: "Create",
+            name: "Name",
+            nameErrorMessage: "Name is mandatory",
+            description: "Description",
+            endDate: "End date",
+            endDatePlaceholder: "End date in format dd/mm/yyyy",
+            endDateErrorMessage: "End date is mandatory and its format is dd/mm/yyyy",
+            target: "Target user",
+            targetErrorMessage: "Target is mandatory",
+            myEvents: "My Events",
+            comingEvents: "Coming Events",
+            pendingEvents: "Pending Events"
+          },
+          event: {
+              addParticipantButton: "Add participant",
+              addParticipantModalTitle: "Add a new participant",
+              addParticipantModalButton: "Add",
+              name: "Name",
+              nameErrorMessage: "Name is mandatory",
+              description: "Description",
+              creator: "Creator",
+              endDate: "End date",
+              participantsTitle: "Participants",
+              targetIsTitle: "Target is",
+          }
         };
     }
 }

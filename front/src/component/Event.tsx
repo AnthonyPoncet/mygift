@@ -9,10 +9,11 @@ import { AppState } from '../redux/store';
 import FriendWishList from './FriendWishList';
 import MyWishList from './MyWishList'
 
+import { EventMessage } from '../translation/itrans';
 import './card-gift.css';
 
 interface PathParam { eventId: string };
-interface ConnectProps { userId: number | null, username: String | null };
+interface ConnectProps { userId: number | null, username: String | null, eventM: EventMessage };
 interface Props extends RouteComponentProps<PathParam>, ConnectProps {}
 interface State {
     event: any,
@@ -40,7 +41,9 @@ class Event extends React.Component<Props, State> {
     }
 
     openAddParticipant() {
-        this.setState( { show: true, title: "Add a participant", bodyRender: () => this.modalRender(), button: { text: 'Add', fun: () => this.invite() },
+        const { eventM } = this.props;
+        this.setState( { show: true, title: eventM.addParticipantModalTitle, bodyRender: () => this.modalRender(),
+            button: { text: eventM.addParticipantModalButton, fun: () => this.invite() },
             inputs: { name: '', nameValidity: true }, errorMessage: '' });
     }
 
@@ -49,11 +52,12 @@ class Event extends React.Component<Props, State> {
     };
 
     modalRender() {
+        const { eventM } = this.props;
         return (
             <FormGroup>
-                <Label>Name</Label>
-                <Input name="name" placeholder="name" value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChange(e)}/>
-                <FormFeedback>Name is mandatory</FormFeedback>
+                <Label>{eventM.name}</Label>
+                <Input name="name" placeholder={eventM.name} value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChange(e)}/>
+                <FormFeedback>{eventM.nameErrorMessage}</FormFeedback>
             </FormGroup>);
     }
 
@@ -133,16 +137,17 @@ class Event extends React.Component<Props, State> {
 
     renderEvent() {
       let out: any[] = [];
+      const {eventM} = this.props;
       if (this.state.event) {
           const {event, participants, selectedList} = this.state;
           //TODO: once develop, remove from participant me
-          out.push(<div>Description: {event.description}</div>);
-          out.push(<div>Creator: {event.creatorName}</div>);
-          out.push(<div>End date: {event.endDate.day}/{event.endDate.month}/{event.endDate.year}</div>);
+          out.push(<div>{eventM.description}: {event.description}</div>);
+          out.push(<div>{eventM.creator}: {event.creatorName}</div>);
+          out.push(<div>{eventM.endDate}: {event.endDate.day}/{event.endDate.month}/{event.endDate.year}</div>);
           if (event.type === "ALL_FOR_ALL") {
               //Show participants + click on participant show list + icon if already bought something to someone
-              out.push(<h5>Participants</h5>);
-              out.push(<Button color="link" onClick={() => this.openAddParticipant()}>Add participant</Button>);
+              out.push(<h5>{eventM.participantsTitle}</h5>);
+              out.push(<Button color="link" onClick={() => this.openAddParticipant()}>{eventM.addParticipantButton}</Button>);
               let participantsOut = participants.map((p, pIndex) => {
                   return <div style={{cursor: "pointer"}} onClick={() => this.setState({selectedList: p.name})}>{p.name}</div>
               });
@@ -152,11 +157,10 @@ class Event extends React.Component<Props, State> {
                   out.push(<h5>My List</h5>);
                   out.push(<MyWishList/>)
               } else {
-                  out.push(<h5>{selectedList} List</h5>);
                   out.push(<FriendWishList friendName={selectedList}/>)
               }
           } else {
-              out.push(<h5>Target is {event.target}</h5>);
+              out.push(<h5>{eventM.targetIsTitle} {event.target}</h5>);
               if (event.target === this.props.username) {
                   out.push(<MyWishList/>)
               } else {
@@ -192,5 +196,6 @@ class Event extends React.Component<Props, State> {
     }
 }
 
-function mapStateToProps(state: AppState): ConnectProps {return { userId: state.signin.userId, username: state.signin.username };}
+function mapStateToProps(state: AppState): ConnectProps {
+  return { userId: state.signin.userId, username: state.signin.username, eventM: state.locale.messages.event };}
 export default withRouter(connect(mapStateToProps)(Event));
