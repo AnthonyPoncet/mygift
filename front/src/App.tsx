@@ -1,6 +1,6 @@
 import React from 'react';
 import { Router, Route, Link } from 'react-router-dom';
-import { Input, Label, FormGroup } from "reactstrap";
+import { Input, FormGroup } from "reactstrap";
 
 import { connect } from 'react-redux';
 import { AppState } from './redux/store'
@@ -41,6 +41,7 @@ class App extends React.Component<AppProps> {
         const username = this.props.username;
         const { app } = this.props;
 
+        let locale  = localStorage.getItem("locale");
         return (
           <Router history={history}>
               <div>
@@ -62,7 +63,9 @@ class App extends React.Component<AppProps> {
                     { username && (<button className="btn" type="button" onClick={() => this.props.logout()}>{app.logout}</button>) }
                     <FormGroup>
                       <Input type="select" name="select" id="exampleSelect" onChange={(e) => this.props.changeLocale(e.target.value)}>
-                        {this.locales.map((value) => { return (<option >{value}</option>); })}
+                        {this.locales.map((value) => {
+                          if (value === locale) {return (<option selected>{value}</option>);} 
+                          else {return (<option >{value}</option>);}; })}
                       </Input>
                     </FormGroup>
                   </form>

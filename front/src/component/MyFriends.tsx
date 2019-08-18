@@ -7,6 +7,7 @@ import { AppState } from '../redux/store';
 
 import Octicon, {Check, X, CircleSlash, ListUnordered} from '@primer/octicons-react'
 
+import { MyFriendsMessage } from '../translation/itrans';
 import './friends.css'
 
 class Friend {
@@ -19,9 +20,7 @@ class Friend {
     }
 }
 
-interface Props {
-  userId: number | null
-}
+interface Props { userId: number | null, myfriends: MyFriendsMessage }
 interface State {
   initiatedRequests: any[],
   receivedRequests: any[],
@@ -63,7 +62,8 @@ class MyFriends extends React.Component<Props, State> {
     }
 
     openAddFriend() {
-        this.setState( { show: true, title: "Add a new friend", bodyRender: this.friendBodyRender, button: { text: 'Add', fun: this.addFriend },
+        const { myfriends } = this.props;
+        this.setState( { show: true, title: myfriends.addFriendModalTitle, bodyRender: this.friendBodyRender, button: { text: myfriends.addModalButton, fun: this.addFriend },
             inputs: { name: '', nameValidity: true }, errorMessage: '' });
     }
 
@@ -74,11 +74,12 @@ class MyFriends extends React.Component<Props, State> {
     };
 
     friendBodyRender() {
+        const { myfriends } = this.props;
         return (<Form inline>
             <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
-                <Label className="mr-sm-2">Name</Label>
-                <Input name="name" placeholder="name" value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChangeName(e)}/>
-                <FormFeedback>Name is mandatory</FormFeedback>
+                <Label className="mr-sm-2">{myfriends.name}</Label>
+                <Input name="name" placeholder={myfriends.name} value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChangeName(e)}/>
+                <FormFeedback>{myfriends.nameErrorMessage}</FormFeedback>
             </FormGroup>
             <Button color="primary" onClick={this.state.button.fun}>{this.state.button.text}</Button>
         </Form>);
@@ -205,7 +206,7 @@ class MyFriends extends React.Component<Props, State> {
         if (this.state.initiatedRequests.length > 0) {
             const ok = this.state.initiatedRequests.filter(i => i.status === "ACCEPTED").map(i => new Friend(i.id, i.to.name));
             if (ok.length > 0) friends = ok;
-            initiated = this.state.initiatedRequests.filter(i => i.status === "ACCEPTED");
+            initiated = this.state.initiatedRequests.filter(i => i.status === "PENDING");
         }
         if (this.state.receivedRequests.length > 0) {
             const ok = this.state.receivedRequests.filter(i => i.status === "ACCEPTED").map(i => new Friend(i.id, i.from.name));
@@ -213,8 +214,10 @@ class MyFriends extends React.Component<Props, State> {
             received = this.state.receivedRequests.filter(i => i.status === "PENDING");
         }
 
+        const { myfriends } = this.props;
+
         return (<>
-            <h2>Requests</h2>
+            <h2>{myfriends.requests}</h2>
             {received.length > 0 ?
               received.map((req, i) => { return (
                 <li key={i + 'received' + req.to.name }>
@@ -228,9 +231,9 @@ class MyFriends extends React.Component<Props, State> {
                     {' '}
                     <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(req.id, true)}><Octicon icon={CircleSlash}/></span>
                 </li>);}) :
-              <span>No pending request</span>}
+              <span>{myfriends.noPendingRequest}</span>}
 
-            <h2>My requests</h2>
+            <h2>{myfriends.myRequests}</h2>
             {initiated.length > 0 ?
               initiated.map((req, i) => { return (
                 <li key={i + 'initiated' + req.to.name }>
@@ -240,9 +243,9 @@ class MyFriends extends React.Component<Props, State> {
                     {' '}
                     <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
                 </li>);}) :
-              <span>All your firend request has been processed</span>}
+              <span>{myfriends.allRequestsAccepted}</span>}
 
-            <h2>Friends</h2>
+            <h2>{myfriends.friends}</h2>
             {friends.map((req, i) => {
               if (i.toString() === this.state.hoverId) {
                 return (
@@ -276,7 +279,7 @@ class MyFriends extends React.Component<Props, State> {
         return (<div>
             <div className="main-friend">
               {this.props.userId && <>
-                  <Button color="link" onClick={this.openAddFriend}>Add Friend</Button>
+                  <Button color="link" onClick={this.openAddFriend}>{this.props.myfriends.addFriendButton}</Button>
                   {this.renderRequests()}
               </>}
 
@@ -293,5 +296,5 @@ class MyFriends extends React.Component<Props, State> {
     }
 }
 
-function mapStateToProps(state: AppState): Props {return { userId: state.signin.userId };}
+function mapStateToProps(state: AppState): Props {return { userId: state.signin.userId, myfriends: state.locale.messages.myfriends };}
 export default connect(mapStateToProps)(MyFriends);

@@ -29,10 +29,42 @@ export interface MyWishListMessage {
     updateCategoryModalTitle: string
 }
 
+export interface MyFriendsMessage {
+  addFriendButton: string,
+  addFriendModalTitle: string,
+  addModalButton: string,
+  name: string,
+  nameErrorMessage: string,
+  requests: string,
+  noPendingRequest: string,
+  myRequests: string,
+  allRequestsAccepted: string,
+  friends: string
+}
+
+export interface FriendWishListMessage {
+  title: string
+}
+
+export interface Connection {
+  signUpTitle: string,
+  signUpButton: string,
+  signInTitle: string,
+  signInButton: string,
+  username: string,
+  password: string,
+  emptyErrorMessage: string,
+  newToMygift: string,
+  createAnAccount: string
+}
+
 export interface Translations {
     app: AppMessage,
+    connection: Connection,
     home: HomeMessage,
-    mywishlist: MyWishListMessage
+    mywishlist: MyWishListMessage,
+    myfriends: MyFriendsMessage,
+    friendwishlist: FriendWishListMessage
 }
 
 interface Itrans {

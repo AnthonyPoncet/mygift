@@ -8,5 +8,6 @@ interface ChangeLocaleAction {
 export type ChangeLocaleActions = ChangeLocaleAction;
 
 export function changeLocale(locale: string) : ChangeLocaleAction {
+    localStorage.setItem('locale', locale);
     return { type: CHANGE_LOCALE, locale: locale };
 }

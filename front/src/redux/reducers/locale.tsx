@@ -7,7 +7,9 @@ import { Translations } from '../../translation/itrans';
 
 interface InternalState { messages: Translations }
 
-const defaultState : InternalState = { messages: new En().getTranslation() };
+const defaultState : InternalState = {
+  messages: (localStorage.getItem("locale") === null || localStorage.getItem("locale") === "English") ?
+    new En().getTranslation() : new Fr().getTranslation() };
 
 export function changeLocale(state = defaultState, action: ChangeLocaleActions) {
   switch (action.type) {
@@ -15,10 +17,8 @@ export function changeLocale(state = defaultState, action: ChangeLocaleActions) 
       switch(action.locale) {
           case 'English':
             return { messages: new En().getTranslation() };
-            break;
           case 'French':
             return { messages: new Fr().getTranslation() };
-            break;
       }
     default:
       return state

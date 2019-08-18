@@ -5,6 +5,17 @@ class En implements Itrans {
     getTranslation() : Translations {
         return {
           app: { signin: "Sign In", signup: "Sign Up", myList: "My List", myFriends: "My Friends", myEvents: "My Events", logout: "Log Out" },
+          connection: {
+            signUpTitle: "Sign up to MyGift",
+            signUpButton: "Sign up",
+            signInTitle: "Sign in to MyGift",
+            signInButton: "Sign in",
+            username: "Username",
+            password: "Password",
+            emptyErrorMessage: "Username and Password could not be empty.",
+            newToMygift: "New to MyGift?",
+            createAnAccount: "Create an account"
+          },
           home: { hello: "Hello" },
           mywishlist: {
             addGiftButton: "Add Gift",
@@ -21,7 +32,20 @@ class En implements Itrans {
             updateModalButton: "Modify",
             addCategoryButton: "Add Category",
             addCategoryModalTitle: "Add a new category",
-            updateCategoryModalTitle: "Modify category" }
+            updateCategoryModalTitle: "Modify category" },
+          myfriends: {
+            addFriendButton: "Add friend",
+            addFriendModalTitle: "Add a new friend",
+            addModalButton: "Add",
+            name: "Name",
+            nameErrorMessage: "Name is mandatory",
+            requests: "Requests",
+            noPendingRequest: "No pending requests.",
+            myRequests: "My requests",
+            allRequestsAccepted: "All requests has been accepted or declined.",
+            friends: "Friends"
+          },
+          friendwishlist: { title: "Wish list of " }
         };
     }
 }
