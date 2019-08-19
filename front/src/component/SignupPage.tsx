@@ -16,40 +16,70 @@ interface DispatchProps {
 interface StateProps { errorMessage: String | null, connection: Connection }
 type Props = DispatchProps & StateProps
 
-interface State {
-  username: string,
-  password: string
-}
+interface State { username: string, password: string, loaded: boolean }
 
 class SignupPage extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { username: '', password: '' };
+    this.state = { username: '', password: '', loaded: false };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   handleChange(e: any) {
-    const { name, value } = e.target;
-    if (name === "username") {
-      this.setState({username: value, password: this.state.password});
-    } else if (name === "password") {
-      this.setState({username: this.state.username, password: value});
-    }
+      const { name, value } = e.target;
+      if (name === "username") {
+          this.setState({username: value, password: this.state.password});
+      } else if (name === "password") {
+          this.setState({username: this.state.username, password: value});
+      }
   }
 
   handleSubmit() {
-    const { username, password } = this.state;
-    if (username && password) {
-      this.props.signup({username: username, password: password});
-    } else {
-      this.props.error(this.props.connection.emptyErrorMessage);
-    }
+      const { username, password } = this.state;
+      if (username && password) {
+          this.props.signup({username: username, password: password});
+      } else {
+          this.props.error(this.props.connection.emptyErrorMessage);
+      }
+  }
+
+  loadImage(name: string) {
+      const request = async() => {
+          const response = await fetch('http://localhost:8080/files/' + name);
+
+          response.blob().then(blob => {
+              let url = window.URL.createObjectURL(blob);
+              let tag = document.querySelector('#profile');
+              if (tag instanceof HTMLImageElement) tag.src = url;
+          });
+
+          this.setState({ loaded: true });
+      };
+      request();
+  }
+
+  changeImage(e: any) {
+      const formData = new FormData();
+      formData.append("0", e.target.files[0]);
+      const request = async () => {
+          const response = await fetch('http://localhost:8080/files', {method: 'post', body: formData});
+          if (response.status === 202) {
+              console.log("done");
+              const json = await response.json();
+              this.setState({ loaded: false });
+              this.loadImage(json.name);
+          } else {
+              const json = await response.json();
+              console.log(json);
+          }
+      };
+      request();
   }
 
   render() {
-    const { username, password } = this.state;
+    const { username, password, loaded } = this.state;
     const { connection } = this.props;
     return (
         <div className="auth-form">
@@ -64,6 +94,11 @@ class SignupPage extends React.Component<Props, State> {
                 <label>{connection.password}</label>
                 <input type="password" name="password" placeholder={connection.password} className="form-control" value={password} onChange={this.handleChange} />
               </div>
+              <div className="form-group">
+                <label>{connection.image}</label>
+                <input type="file" onChange={(e) => this.changeImage(e)}/>
+              </div>
+              {loaded === true && <img id="profile" height="150" width="150"/>}
               <button className="btn btn-primary btn-large" onClick={this.handleSubmit}>{connection.signInButton}</button>
           </div>
         </div>

@@ -10,22 +10,26 @@ import Octicon, {Check, X, CircleSlash, ListUnordered} from '@primer/octicons
 import { MyFriendsMessage } from '../translation/itrans';
 import './friends.css'
 
+import blank_profile_picture from './blank_profile_picture.png'
+
 class Friend {
     reqId: number;
     name: string;
+    picture: string | null;
 
-    constructor(reqId: number, name: string) {
+    constructor(reqId: number, name: string, picture: string | null) {
         this.reqId = reqId;
         this.name = name;
+        this.picture = picture;
     }
 }
 
 interface Props { userId: number | null, myfriends: MyFriendsMessage }
 interface State {
-  initiatedRequests: any[],
-  receivedRequests: any[],
-  show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string,
-  hoverId: string
+    initiatedRequests: any[],
+    receivedRequests: any[],
+    show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string,
+    hoverId: string
 }
 
 class MyFriends extends React.Component<Props, State> {
@@ -94,6 +98,11 @@ class MyFriends extends React.Component<Props, State> {
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ initiatedRequests: json });
+            json.forEach((req: any) => {
+                if (req.status === 'ACCEPTED' && req.to.picture !== undefined) {
+                    this.loadImage(req.to.picture, req.to.name + 'profile')
+                }
+            });
         } else {
             console.log(json.error);
         }
@@ -104,6 +113,11 @@ class MyFriends extends React.Component<Props, State> {
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ receivedRequests: json });
+            json.forEach((req: any) => {
+                if (req.status === 'ACCEPTED' && req.to.picture !== undefined) {
+                    this.loadImage(req.from.picture, req.from.name + 'profile')
+                }
+            });
         } else {
             console.log(json.error);
         }
@@ -199,17 +213,30 @@ class MyFriends extends React.Component<Props, State> {
       this.setState({ hoverId: '' });
     }
 
+    loadImage(name: string, tagName: string) {
+        const request = async() => {
+            const response = await fetch('http://localhost:8080/files/' + name);
+
+            response.blob().then(blob => {
+                let url = window.URL.createObjectURL(blob);
+                let tag = document.querySelector('#' + tagName);
+                if (tag instanceof HTMLImageElement) tag.src = url;
+            });
+        };
+        request();
+    }
+
     renderRequests() {
         let friends: Friend[] = [];
         let initiated = [];
         let received = [];
         if (this.state.initiatedRequests.length > 0) {
-            const ok = this.state.initiatedRequests.filter(i => i.status === "ACCEPTED").map(i => new Friend(i.id, i.to.name));
+            const ok = this.state.initiatedRequests.filter(i => i.status === "ACCEPTED").map(i => new Friend(i.id, i.to.name, i.to.picture));
             if (ok.length > 0) friends = ok;
             initiated = this.state.initiatedRequests.filter(i => i.status === "PENDING");
         }
         if (this.state.receivedRequests.length > 0) {
-            const ok = this.state.receivedRequests.filter(i => i.status === "ACCEPTED").map(i => new Friend(i.id, i.from.name));
+            const ok = this.state.receivedRequests.filter(i => i.status === "ACCEPTED").map(i => new Friend(i.id, i.from.name, i.from.picture));
             if (ok.length > 0) friends = ok.concat(friends);
             received = this.state.receivedRequests.filter(i => i.status === "PENDING");
         }
@@ -246,28 +273,33 @@ class MyFriends extends React.Component<Props, State> {
               <span>{myfriends.allRequestsAccepted}</span>}
 
             <h2>{myfriends.friends}</h2>
-            {friends.map((req, i) => {
-              if (i.toString() === this.state.hoverId) {
-                return (
-                  <div key={i + 'friends-' + req.reqId} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
-                    <div className="friend-image">No image</div>
-                    <div className="friend-card-delete" >
-                      <Link to={'/friend/' + req.name} className="btn btn-link"><Octicon icon={ListUnordered}/></Link>
-                      <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.reqId)}><Octicon icon={X}/></span>
-                    </div>
-                    <div className="friend-footer">
-                      <div className="friend-name">{req.name}</div>
-                    </div>
-                  </div>);
-              } else {
-                return (
-                  <div key={i + 'friends-' + req.reqId} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
-                    <div className="friend-image">No image</div>
-                    <div className="friend-footer">
-                      <div className="friend-name">{req.name}</div>
-                    </div>
-                  </div>);
-              }})}
+            <div className="mycard-row">
+              {friends.map((req, i) => {
+                let image = (req.picture === undefined) ?
+                  <img className="friend-image" src={blank_profile_picture}/> :
+                  <img className="friend-image" id={req.name+'profile'}/>;
+                if (i.toString() === this.state.hoverId) {
+                  return (
+                    <div key={i + 'friends-' + req.reqId} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
+                      {image}
+                      <div className="friend-card-delete" >
+                        <Link to={'/friend/' + req.name} className="btn btn-link"><Octicon icon={ListUnordered}/></Link>
+                        <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.reqId)}><Octicon icon={X}/></span>
+                      </div>
+                      <div className="friend-footer">
+                        <div className="friend-name">{req.name}</div>
+                      </div>
+                    </div>);
+                } else {
+                  return (
+                    <div key={i + 'friends-' + req.reqId} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
+                      {image}
+                      <div className="friend-footer">
+                        <div className="friend-name">{req.name}</div>
+                      </div>
+                    </div>);
+                }})}
+              </div>
         </>);
     }
 

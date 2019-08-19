@@ -5,8 +5,7 @@
 
 .friend-card {
   position: relative;
-  border-radius: 5px;
-  height: 250px;
+  height: 195px;
   width: 150px;
   margin: 10px;
 }
@@ -21,6 +20,12 @@
 }
 
 .friend-image {
+  background-color: #DFDFDF;
+  height: 150px;
+  width: inherit;
+}
+
+.friend-no-image {
   background-color: #DFDFDF;
   height: 150px;
   width: 150px;

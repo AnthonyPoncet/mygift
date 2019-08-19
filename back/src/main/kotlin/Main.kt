@@ -1,4 +1,5 @@
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
 import io.ktor.application.call
@@ -11,19 +12,22 @@ import io.ktor.gson.gson
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
+import io.ktor.http.content.streamProvider
+import io.ktor.request.receiveMultipart
 import io.ktor.request.receiveText
 import io.ktor.response.respond
+import io.ktor.response.respondFile
 import io.ktor.routing.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import java.util.ArrayList
-import com.google.gson.reflect.TypeToken
+import java.io.File
 
 
-
+data class FileAnswer(val name: String)
 data class Error(val error: String)
 data class FriendRequestConflict(val ownRequest: Boolean, val status: RequestStatus, val message: String)
-
 data class NotANumberException(val target: String) : Exception()
 
 fun main(args: Array<String>) {
@@ -35,6 +39,11 @@ fun main(args: Array<String>) {
         if (arguments.resetDB) {
             println("Reset DB with default values")
             val dbInitializerForTest = DbInitializerForTest(databaseManager)
+        }
+
+        val directory = File("uploads")
+        if (!directory.exists()) {
+            directory.mkdir()
         }
 
         println("Start server on port ${arguments.port}")
@@ -454,6 +463,33 @@ fun main(args: Array<String>) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }
                     }
+                }
+
+                post ("/files") {
+                    var fileName = ""
+
+                    val multipart = call.receiveMultipart()
+                    multipart.forEachPart { part ->
+                        when (part) {
+                            is PartData.FileItem -> {
+                                val name = File(part.originalFileName).name
+                                val ext = File(part.originalFileName).extension
+                                fileName = "upload-${System.currentTimeMillis()}-${name.hashCode()}.$ext"
+                                val file = File("uploads", fileName)
+                                part.streamProvider().use {
+                                        input -> file.outputStream().buffered().use { output -> input.copyTo(output) } }
+                            }
+                        }
+
+                        part.dispose()
+                    }
+                    call.respond(HttpStatusCode.Accepted, FileAnswer(fileName))
+                }
+                get("/files/{name}") {
+                    val filename = call.parameters["name"]!!
+                    val file = File("uploads/$filename")
+                    if(file.exists()) { call.respondFile(file) }
+                    else call.respond(HttpStatusCode.NotFound)
                 }
             }
         }
