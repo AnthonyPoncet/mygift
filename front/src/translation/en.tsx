@@ -12,6 +12,7 @@ class En implements Itrans {
             signInButton: "Sign in",
             username: "Username",
             password: "Password",
+            image: "Profile picture",
             emptyErrorMessage: "Username and Password could not be empty.",
             newToMygift: "New to MyGift?",
             createAnAccount: "Create an account"

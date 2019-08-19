@@ -3,7 +3,7 @@ import java.sql.DriverManager
 import java.sql.ResultSet
 import java.time.LocalDate
 
-data class DbUser(val id: Long, val name: String, val password: String)
+data class DbUser(val id: Long, val name: String, val password: String, val picture: String?)
 data class DbCategory(val id: Long, val userId: Long, val name: String)
 data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long)
 enum class BuyAction { NONE, WANT_TO_BUY, BOUGHT }
@@ -12,6 +12,8 @@ enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
 data class DbFriendRequest(val id: Long, val userOne: Long, val userTwo: Long, val status: RequestStatus)
 data class DbEvent(val id: Long, val name: String, val creatorId: Long, val description: String, val endDate: LocalDate, val target: Long?) //target = -1 if ALL, userId other
 data class DbParticipant(val id: Long, val eventId: Long, val userId: Long, val status: RequestStatus)
+
+data class NakedUser(val name: String, val picture: String?)
 
 class FriendRequestAlreadyExistException(val dbFriendRequest: DbFriendRequest) : Exception("Friend request already exists and is ${dbFriendRequest.status}.")
 
@@ -68,7 +70,8 @@ class DatabaseManager(dbPath: String) {
         conn.execute("CREATE TABLE IF NOT EXISTS users (" +
                 "id         INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "name       TEXT NOT NULL, " +
-                "password   TEXT NOT NULL)")
+                "password   TEXT NOT NULL, " +
+                "picture    TEXT)")
         conn.execute("CREATE TABLE IF NOT EXISTS categories (" +
                 "id         INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "userId     INTEGER NOT NULL, " +
@@ -131,26 +134,32 @@ class DatabaseManager(dbPath: String) {
             throw Exception("User already exists")
         }
 
-        conn.execute("INSERT INTO users(name,password) VALUES ('" + userInformation.name + "', '" + userInformation.password + "')")
+        conn.execute("INSERT INTO users(name,password,picture) VALUES " +
+                "('${userInformation.name}', '${userInformation.password}', '${userInformation.picture?: ""}')")
         val nextUserId = conn.executeQuery("SELECT last_insert_rowid()").getLong(1)
         addCategory(nextUserId, RestCategory(DEFAULT_CATEGORY_NAME))
 
-        return DbUser(nextUserId, userInformation.name, userInformation.password)
+        return DbUser(nextUserId, userInformation.name, userInformation.password, userInformation.picture)
     }
 
     @Synchronized fun getUser(userName: String): DbUser? {
         val res = conn.executeQuery("SELECT * FROM users WHERE users.name='$userName'")
         return if (res.next()) {
-            DbUser(res.getLong("id"), res.getString("name"), res.getString("password"))
+            val picture = res.getString("picture")
+            DbUser(res.getLong("id"),
+                res.getString("name"),
+                res.getString("password"),
+                if (picture.isEmpty()) null else picture)
         } else {
             null
         }
     }
 
-    @Synchronized fun getUser(userId: Long): String? {
+    @Synchronized fun getUser(userId: Long): NakedUser? {
         val res = conn.executeQuery("SELECT * FROM users WHERE users.id='$userId'")
         return if (res.next()) {
-            res.getString("name")
+            val picture = res.getString("picture")
+            NakedUser(res.getString("name"), if (picture.isEmpty()) null else picture)
         } else {
             null
         }

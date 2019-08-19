@@ -53,6 +53,7 @@ export interface Connection {
     signInButton: string,
     username: string,
     password: string,
+    image: string,
     emptyErrorMessage: string,
     newToMygift: string,
     createAnAccount: string

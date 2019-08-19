@@ -2,7 +2,7 @@ import java.time.LocalDate
 import kotlin.Exception
 
 /** RETURN CLASSES **/
-data class User(val id: Long, val name: String)
+data class User(val id: Long, val name: String, val picture: String?)
 data class Gift(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long)
 data class Gifts(val gifts: List<Gift>)
 data class FriendGift(val gift: Gift, val interestedUser: List<String>, val buyActionUser: Map<String, BuyAction>)
@@ -15,7 +15,7 @@ data class Event(val id: Long, val type: EventType, val name: String, val creato
 
 /** INPUT CLASSES **/
 data class ConnectionInformation(val name: String?, val password: String?)
-data class UserInformation(val name: String?, val password: String?)
+data class UserInformation(val name: String?, val password: String?, val picture: String?)
 data class RestGift(val name: String?, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long?)
 data class RestCategory(val name: String?)
 data class RestCreateFriendRequest(val name: String?)
@@ -33,8 +33,7 @@ class DummyUserCache(private val databaseManager: DatabaseManager) {
         val name = cacheIds[userId]
         return if (name != null) name
         else {
-            val dbName = databaseManager.getUser(userId)
-            cacheIds[userId] = dbName
+            cacheIds[userId] = databaseManager.getUser(userId)?.name
             cacheIds[userId]
         }
     }
@@ -74,12 +73,12 @@ class UserManager(private val databaseManager: DatabaseManager) {
         val user = databaseManager.getUser(connectionInformation.name) ?: throw Exception("Unknown user")
         if (user.password != connectionInformation.password) throw Exception("Wrong password")
 
-        return User(user.id, user.name)
+        return User(user.id, user.name, user.picture)
     }
 
     fun addUser(userInformation: UserInformation): User {
         val dbUser = databaseManager.addUser(userInformation)
-        return User(dbUser.id, dbUser.name)
+        return User(dbUser.id, dbUser.name, dbUser.picture)
     }
 
     fun getUserGifts(userId: Long): Gifts {
@@ -197,7 +196,10 @@ class UserManager(private val databaseManager: DatabaseManager) {
     private fun toFriendRequest(dbRequest: DbFriendRequest) : FriendRequest {
         val one = databaseManager.getUser(dbRequest.userOne)!!
         val two = databaseManager.getUser(dbRequest.userTwo)!!
-        return FriendRequest(dbRequest.id, User(dbRequest.userOne, one), User(dbRequest.userTwo, two), dbRequest.status)
+        return FriendRequest(dbRequest.id,
+            User(dbRequest.userOne, one.name, one.picture),
+            User(dbRequest.userTwo, two.name, two.picture),
+            dbRequest.status)
     }
 
     fun createEvent(event: RestCreateEvent, userId: Long) {

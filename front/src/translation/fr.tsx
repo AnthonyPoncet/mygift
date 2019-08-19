@@ -12,6 +12,7 @@ class Fr implements Itrans {
             signInButton: "Se connecter",
             username: "Username",
             password: "Mot de passe",
+            image: "Photo de profil",
             emptyErrorMessage: "Username et Mot de passe ne peuvent pas être vide.",
             newToMygift: "Nouveau to MyGift ?",
             createAnAccount: "Créer un compte"
