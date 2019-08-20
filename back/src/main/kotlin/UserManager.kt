@@ -3,7 +3,7 @@ import kotlin.Exception
 
 /** RETURN CLASSES **/
 data class User(val id: Long, val name: String, val picture: String?)
-data class Gift(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long)
+data class Gift(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?)
 data class Gifts(val gifts: List<Gift>)
 data class FriendGift(val gift: Gift, val interestedUser: List<String>, val buyActionUser: Map<String, BuyAction>)
 data class FriendGifts(val friendGifts: List<FriendGift>)
@@ -16,7 +16,7 @@ data class Event(val id: Long, val type: EventType, val name: String, val creato
 /** INPUT CLASSES **/
 data class ConnectionInformation(val name: String?, val password: String?)
 data class UserInformation(val name: String?, val password: String?, val picture: String?)
-data class RestGift(val name: String?, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long?)
+data class RestGift(val name: String?, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long?, val picture: String?)
 data class RestCategory(val name: String?)
 data class RestCreateFriendRequest(val name: String?)
 enum class EventType { ALL_FOR_ALL, ALL_FOR_ONE }
@@ -82,12 +82,12 @@ class UserManager(private val databaseManager: DatabaseManager) {
     }
 
     fun getUserGifts(userId: Long): Gifts {
-        return Gifts(databaseManager.getUserGifts(userId).map { g -> Gift(g.id, g.name, g.description, g.price, g.whereToBuy, g.categoryId) })
+        return Gifts(databaseManager.getUserGifts(userId).map { g -> Gift(g.id, g.name, g.description, g.price, g.whereToBuy, g.categoryId, g.picture) })
     }
 
     //Not optimal at all!
     fun getFriendGifts(userId: Long, friendName: String): FriendGifts {
-        val gifts = databaseManager.getFriendGifts(userId, friendName).map { g -> Gift(g.id, g.name, g.description, g.price, g.whereToBuy, g.categoryId) }
+        val gifts = databaseManager.getFriendGifts(userId, friendName).map { g -> Gift(g.id, g.name, g.description, g.price, g.whereToBuy, g.categoryId, g.picture) }
 
         val friendGifts = arrayListOf<FriendGift>()
         val dummyUserCache = DummyUserCache(databaseManager) //Cache only by call

@@ -29,6 +29,7 @@ class En implements Itrans {
             whereToBuy: "Where to buy",
             whereToBuyPlaceholder: "Amazon link, local shop...",
             category: "Category",
+            image: "Picture",
             updateGiftModalTitle: "Modify gift",
             updateModalButton: "Modify",
             addCategoryButton: "Add Category",

@@ -276,8 +276,8 @@ class MyFriends extends React.Component<Props, State> {
             <div className="mycard-row">
               {friends.map((req, i) => {
                 let image = (req.picture === undefined) ?
-                  <img className="friend-image" src={blank_profile_picture}/> :
-                  <img className="friend-image" id={req.name+'profile'}/>;
+                  <img className="friend-image" src={blank_profile_picture} alt="Nothing"/> :
+                  <img className="friend-image" id={req.name+'profile'} alt="Profile"/>;
                 if (i.toString() === this.state.hoverId) {
                   return (
                     <div key={i + 'friends-' + req.reqId} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>

@@ -19,8 +19,10 @@ export function changeLocale(state = defaultState, action: ChangeLocaleActions) 
             return { messages: new En().getTranslation() };
           case 'French':
             return { messages: new Fr().getTranslation() };
+          default:
+            return state;
       }
     default:
-      return state
+      return state;
   }
 }

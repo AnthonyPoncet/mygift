@@ -5,7 +5,7 @@ import java.time.LocalDate
 
 data class DbUser(val id: Long, val name: String, val password: String, val picture: String?)
 data class DbCategory(val id: Long, val userId: Long, val name: String)
-data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long)
+data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?)
 enum class BuyAction { NONE, WANT_TO_BUY, BOUGHT }
 data class DbFriendActionOnGift(val id: Long, val giftId: Long, val userId: Long, val interested: Boolean, val buy: BuyAction)
 enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
@@ -85,6 +85,7 @@ class DatabaseManager(dbPath: String) {
                 "price          TEXT, " +
                 "whereToBuy     TEXT, " +
                 "categoryId     INTEGER NOT NULL, " +
+                "picture    TEXT, " +
                 "FOREIGN KEY(userId) REFERENCES users(id), " +
                 "FOREIGN KEY(categoryId) REFERENCES categories(id))")
         conn.execute("CREATE TABLE IF NOT EXISTS friendActionOnGift (" +
@@ -180,8 +181,8 @@ class DatabaseManager(dbPath: String) {
         if (!categoryExists(gift.categoryId)) throw Exception("Unknown category " + gift.categoryId)
         if (!categoryBelongToUser(userId, gift.categoryId)) throw Exception("Category " + gift.categoryId + " does not belong to user $userId")
 
-        conn.execute("INSERT INTO gifts(userId,name,description,price,whereToBuy,categoryId) VALUES " +
-                "($userId, '${gift.name}', '${gift.description ?: ""}', '${gift.price ?: ""}', '${gift.whereToBuy ?: ""}', ${gift.categoryId})")
+        conn.execute("INSERT INTO gifts(userId,name,description,price,whereToBuy,categoryId,picture) VALUES " +
+                "($userId, '${gift.name}', '${gift.description ?: ""}', '${gift.price ?: ""}', '${gift.whereToBuy ?: ""}', ${gift.categoryId}, '${gift.picture ?: ""}')")
         //API return 0 instead of null for price...
         //Maybe this query should be dynamic
     }
@@ -192,6 +193,7 @@ class DatabaseManager(dbPath: String) {
         val gifts = arrayListOf<DbGift>()
         val res = conn.executeQuery("SELECT * FROM gifts WHERE gifts.userId=$userId")
         while (res.next()) {
+            val picture = res.getString("picture")
             gifts.add(DbGift(
                 res.getLong("id"),
                 res.getLong("userId"),
@@ -199,7 +201,8 @@ class DatabaseManager(dbPath: String) {
                 res.getString("description"),
                 res.getString("price"),
                 res.getString("whereToBuy"),
-                res.getLong("categoryId")))
+                res.getLong("categoryId"),
+                if (picture.isEmpty()) null else picture))
         }
 
         return gifts

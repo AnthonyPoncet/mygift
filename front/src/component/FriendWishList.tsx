@@ -7,6 +7,7 @@ import { AppState } from '../redux/store';
 
 import { FriendWishListMessage } from '../translation/itrans';
 import './card-gift.css';
+import blank_gift from './blank_gift.png';
 
 interface ConnectProps { userId: number | null, username: String | null, friendwishlist: FriendWishListMessage };
 interface Props extends ConnectProps { friendName: string }
@@ -30,11 +31,26 @@ class FriendWishList extends React.Component<Props, State> {
         }
     }
 
+    loadImage(name: string, tagName: string) {
+        const request = async() => {
+            const response = await fetch('http://localhost:8080/files/' + name);
+            response.blob().then(blob => {
+                let url = window.URL.createObjectURL(blob);
+                let tag = document.querySelector('#' + tagName);
+                if (tag instanceof HTMLImageElement) tag.src = url;
+            });
+        };
+        request();
+    }
+
     async getGifts(userId: number, friendName: string) {
         const response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + friendName);
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ gifts: json.friendGifts });
+            json.friendGifts.forEach((gift: any) => {
+                if (gift.gift.picture !== undefined) this.loadImage(gift.gift.picture, 'gift-'+gift.gift.id)
+            })
         } else {
             console.log(json.error);
         }
@@ -131,12 +147,16 @@ class FriendWishList extends React.Component<Props, State> {
                   let iWantToBuy = false;
                   let iBought = false;
                   if (this.props.username !== null) {
-                      for (const [index, value] of interestedUser.entries()) { if (value === this.props.username) imInterested = true; }
-                      for (const [index, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
-                      for (const [index, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
+                      for (const [, value] of interestedUser.entries()) { if (value === this.props.username) imInterested = true; }
+                      for (const [, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
+                      for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
                   }
+                  let imageFull = (gift.picture === undefined) ?
+                    <img className="gift-image-full" src={blank_gift} alt="Nothing"/> :
+                    <img className="gift-image-full" id={'gift-'+gift.id} alt="Gift"/>;
                   return (
                       <div className="mycard" onMouseEnter={() => this.handleEnter(index, gIndex)} onMouseLeave={() => this.handleOut()}>
+                          {imageFull}
                           <div className="card-edit-close">
                             <span className={imInterested ? "text-right icon-selected" : "text-right"} style={{cursor: "pointer"}} onClick={() => this.interested(this.props.userId, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
                             {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
@@ -153,9 +173,13 @@ class FriendWishList extends React.Component<Props, State> {
                           </div>
                       </div>);
                   } else {
+                    let imageOnly = (gift.picture === undefined) ?
+                      <img className="gift-image-name-only" src={blank_gift} alt="Nothing"/> :
+                      <img className="gift-image-name-only" id={'gift-'+gift.id} alt="Gift"/>;
                     return (
                         <div className="mycard" onMouseEnter={() => this.handleEnter(index, gIndex)} onMouseLeave={() => this.handleOut()}>
-                              <div className="card-name-only">{gift.name}</div>
+                            {imageOnly}
+                            <div className="card-name-only">{gift.name}</div>
                         </div>);
                   }
                 });

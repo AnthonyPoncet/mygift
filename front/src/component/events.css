@@ -18,11 +18,10 @@
   height: 150px;
 }
 
-.card-edit-close {
+.event-edit-close {
   text-align: right;
   padding: 5px;
   font-size: 12px;
-  transform: translateY(-150px);
   /*border: 1px solid;*/
 }
 .card-edit-close span {

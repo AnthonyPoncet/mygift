@@ -10,6 +10,8 @@ import Octicon, {Check, X, CircleSlash, ListUnordered} from '@primer/octicons
 import { MyEventsMessage } from '../translation/itrans';
 import "react-datepicker/dist/react-datepicker.css";
 
+import './events.css';
+
 interface Props {userId: number | null, username: String | null, myevents: MyEventsMessage}
 interface State {
   eventsCreated: any[],
@@ -279,7 +281,7 @@ class Events extends React.Component<Props, State> {
                   if ('my-'+i === this.state.hoverId) {
                     return (
                         <div className="mycard" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
-                            <div className="card-edit-close">
+                            <div className="event-edit-close">
                               <Link to={'/event/' + e.id} className="btn btn-link"><Octicon icon={ListUnordered}/></Link>
                               <span style={{cursor: "pointer"}} onClick={() => this.deleteEvent(e.id)}><Octicon icon={X}/></span>
                             </div>
@@ -304,7 +306,7 @@ class Events extends React.Component<Props, State> {
                   if ('coming-'+i === this.state.hoverId) {
                     return (
                         <div className="mycard" onMouseEnter={() => this.handleEnter("coming", i)} onMouseLeave={() => this.handleOut()}>
-                            <div className="card-edit-close">
+                            <div className="event-edit-close">
                               <Link to={'/event/' + e.id} className="btn btn-link"><Octicon icon={ListUnordered}/></Link>
                             </div>
                             <div className="card-name">{e.name}</div>
@@ -328,7 +330,7 @@ class Events extends React.Component<Props, State> {
                 if ('my-'+i === this.state.hoverId) {
                   return (
                       <div className="mycard" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
-                          <div className="card-edit-close">
+                          <div className="event-edit-close">
                             <span style={{cursor: "pointer"}} onClick={() => this.acceptRequest(e.id)}><Octicon icon={Check}/></span>
                             <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(e.id, false)}><Octicon icon={X}/></span>
                             <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(e.id, true)}><Octicon icon={CircleSlash}/></span>
