@@ -1,68 +1,56 @@
-.mycard-row {
+.events-card-row {
   display: flex;
   width: 100%;
 }
 
-.mycard {
+.events-card {
   position: relative;
   background-color: #DFDFDF;
-  /*border: 1px solid;*/
   border-radius: 5px;
   height: 250px;
   width: 150px;
   margin: 10px;
 }
 
-.gift-image-full {
+.events-image-full {
   width: inherit;
   height: 150px;
 }
 
-.event-edit-close {
+.events-edit-close {
   text-align: right;
   padding: 5px;
   font-size: 12px;
-  /*border: 1px solid;*/
-}
-.card-edit-close span {
-  cursor: "pointer";
 }
 
 .icon-selected {
-  color: #007bff;
+  color: #000;
 }
 
-
-.card-name {
+.events-card-name {
   text-align: center;
   padding: 0 5px 5px;
   font-weight: bold;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-
-    /*border: 1px solid;*/
 }
-.card-description {
+.events-card-description {
   padding: 5px;
   font-size: 12px;
   text-align: justify;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-
-    /*border: 1px solid;*/
 }
-.mycard-footer {
+.events-card-footer {
   width: inherit;
   padding: 5px;
   position: absolute;
   top: 220px;
   overflow: hidden;
-
-    /*border: 1px solid;*/
 }
-.card-wtb { /*want to buy*/
+.events-card-wtb { /*want to buy*/
   float: left;
   width: 66%;
 
@@ -71,25 +59,21 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-
-    /*border: 1px solid;*/
 }
-.card-price {
+.events-card-price {
   text-align: right;
   font-size: 12px;
   font-weight: bold;
   text-overflow: ellipsis;
   overflow: hidden;
-
-  /*border: 1px solid;*/
 }
 
-.gift-image-name-only {
+.events-image-name-only {
   width: inherit;
   height: 150px;
   vertical-align: middle;
 }
-.card-name-only {
+.events-card-name-only {
   display: table-cell;
   height: 100px;
   width: 150px;

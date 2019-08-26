@@ -6,7 +6,6 @@
 .mycard {
   position: relative;
   background-color: #DFDFDF;
-  /*border: 1px solid;*/
   border-radius: 5px;
   height: 250px;
   width: 150px;
@@ -23,7 +22,6 @@
   padding: 5px;
   font-size: 12px;
   transform: translateY(-150px);
-  /*border: 1px solid;*/
 }
 .card-edit-close span {
   cursor: "pointer";
@@ -41,8 +39,7 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-
-    /*border: 1px solid;*/
+  transform: translateY(-18px);
 }
 .card-description {
   padding: 5px;
@@ -51,8 +48,7 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-
-    /*border: 1px solid;*/
+  transform: translateY(-18px);
 }
 .mycard-footer {
   width: inherit;
@@ -60,8 +56,6 @@
   position: absolute;
   top: 220px;
   overflow: hidden;
-
-    /*border: 1px solid;*/
 }
 .card-wtb { /*want to buy*/
   float: left;
@@ -72,8 +66,6 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-
-    /*border: 1px solid;*/
 }
 .card-price {
   text-align: right;
@@ -81,8 +73,6 @@
   font-weight: bold;
   text-overflow: ellipsis;
   overflow: hidden;
-
-  /*border: 1px solid;*/
 }
 
 .gift-image-name-only {

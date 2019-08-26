@@ -65,16 +65,14 @@ class Fr implements Itrans {
             pendingEvents: "Evènements en attente"
           },
           event: {
-            addParticipantButton: "Ajouter un participant",
             addParticipantModalTitle: "Ajouter un nouveau participant",
             addParticipantModalButton: "Ajouter",
             name: "Nom",
             nameErrorMessage: "Le nom est obligatoire",
             description: "Description",
-            creator: "Createur",
-            endDate: "Date de fin",
+            creator: "Organisé par",
             participantsTitle: "Participants",
-            targetIsTitle: "Utilisateur concerné",
+            targetIsTitle: "Evènement pour",
           }
         };
     }

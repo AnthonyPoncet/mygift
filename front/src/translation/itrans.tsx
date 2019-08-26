@@ -78,14 +78,12 @@ export interface MyEventsMessage {
 }
 
 export interface EventMessage {
-    addParticipantButton: string,
     addParticipantModalTitle: string,
     addParticipantModalButton: string,
     name: string,
     nameErrorMessage: string,
     description: string,
     creator: string,
-    endDate: string,
     participantsTitle: string,
     targetIsTitle: string,
 }

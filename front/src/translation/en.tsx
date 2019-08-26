@@ -65,16 +65,14 @@ class En implements Itrans {
             pendingEvents: "Pending Events"
           },
           event: {
-              addParticipantButton: "Add participant",
               addParticipantModalTitle: "Add a new participant",
               addParticipantModalButton: "Add",
               name: "Name",
               nameErrorMessage: "Name is mandatory",
               description: "Description",
-              creator: "Creator",
-              endDate: "End date",
+              creator: "Organised by",
               participantsTitle: "Participants",
-              targetIsTitle: "Target is",
+              targetIsTitle: "Event for",
           }
         };
     }

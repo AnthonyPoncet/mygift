@@ -276,76 +276,78 @@ class Events extends React.Component<Props, State> {
         const { myevents } = this.props;
         return (<>
             <h2>{myevents.myEvents}</h2>
-            <div className="mycard-row">
+            <div className="events-card-row">
               {this.state.eventsCreated.map((e, i) => {
                   if ('my-'+i === this.state.hoverId) {
                     return (
-                        <div className="mycard" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
-                            <div className="event-edit-close">
+                        <div className="events-card" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
+                            <div className="events-edit-close">
                               <Link to={'/event/' + e.id} className="btn btn-link"><Octicon icon={ListUnordered}/></Link>
                               <span style={{cursor: "pointer"}} onClick={() => this.deleteEvent(e.id)}><Octicon icon={X}/></span>
                             </div>
-                            <div className="card-name">{e.name}</div>
-                            <div className="card-description">{e.description}</div>
-                            <div className="mycard-footer">
-                              <div className="card-wtb">{e.endDate.day}/{e.endDate.month}/{e.endDate.year}</div>
-                              <div className="card-price">{e.type === "ALL_FOR_ALL" ? "All" : e.target}</div>
+                            <div className="events-card-name">{e.name}</div>
+                            <div className="events-card-description">{e.description}</div>
+                            <div className="events-card-footer">
+                              <div className="events-card-wtb">{e.endDate.day}/{e.endDate.month}/{e.endDate.year}</div>
+                              <div className="events-card-price">{e.type === "ALL_FOR_ALL" ? "All" : e.target}</div>
                             </div>
                         </div>);
                     } else {
                       return (
-                          <div className="mycard" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
-                                <div className="card-name-only">{e.name}</div>
+                          <div className="events-card" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
+                                <div className="events-card-name-only">{e.name}</div>
                           </div>);
                     }
               })}
             </div>
             <h2>{myevents.comingEvents}</h2>
-            <div className="mycard-row">
+            <div className="events-card-row">
               {coming.map((e, i) => {
                   if ('coming-'+i === this.state.hoverId) {
                     return (
-                        <div className="mycard" onMouseEnter={() => this.handleEnter("coming", i)} onMouseLeave={() => this.handleOut()}>
-                            <div className="event-edit-close">
-                              <Link to={'/event/' + e.id} className="btn btn-link"><Octicon icon={ListUnordered}/></Link>
+                        <div className="events-card" onMouseEnter={() => this.handleEnter("coming", i)} onMouseLeave={() => this.handleOut()}>
+                            <div className="events-edit-close">
+                              <Link to={'/event/' + e.id} className="btn btn-link" style={{ textDecoration: 'none', color: 'black' }}><Octicon icon={ListUnordered}/></Link>
                             </div>
-                            <div className="card-name">{e.name}</div>
-                            <div className="card-description">{e.description}</div>
-                            <div className="mycard-footer">
-                              <div className="card-wtb">{e.endDate.day}/{e.endDate.month}/{e.endDate.year}</div>
-                              <div className="card-price">{e.type === "ALL_FOR_ALL" ? "All" : e.target}</div>
+                            <div className="events-card-name">{e.name}</div>
+                            <div className="events-card-description">{e.description}</div>
+                            <div className="events-card-footer">
+                              <div className="events-card-wtb">{e.endDate.day}/{e.endDate.month}/{e.endDate.year}</div>
+                              <div className="events-card-price">{e.type === "ALL_FOR_ALL" ? "All" : e.target}</div>
                             </div>
                         </div>);
                     } else {
                       return (
-                          <div className="mycard" onMouseEnter={() => this.handleEnter("coming", i)} onMouseLeave={() => this.handleOut()}>
-                                <div className="card-name-only">{e.name}</div>
+                          <div className="events-card" onMouseEnter={() => this.handleEnter("coming", i)} onMouseLeave={() => this.handleOut()}>
+                                <div className="events-card-name-only">{e.name}</div>
                           </div>);
                     }
               })}
             </div>
             <h2>{myevents.pendingEvents}</h2>
-            <div className="mycard-row">
+            <div className="events-card-row">
               {pending.map((e, i) => {
                 if ('my-'+i === this.state.hoverId) {
                   return (
-                      <div className="mycard" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
-                          <div className="event-edit-close">
+                      <div className="events-card" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
+                          <div className="events-edit-close">
                             <span style={{cursor: "pointer"}} onClick={() => this.acceptRequest(e.id)}><Octicon icon={Check}/></span>
+                            {' '}
                             <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(e.id, false)}><Octicon icon={X}/></span>
+                            {' '}
                             <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(e.id, true)}><Octicon icon={CircleSlash}/></span>
                           </div>
-                          <div className="card-name">{e.name}</div>
-                          <div className="card-description">{e.description}</div>
-                          <div className="mycard-footer">
-                            <div className="card-wtb">{e.endDate.day}/{e.endDate.month}/{e.endDate.year}</div>
-                            <div className="card-price">{e.type === "ALL_FOR_ALL" ? "All" : e.target}</div>
+                          <div className="events-card-name">{e.name}</div>
+                          <div className="events-card-description">{e.description}</div>
+                          <div className="events-card-footer">
+                            <div className="events-card-wtb">{e.endDate.day}/{e.endDate.month}/{e.endDate.year}</div>
+                            <div className="events-card-price">{e.type === "ALL_FOR_ALL" ? "All" : e.target}</div>
                           </div>
                       </div>);
                   } else {
                     return (
-                        <div className="mycard" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
-                              <div className="card-name-only">{e.name}</div>
+                        <div className="events-card" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
+                              <div className="events-card-name-only">{e.name}</div>
                         </div>);
                   }
               })}

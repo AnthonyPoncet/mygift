@@ -265,7 +265,7 @@ class MyFriends extends React.Component<Props, State> {
                     <div key={i + 'friends-' + req.reqId} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
                       {image}
                       <div className="friend-card-delete" >
-                        <Link to={'/friend/' + req.name} className="btn btn-link"><Octicon icon={ListUnordered}/></Link>
+                        <Link to={'/friend/' + req.name} className="btn btn-link" style={{ textDecoration: 'none', color: 'black' }}><Octicon icon={ListUnordered}/></Link>
                         <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.reqId)}><Octicon icon={X}/></span>
                       </div>
                       <div className="friend-footer">
