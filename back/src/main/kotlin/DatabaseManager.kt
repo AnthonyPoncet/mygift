@@ -123,24 +123,13 @@ class DatabaseManager(dbPath: String) {
     /**
      * Users
      */
-    @Synchronized fun addUser(userInformation: UserInformation): DbUser {
-        if (userInformation.name == null) {
-            throw Exception("Name could not be null")
-        }
-        if (userInformation.password == null) {
-            throw Exception("Password could not be null")
-        }
-
-        if (getUser(userInformation.name) != null) {
-            throw Exception("User already exists")
-        }
-
+    @Synchronized fun addUser(userName: String, password: String, picture: String?): DbUser {
         conn.execute("INSERT INTO users(name,password,picture) VALUES " +
-                "('${userInformation.name}', '${userInformation.password}', '${userInformation.picture?: ""}')")
+                "('$userName', '$password', '${picture?: ""}')")
         val nextUserId = conn.executeQuery("SELECT last_insert_rowid()").getLong(1)
         addCategory(nextUserId, RestCategory(DEFAULT_CATEGORY_NAME))
 
-        return DbUser(nextUserId, userInformation.name, userInformation.password, userInformation.picture)
+        return DbUser(nextUserId, userName, password, picture)
     }
 
     @Synchronized fun getUser(userName: String): DbUser? {
@@ -433,7 +422,7 @@ class DatabaseManager(dbPath: String) {
 
     @Synchronized fun deleteFriendRequest(userId: Long, friendRequestId: Long) {
         if (!userExists(userId)) throw Exception("Unknown user $userId")
-        if (!friendRequestBelongToUser(userId, friendRequestId)) throw Exception("Friend request $friendRequestId does not belong to user $userId")
+        if (!friendRequestBelongToUser(userId, friendRequestId) && !friendRequestIsNotForUser(userId, friendRequestId)) throw Exception("Friend request $friendRequestId does not belong to user $userId")
 
         conn.executeUpdate("DELETE FROM friendRequest WHERE id = $friendRequestId")
     }

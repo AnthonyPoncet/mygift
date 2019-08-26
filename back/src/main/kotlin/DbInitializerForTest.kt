@@ -7,16 +7,16 @@ class DbInitializerForTest(private val databaseManager: DatabaseManager) {
         databaseManager.cleanTables()
 
         //Create User
-        val aze = databaseManager.addUser(UserInformation("aze", "aze", "black_cat.png")).id
+        val aze = databaseManager.addUser("aze", "aze", "black_cat.png").id
         val azeDCat = databaseManager.getUserCategories(aze)[0].id
         println("username: aze, pwd: aze ==> id: $aze - Default category id: $azeDCat")
-        val eza = databaseManager.addUser(UserInformation("eza", "eza", "red_cat.png")).id
+        val eza = databaseManager.addUser("eza", "eza", "red_cat.png").id
         databaseManager.addCategory(eza, RestCategory("Second catégorie"))
         val ezaCats = databaseManager.getUserCategories(eza)
         val ezaDCat = ezaCats[0].id
         val ezaSCat = ezaCats[1].id
         println("username: eza, pwd: eza ==> id: $eza - Default category id: $eza, \"Second catégorie\" id: $ezaSCat")
-        val other = databaseManager.addUser(UserInformation("other", "other", null)).id
+        val other = databaseManager.addUser("other", "other", null).id
         println("usernamme: other, pwd; other ==> id: $other")
 
         //Fill gift

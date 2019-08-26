@@ -69,19 +69,18 @@ fun main(args: Array<String>) {
             routing {
                 route("/user") {
                     post("/connect") {
-                        val receiveText = call.receiveText()
-                        val connectionInformation = Gson().fromJson(receiveText, ConnectionInformation::class.java)
-
-                        if (connectionInformation.name == null || connectionInformation.password == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("missing name or password node in json"))
-                            return@post
-                        }
+                        val connectionInformation = Gson().fromJson(call.receiveText(), ConnectionInformation::class.java)
 
                         try {
                             val user = userManager.connect(connectionInformation)
                             call.respond(HttpStatusCode.OK, user)
+                        } catch (e: BadParamException) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.error))
+                        } catch (e: ConnectionException) {
+                            call.respond(HttpStatusCode.Conflict, Error(e.error))
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.Conflict, Error(e.message!!))
+                            System.err.println(e)
+                            call.respond(HttpStatusCode.InternalServerError, Error(e.message?: "Unknown error"))
                         }
                     }
                 }
@@ -90,16 +89,16 @@ fun main(args: Array<String>) {
                     put {
                         val basicUserInformation = Gson().fromJson(call.receiveText(), UserInformation::class.java)
 
-                        if (basicUserInformation.name == null || basicUserInformation.password == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("missing name or password node in json"))
-                            return@put
-                        }
-
                         try {
                             val user = userManager.addUser(basicUserInformation)
                             call.respond(HttpStatusCode.Created, user)
+                        } catch (e: BadParamException) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.error))
+                        } catch (e: CreateUserException) {
+                            call.respond(HttpStatusCode.Conflict, Error(e.error))
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.Conflict, Error(e.message!!))
+                            System.err.println(e)
+                            call.respond(HttpStatusCode.InternalServerError, Error(e.message?: "Unknown error"))
                         }
                     }
                 }
@@ -221,27 +220,6 @@ fun main(args: Array<String>) {
                     }
 
                     /** CATEGORIES **/
-                    get("/categories") {
-                        val id = getUserId(call.parameters)
-
-                        try {
-                            val userCategories = userManager.getUserCategories(id)
-                            call.respond(HttpStatusCode.OK, userCategories)
-                        } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
-                        }
-                    }
-                    get("/categories/{friendName}") {
-                        val id = getUserId(call.parameters)
-                        val friendName = call.parameters["friendName"]!!
-
-                        try {
-                            val userCategories = userManager.getFriendCategories(id, friendName)
-                            call.respond(HttpStatusCode.OK, userCategories)
-                        } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
-                        }
-                    }
                     put("/categories") {
                         val id = getUserId(call.parameters)
 
@@ -275,7 +253,6 @@ fun main(args: Array<String>) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }
                     }
-
                     delete("/categories/{cid}") {
                         val id = getUserId(call.parameters)
                         val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException("Category id")
@@ -289,21 +266,31 @@ fun main(args: Array<String>) {
                     }
 
                     /** FRIEND REQUEST **/
-                    get("/friend-requests/sent") {
+                    get("/friends") {
                         val id = getUserId(call.parameters)
 
                         try {
-                            val requests = userManager.getInitiatedFriendRequest(id)
+                            val friends = userManager.getFriends(id)
+                            call.respond(HttpStatusCode.OK, friends)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+                    get("/friend-requests/pending") {
+                        val id = getUserId(call.parameters)
+
+                        try {
+                            val requests = userManager.getPendingFriendRequests(id)
                             call.respond(HttpStatusCode.OK, requests)
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }
                     }
-                    get("/friend-requests/received") {
+                    get("/friend-requests/received-blocked") {
                         val id = getUserId(call.parameters)
 
                         try {
-                            val requests = userManager.getReceivedFriendRequest(id)
+                            val requests = userManager.getReceivedBlockedFriendRequests(id)
                             call.respond(HttpStatusCode.OK, requests)
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))

@@ -12,22 +12,11 @@ import './friends.css'
 
 import blank_profile_picture from './blank_profile_picture.png'
 
-class Friend {
-    reqId: number;
-    name: string;
-    picture: string | null;
-
-    constructor(reqId: number, name: string, picture: string | null) {
-        this.reqId = reqId;
-        this.name = name;
-        this.picture = picture;
-    }
-}
-
 interface Props { userId: number | null, myfriends: MyFriendsMessage }
 interface State {
-    initiatedRequests: any[],
-    receivedRequests: any[],
+    pendingSent: any[],
+    pendingReceived: any[],
+    friends: any[],
     show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string,
     hoverId: string
 }
@@ -43,8 +32,9 @@ class MyFriends extends React.Component<Props, State> {
         this.closeModal = this.closeModal.bind(this);
 
         this.state = {
-            initiatedRequests: [],
-            receivedRequests: [],
+            pendingSent: [],
+            pendingReceived: [],
+            friends: [],
             show: false, title: '', bodyRender: undefined, button: { text: '', fun: undefined }, inputs: { }, errorMessage: '',
             hoverId: ''
         }
@@ -52,16 +42,16 @@ class MyFriends extends React.Component<Props, State> {
 
     componentDidMount() {
         if (this.props.userId) {
-            this.getInitiated(this.props.userId);
-            this.getReceived(this.props.userId); //this one should be scheduled
+            this.getPending(this.props.userId);
+            this.getFriends(this.props.userId); //this one should be scheduled
         }
     }
 
     //Hanle loggin, seems weird
     componentWillReceiveProps(nextProps: Props, nextContext: any) {
         if (nextProps.userId) {
-            this.getInitiated(nextProps.userId);
-            this.getReceived(nextProps.userId);
+            this.getPending(nextProps.userId);
+            this.getFriends(nextProps.userId);
         }
     }
 
@@ -93,14 +83,19 @@ class MyFriends extends React.Component<Props, State> {
         this.setState({ show: false });
     }
 
-    async getInitiated(userId: number) {
-        const response = await fetch('http://localhost:8080/users/' + userId + '/friend-requests/sent');
+    async getPending(userId: number) {
+        const response = await fetch('http://localhost:8080/users/' + userId + '/friend-requests/pending');
         const json = await response.json();
         if (response.status === 200) {
-            this.setState({ initiatedRequests: json });
-            json.forEach((req: any) => {
-                if (req.status === 'ACCEPTED' && req.to.picture !== undefined) {
-                    this.loadImage(req.to.picture, req.to.name + 'profile')
+            this.setState({ pendingSent: json.sent, pendingReceived: json.received });
+            json.sent.forEach((req: any) => {
+                if (req.otherUser.picture !== undefined) {
+                    this.loadImage(req.otherUser.picture, req.otherUser.name + 'profile')
+                }
+            });
+            json.received.forEach((req: any) => {
+                if (req.otherUser.picture !== undefined) {
+                    this.loadImage(req.otherUser.picture, req.otherUser.name + 'profile')
                 }
             });
         } else {
@@ -108,14 +103,14 @@ class MyFriends extends React.Component<Props, State> {
         }
     };
 
-    async getReceived(userId: number) {
-        const response = await fetch('http://localhost:8080/users/' + userId + '/friend-requests/received');
+    async getFriends(userId: number) {
+        const response = await fetch('http://localhost:8080/users/' + userId + '/friends');
         const json = await response.json();
         if (response.status === 200) {
-            this.setState({ receivedRequests: json });
-            json.forEach((req: any) => {
-                if (req.status === 'ACCEPTED' && req.to.picture !== undefined) {
-                    this.loadImage(req.from.picture, req.from.name + 'profile')
+            this.setState({ friends: json });
+            json.forEach((friend: any) => {
+                if (friend.picture !== undefined) {
+                    this.loadImage(friend.picture, friend.name + 'profile')
                 }
             });
         } else {
@@ -124,7 +119,6 @@ class MyFriends extends React.Component<Props, State> {
     };
 
     generateMessage(json: any, friendName: string): string {
-        console.log(json);
         switch(json.status) {
             case "ACCEPTED":
                 return 'You are already friend with ' + friendName;
@@ -156,7 +150,7 @@ class MyFriends extends React.Component<Props, State> {
                 });
             if (response.status === 200) {
                 this.setState({ show: false });
-                this.props.userId !== null && this.getInitiated(this.props.userId);
+                this.props.userId !== null && this.getPending(this.props.userId);
             } else {
                 const json = await response.json();
                 this.setState({ show: true, errorMessage: this.generateMessage(json, name) });
@@ -169,7 +163,7 @@ class MyFriends extends React.Component<Props, State> {
         const request = async () => {
             const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/friend-requests/' + id, {method: 'delete'});
             if (response.status === 202) {
-                this.props.userId && this.getInitiated(this.props.userId);
+                this.props.userId && this.getPending(this.props.userId);
             } else {
                 const json = await response.json();
                 console.log(json);
@@ -182,7 +176,7 @@ class MyFriends extends React.Component<Props, State> {
         const request = async () => {
             const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/friend-requests/' + id + '/accept');
             if (response.status === 202) {
-                this.props.userId && this.getReceived(this.props.userId);
+                this.props.userId && this.getFriends(this.props.userId);
             } else {
                 const json = await response.json();
                 console.log(json);
@@ -196,7 +190,8 @@ class MyFriends extends React.Component<Props, State> {
             console.log('http://localhost:8080/users/' + this.props.userId + '/friend-requests/' + id + '/decline?blockUser=' + blockUser)
             const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/friend-requests/' + id + '/decline?blockUser=' + blockUser, {method:"post"});
             if (response.status === 202) {
-                this.props.userId && this.getReceived(this.props.userId);
+                this.props.userId && this.getPending(this.props.userId);
+                this.props.userId && this.getFriends(this.props.userId);
             } else {
                 const json = await response.json();
                 console.log(json);
@@ -227,26 +222,13 @@ class MyFriends extends React.Component<Props, State> {
     }
 
     renderRequests() {
-        let friends: Friend[] = [];
-        let initiated = [];
-        let received = [];
-        if (this.state.initiatedRequests.length > 0) {
-            const ok = this.state.initiatedRequests.filter(i => i.status === "ACCEPTED").map(i => new Friend(i.id, i.to.name, i.to.picture));
-            if (ok.length > 0) friends = ok;
-            initiated = this.state.initiatedRequests.filter(i => i.status === "PENDING");
-        }
-        if (this.state.receivedRequests.length > 0) {
-            const ok = this.state.receivedRequests.filter(i => i.status === "ACCEPTED").map(i => new Friend(i.id, i.from.name, i.from.picture));
-            if (ok.length > 0) friends = ok.concat(friends);
-            received = this.state.receivedRequests.filter(i => i.status === "PENDING");
-        }
-
+        const { pendingSent, pendingReceived, friends } = this.state;
         const { myfriends } = this.props;
 
         return (<>
             <h2>{myfriends.requests}</h2>
-            {received.length > 0 ?
-              received.map((req, i) => { return (
+            {pendingReceived.length > 0 ?
+              pendingReceived.map((req, i) => { return (
                 <li key={i + 'received' + req.to.name }>
                     {req.from.name}
                     {' '}
@@ -261,8 +243,8 @@ class MyFriends extends React.Component<Props, State> {
               <span>{myfriends.noPendingRequest}</span>}
 
             <h2>{myfriends.myRequests}</h2>
-            {initiated.length > 0 ?
-              initiated.map((req, i) => { return (
+            {pendingSent.length > 0 ?
+              pendingSent.map((req, i) => { return (
                 <li key={i + 'initiated' + req.to.name }>
                     {req.to.name}
                     {' '}
