@@ -2,6 +2,9 @@ import React from 'react';
 
 import Octicon, {Heart, Checklist, Gift} from '@primer/octicons-react'
 
+import { Modal, ModalHeader, ModalBody } from "reactstrap";
+
+
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
 
@@ -13,13 +16,15 @@ interface ConnectProps { userId: number | null, username: String | null, friendw
 interface Props extends ConnectProps { friendName: string }
 interface State {
     catAndGifts: any[],
-    hoverId: string
+    hoverId: string,
+    showGift: boolean,
+    giftToShow: any | null
 }
 
 class FriendWishList extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
-        this.state = {catAndGifts: [], hoverId: ''};
+        this.state = {catAndGifts: [], hoverId: '', showGift: false, giftToShow: null};
     }
 
     componentDidMount() {
@@ -106,11 +111,15 @@ class FriendWishList extends React.Component<Props, State> {
     }
 
     handleEnter(cat: number, gift: number) {
-      this.setState({ hoverId: cat + "-" + gift});
+        this.setState({ hoverId: cat + "-" + gift});
     }
 
     handleOut() {
-      this.setState({ hoverId: '' });
+        this.setState({ hoverId: '' });
+    }
+
+    showGift(gift: any) {
+        this.setState({ showGift: true, giftToShow: gift });
     }
 
     renderGifts() {
@@ -139,8 +148,8 @@ class FriendWishList extends React.Component<Props, State> {
                         for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
                     }
                     let imageFull = (gift.picture === undefined) ?
-                      <img className="gift-image-full" src={blank_gift} alt="Nothing"/> :
-                      <img className="gift-image-full" id={'gift-'+gift.id} alt="Gift"/>;
+                      <img className="gift-image-full" style={{cursor: "pointer"}} onClick={() => this.showGift(gift)} src={blank_gift} alt="Nothing"/> :
+                      <img className="gift-image-full" style={{cursor: "pointer"}} onClick={() => this.showGift(gift)} id={'gift-'+gift.id} alt="Gift"/>;
                     return (
                         <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
                             {imageFull}
@@ -181,7 +190,69 @@ class FriendWishList extends React.Component<Props, State> {
         <div>
           <h1 className="friend-wishlist-title">{this.props.friendwishlist.title} {this.props.friendName}</h1>
           <div>{this.renderGifts()}</div>
+
+          <DisplayGift show={this.state.showGift} gift={this.state.giftToShow} close={() => this.setState({showGift: false, giftToShow: null})}/>
         </div>);
+    }
+}
+
+interface DisplayGiftProps {
+    show: boolean
+    gift: any | null,
+    close(): void
+};
+
+class DisplayGift extends React.Component<DisplayGiftProps> {
+    private oldGift: any | null = null;
+    private url: any | null = null;
+
+    componentWillReceiveProps(nextProps: any) {
+        // You don't have to do this check first, but it can help prevent an unneeded render
+        if (nextProps.gift !== this.oldGift) {
+            this.oldGift = nextProps.gift;
+            if (nextProps.gift !== null && nextProps.gift.picture !== undefined) {
+                this.url = null;
+                this.loadImage(nextProps.gift.picture, 'gift-'+nextProps.gift.id);
+            }
+        }
+    }
+
+    loadImage(name: string, tagName: string) {
+        console.log("load " + name + " in " + tagName)
+
+        const request = async() => {
+            const response = await fetch('http://localhost:8080/files/' + name);
+            response.blob().then(blob => {
+                let url = window.URL.createObjectURL(blob);
+                this.url = url;
+            });
+        };
+        request();
+    }
+
+    render() {
+        const { show, gift, close } = this.props;
+
+        if (gift === null) return <div/>;
+
+        console.log(gift)
+
+        return (
+          <Modal isOpen={show} toggle={() => close()}>
+            <ModalHeader toggle={() => close() }>{gift.name}</ModalHeader>
+            <ModalBody>
+                <div>
+                  {
+                    (gift.picture === undefined) ?
+                    <img className="dg-image" src={blank_gift} alt="Nothing"/> :
+                    <img className="dg-image" src={this.url} alt="Gift"/>
+                  }
+                  {gift.description !== "" && gift.description}
+                </div>
+                <div>{gift.price}</div>
+                <div>{gift.whereToBuy}</div>
+            </ModalBody>
+          </Modal>);
     }
 }
 

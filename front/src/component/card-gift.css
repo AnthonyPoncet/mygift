@@ -12,6 +12,10 @@
   margin: 10px;
 }
 
+.icon-selected {
+  color: #007bff;
+}
+
 .gift-image-full {
   width: inherit;
   height: 150px;
@@ -87,4 +91,11 @@
   padding: 10px;
   text-align: center;
   vertical-align: middle;
+}
+
+
+/*display gift*/
+.dg-image {
+  width: 300px;
+  height: 300px;
 }
