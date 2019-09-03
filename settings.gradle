@@ -1,0 +1,4 @@
+rootProject.name = 'mygift'
+
+include 'back'
+include 'front'

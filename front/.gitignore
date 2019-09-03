@@ -10,6 +10,7 @@
 
 # production
 /build
+/build_packageJS
 
 # misc
 .DS_Store

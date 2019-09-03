@@ -11,6 +11,11 @@ import io.ktor.features.StatusPages
 import io.ktor.gson.gson
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.defaultResource
+import io.ktor.http.content.files
+import io.ktor.http.content.resource
+import io.ktor.http.content.resources
+import io.ktor.http.content.static
 import io.ktor.http.Parameters
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
@@ -477,6 +482,15 @@ fun main(args: Array<String>) {
                     val file = File("uploads/$filename")
                     if(file.exists()) { call.respondFile(file) }
                     else call.respond(HttpStatusCode.NotFound)
+                }
+
+                static("/") {
+                   resources("static")
+                   defaultResource("static/index.html")
+                }
+
+                static("static") {
+                   resources("static/static")
                 }
             }
         }
