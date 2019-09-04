@@ -11,12 +11,16 @@ import { MyWishListMessage } from '../translation/itrans';
 import './card-gift.css';
 import blank_gift from './blank_gift.png';
 
-interface Props { userId: number | null, mywishlist: MyWishListMessage }
+import { getServerUrl } from "../ServerInformation";
+let url = getServerUrl();
+
+
+interface Props { userId: number | null, mywishlist: MyWishListMessage };
 interface State {
   catAndGifts: any[],
   show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, loaded: boolean, errorMessage: string,
   hoverId: string
-}
+};
 
 class MyWishList extends React.Component<Props, State> {
     constructor(props: Props) {
@@ -87,7 +91,7 @@ class MyWishList extends React.Component<Props, State> {
 
     loadImage(name: string, tagName: string) {
         const request = async() => {
-            const response = await fetch('http://localhost:8080/files/' + name);
+            const response = await fetch(url + '/files/' + name);
             response.blob().then(blob => {
                 let url = window.URL.createObjectURL(blob);
                 let tag = document.querySelector('#' + tagName);
@@ -102,7 +106,7 @@ class MyWishList extends React.Component<Props, State> {
         const formData = new FormData();
         formData.append("0", e.target.files[0]);
         const request = async () => {
-            const response = await fetch('http://localhost:8080/files', {method: 'post', body: formData});
+            const response = await fetch(url + '/files', {method: 'post', body: formData});
             if (response.status === 202) {
                 console.log("done");
                 const json = await response.json();
@@ -190,13 +194,13 @@ class MyWishList extends React.Component<Props, State> {
         request();
     }
 
-    addGift() { this.giftRestCall('http://localhost:8080/users/' + this.props.userId + '/gifts', 'PUT'); }
+    addGift() { this.giftRestCall(url + '/users/' + this.props.userId + '/gifts', 'PUT'); }
 
-    updateGift(id: number) { this.giftRestCall('http://localhost:8080/users/' + this.props.userId + '/gifts/' + id, 'PATCH'); }
+    updateGift(id: number) { this.giftRestCall(url + '/users/' + this.props.userId + '/gifts/' + id, 'PATCH'); }
 
     deleteGift(id: number) {
         const request = async () => {
-            const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/gifts/' + id, {method: 'delete'});
+            const response = await fetch(url + '/users/' + this.props.userId + '/gifts/' + id, {method: 'delete'});
             if (response.status === 202) {
                 this.props.userId && this.getGifts(this.props.userId);
             } else {
@@ -258,13 +262,13 @@ class MyWishList extends React.Component<Props, State> {
         request();
     }
 
-    addCat() { this.catRestCall('http://localhost:8080/users/' + this.props.userId + '/categories', 'PUT'); }
+    addCat() { this.catRestCall(url + '/users/' + this.props.userId + '/categories', 'PUT'); }
 
-    updateCat(id: number) { this.catRestCall('http://localhost:8080/users/' + this.props.userId + '/categories/' + id, 'PATCH'); }
+    updateCat(id: number) { this.catRestCall(url + '/users/' + this.props.userId + '/categories/' + id, 'PATCH'); }
 
     deleteCat(id: number) {
         const request = async () => {
-            const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/categories/' + id, {method: 'delete'});
+            const response = await fetch(url + '/users/' + this.props.userId + '/categories/' + id, {method: 'delete'});
             if (response.status === 202) {
                 this.props.userId && this.getGifts(this.props.userId);
             } else {
@@ -278,7 +282,7 @@ class MyWishList extends React.Component<Props, State> {
     closeModal() { this.setState({ show: false }); }
 
     async getGifts(userId: number) {
-        const response = await fetch('http://localhost:8080/users/' + userId + '/gifts');
+        const response = await fetch(url + '/users/' + userId + '/gifts');
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ catAndGifts: json });

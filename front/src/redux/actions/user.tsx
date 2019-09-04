@@ -6,6 +6,8 @@ import { AnyAction } from 'redux';
 
 import { history } from '../../component/history';
 
+import { getServerUrl } from "../../ServerInformation";
+
 interface UserSignIn {
   userId: number,
   username: string
@@ -23,7 +25,7 @@ export const signin = (username: String, password: String): ThunkAction<Promise<
     return async (dispatch: ThunkDispatch<{}, {}, AnyAction>): Promise<void> => {
         return new Promise<void>(() => {
               const request = async () => {
-                  const response = await fetch('http://localhost:8080/user/connect', {
+                  const response = await fetch(getServerUrl() + '/user/connect', {
                       method: 'post',
                       headers: {'Content-Type':'application/json'},
                       body: JSON.stringify({
@@ -67,7 +69,7 @@ export const signup = (user: UserSignUp): ThunkAction<Promise<void>, {}, {}, Any
   return async (dispatch: ThunkDispatch<{}, {}, AnyAction>): Promise<void> => {
     return new Promise<void>(() => {
       const request = async () => {
-          const response = await fetch('http://localhost:8080/users', {
+          const response = await fetch(getServerUrl() + '/users', {
               method: 'put',
               headers: {'Content-Type':'application/json'},
               body: JSON.stringify({

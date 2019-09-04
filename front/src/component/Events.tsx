@@ -12,14 +12,18 @@ import "react-datepicker/dist/react-datepicker.css";
 
 import './events.css';
 
-interface Props {userId: number | null, username: String | null, myevents: MyEventsMessage}
+import { getServerUrl } from "../ServerInformation";
+let url = getServerUrl();
+
+
+interface Props { userId: number | null, username: String | null, myevents: MyEventsMessage };
 interface State {
   eventsCreated: any[],
   eventsAsParticipant: any[],
   testDate: any,
   show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string,
   hoverId: string
-}
+};
 
 class Events extends React.Component<Props, State> {
     constructor(props: Props) {
@@ -137,7 +141,7 @@ class Events extends React.Component<Props, State> {
     }
 
     async getEventCreated(userId: number) {
-        const response = await fetch('http://localhost:8080/users/' + userId + '/events');
+        const response = await fetch(url + '/users/' + userId + '/events');
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ eventsCreated: json });
@@ -147,7 +151,7 @@ class Events extends React.Component<Props, State> {
     };
 
     async getEventAsParticipant(userId: number) {
-        const response = await fetch('http://localhost:8080/users/' + userId + '/events-as-participant');
+        const response = await fetch(url + '/users/' + userId + '/events-as-participant');
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ eventsAsParticipant: json });
@@ -195,7 +199,7 @@ class Events extends React.Component<Props, State> {
         console.log(body);
 
         const request = async () => {
-            const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/events', {
+            const response = await fetch(url + '/users/' + this.props.userId + '/events', {
                     method: 'put',
                     headers: {'Content-Type':'application/json'},
                     body: body
@@ -214,7 +218,7 @@ class Events extends React.Component<Props, State> {
 
     deleteEvent(id: number) {
         const request = async () => {
-            const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/events/' + id, {method: 'delete'});
+            const response = await fetch(url + '/users/' + this.props.userId + '/events/' + id, {method: 'delete'});
             if (response.status === 202) {
                 this.props.userId !== null && this.getEventCreated(this.props.userId);
                 this.props.userId !== null && this.getEventAsParticipant(this.props.userId);
@@ -228,7 +232,7 @@ class Events extends React.Component<Props, State> {
 
     acceptRequest(id: number) {
         const request = async () => {
-            const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/events/' + id + '/accept');
+            const response = await fetch(url + '/users/' + this.props.userId + '/events/' + id + '/accept');
             if (response.status === 202) {
                 this.props.userId !== null && this.getEventCreated(this.props.userId);
                 this.props.userId !== null && this.getEventAsParticipant(this.props.userId);
@@ -242,7 +246,7 @@ class Events extends React.Component<Props, State> {
 
     declineRequest(id: number, blockEvent: boolean) {
         const request = async () => {
-            const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/events/' + id + '/decline?blockEvent=' + blockEvent, {method:"post"});
+            const response = await fetch(url + '/users/' + this.props.userId + '/events/' + id + '/decline?blockEvent=' + blockEvent, {method:"post"});
             if (response.status === 202) {
                 this.props.userId !== null && this.getEventCreated(this.props.userId);
                 this.props.userId !== null && this.getEventAsParticipant(this.props.userId);

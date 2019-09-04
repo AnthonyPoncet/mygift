@@ -13,18 +13,21 @@ import MyWishList from './MyWishList'
 
 import { EventMessage } from '../translation/itrans';
 import './event.css';
-import blank_profile_picture from './blank_profile_picture.png'
+import blank_profile_picture from './blank_profile_picture.png';
+
+import { getServerUrl } from "../ServerInformation";
+let url = getServerUrl();
 
 
 interface PathParam { eventId: string };
 interface ConnectProps { userId: number | null, username: String | null, eventM: EventMessage };
-interface Props extends RouteComponentProps<PathParam>, ConnectProps {}
+interface Props extends RouteComponentProps<PathParam>, ConnectProps {};
 interface State {
     event: any,
     participants: any[],
     selectedList: string | null,
     show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string
-}
+};
 
 class Event extends React.Component<Props, State> {
     private eventId: string;
@@ -78,7 +81,7 @@ class Event extends React.Component<Props, State> {
         let participants: string[] = [];
         participants.push(name);
         const request = async () => {
-          const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/events/' + this.eventId + '/add-participants', {
+          const response = await fetch(url + '/users/' + this.props.userId + '/events/' + this.eventId + '/add-participants', {
                 method: 'post',
                 headers: {'Content-Type':'application/json'},
                 body: JSON.stringify(participants)
@@ -95,7 +98,7 @@ class Event extends React.Component<Props, State> {
     }
 
     async getEvent(userId: number) {
-        const response = await fetch('http://localhost:8080/users/' + userId + '/events/' + this.eventId);
+        const response = await fetch(url + '/users/' + userId + '/events/' + this.eventId);
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ event: json, participants: json.participants });
@@ -105,7 +108,7 @@ class Event extends React.Component<Props, State> {
     };
 
     async getFriend(userId: number) {
-        const response = await fetch('http://localhost:8080/users/' + userId + '/friends');
+        const response = await fetch(url + '/users/' + userId + '/friends');
         const json = await response.json();
         if (response.status === 200) {
             //this.setState({ friends: json });

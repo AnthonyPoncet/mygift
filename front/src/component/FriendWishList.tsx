@@ -12,14 +12,18 @@ import { FriendWishListMessage } from '../translation/itrans';
 import './card-gift.css';
 import blank_gift from './blank_gift.png';
 
+import { getServerUrl } from "../ServerInformation";
+let url = getServerUrl();
+
+
 interface ConnectProps { userId: number | null, username: String | null, friendwishlist: FriendWishListMessage };
-interface Props extends ConnectProps { friendName: string }
+interface Props extends ConnectProps { friendName: string };
 interface State {
     catAndGifts: any[],
     hoverId: string,
     showGift: boolean,
     giftToShow: any | null
-}
+};
 
 class FriendWishList extends React.Component<Props, State> {
     constructor(props: Props) {
@@ -35,7 +39,7 @@ class FriendWishList extends React.Component<Props, State> {
 
     loadImage(name: string, tagName: string) {
         const request = async() => {
-            const response = await fetch('http://localhost:8080/files/' + name);
+            const response = await fetch(url + '/files/' + name);
             response.blob().then(blob => {
                 let url = window.URL.createObjectURL(blob);
                 let tag = document.querySelector('#' + tagName);
@@ -46,7 +50,7 @@ class FriendWishList extends React.Component<Props, State> {
     }
 
     async getGifts(userId: number, friendName: string) {
-        const response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + friendName);
+        const response = await fetch(url + '/users/' + userId + '/gifts/' + friendName);
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ catAndGifts: json });
@@ -63,7 +67,7 @@ class FriendWishList extends React.Component<Props, State> {
     async interested(userId: number | null, giftId: number, imInterested: boolean) {
         if (userId === null) return; //Impossible
 
-        const response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + giftId + '/interested?userId=' + userId, {method: imInterested ? "DELETE" : "POST"});
+        const response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/interested?userId=' + userId, {method: imInterested ? "DELETE" : "POST"});
         if (response.status === 202) {
             this.getGifts(userId, this.props.friendName);
         } else {
@@ -79,9 +83,9 @@ class FriendWishList extends React.Component<Props, State> {
 
         let response = null;
         if (iWantToBuy === true) {
-            response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId, {method: "DELETE"});
+            response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId, {method: "DELETE"});
         } else {
-            response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId + '&action=WANT_TO_BUY', {method: "POST"});
+            response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId + '&action=WANT_TO_BUY', {method: "POST"});
         }
         if (response.status === 202) {
             this.getGifts(userId, this.props.friendName);
@@ -98,9 +102,9 @@ class FriendWishList extends React.Component<Props, State> {
 
         let response = null;
         if (iBought === true) {
-            response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId, {method: "DELETE"});
+            response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId, {method: "DELETE"});
         } else {
-            response = await fetch('http://localhost:8080/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId + '&action=BOUGHT', {method: "POST"});
+            response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId + '&action=BOUGHT', {method: "POST"});
         }
         if (response.status === 202) {
             this.getGifts(userId, this.props.friendName);
@@ -221,7 +225,7 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
         console.log("load " + name + " in " + tagName)
 
         const request = async() => {
-            const response = await fetch('http://localhost:8080/files/' + name);
+            const response = await fetch(url + '/files/' + name);
             response.blob().then(blob => {
                 let url = window.URL.createObjectURL(blob);
                 this.url = url;

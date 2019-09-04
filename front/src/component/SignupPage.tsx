@@ -9,14 +9,18 @@ import { signup, UserSignUp } from '../redux/actions/user'
 
 import { Connection } from '../translation/itrans';
 
+import { getServerUrl } from "../ServerInformation";
+let url = getServerUrl();
+
+
 interface DispatchProps {
   signup: (user: UserSignUp) => void,
   error: (message: String) => void
-}
-interface StateProps { errorMessage: String | null, connection: Connection }
-type Props = DispatchProps & StateProps
+};
+interface StateProps { errorMessage: String | null, connection: Connection };
+type Props = DispatchProps & StateProps;
 
-interface State { username: string, password: string, loaded: boolean }
+interface State { username: string, password: string, loaded: boolean };
 
 class SignupPage extends React.Component<Props, State> {
   constructor(props: Props) {
@@ -47,7 +51,7 @@ class SignupPage extends React.Component<Props, State> {
 
   loadImage(name: string) {
       const request = async() => {
-          const response = await fetch('http://localhost:8080/files/' + name);
+          const response = await fetch(url + '/files/' + name);
 
           response.blob().then(blob => {
               let url = window.URL.createObjectURL(blob);
@@ -64,7 +68,7 @@ class SignupPage extends React.Component<Props, State> {
       const formData = new FormData();
       formData.append("0", e.target.files[0]);
       const request = async () => {
-          const response = await fetch('http://localhost:8080/files', {method: 'post', body: formData});
+          const response = await fetch(url + '/files', {method: 'post', body: formData});
           if (response.status === 202) {
               console.log("done");
               const json = await response.json();

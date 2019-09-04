@@ -8,18 +8,22 @@ import { AppState } from '../redux/store';
 import Octicon, {Check, X, CircleSlash, ListUnordered} from '@primer/octicons-react';
 
 import { MyFriendsMessage } from '../translation/itrans';
-import './friends.css'
+import './friends.css';
 
-import blank_profile_picture from './blank_profile_picture.png'
+import blank_profile_picture from './blank_profile_picture.png';
 
-interface Props { userId: number | null, myfriends: MyFriendsMessage }
+import { getServerUrl } from "../ServerInformation";
+let url = getServerUrl();
+
+
+interface Props { userId: number | null, myfriends: MyFriendsMessage };
 interface State {
     pendingSent: any[],
     pendingReceived: any[],
     friends: any[],
     show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string,
     hoverId: string
-}
+};
 
 class MyFriends extends React.Component<Props, State> {
     constructor(props: Props) {
@@ -84,7 +88,7 @@ class MyFriends extends React.Component<Props, State> {
     }
 
     async getPending(userId: number) {
-        const response = await fetch('http://localhost:8080/users/' + userId + '/friend-requests/pending');
+        const response = await fetch(url + '/users/' + userId + '/friend-requests/pending');
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ pendingSent: json.sent, pendingReceived: json.received });
@@ -104,7 +108,7 @@ class MyFriends extends React.Component<Props, State> {
     };
 
     async getFriends(userId: number) {
-        const response = await fetch('http://localhost:8080/users/' + userId + '/friends');
+        const response = await fetch(url + '/users/' + userId + '/friends');
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ friends: json });
@@ -143,7 +147,7 @@ class MyFriends extends React.Component<Props, State> {
         }
 
         const request = async () => {
-            const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/friend-requests', {
+            const response = await fetch(url + '/users/' + this.props.userId + '/friend-requests', {
                     method: 'put',
                     headers: {'Content-Type':'application/json'},
                     body: JSON.stringify({"name": name})
@@ -161,7 +165,7 @@ class MyFriends extends React.Component<Props, State> {
 
     cancelRequest(id: number) {
         const request = async () => {
-            const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/friend-requests/' + id, {method: 'delete'});
+            const response = await fetch(url + '/users/' + this.props.userId + '/friend-requests/' + id, {method: 'delete'});
             if (response.status === 202) {
                 this.props.userId && this.getPending(this.props.userId);
             } else {
@@ -174,7 +178,7 @@ class MyFriends extends React.Component<Props, State> {
 
     acceptRequest(id: number ) {
         const request = async () => {
-            const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/friend-requests/' + id + '/accept');
+            const response = await fetch(url + '/users/' + this.props.userId + '/friend-requests/' + id + '/accept');
             if (response.status === 202) {
                 this.props.userId && this.getFriends(this.props.userId);
             } else {
@@ -187,8 +191,7 @@ class MyFriends extends React.Component<Props, State> {
 
     declineRequest(id: number, blockUser: boolean) {
         const request = async () => {
-            console.log('http://localhost:8080/users/' + this.props.userId + '/friend-requests/' + id + '/decline?blockUser=' + blockUser)
-            const response = await fetch('http://localhost:8080/users/' + this.props.userId + '/friend-requests/' + id + '/decline?blockUser=' + blockUser, {method:"post"});
+            const response = await fetch(url + '/users/' + this.props.userId + '/friend-requests/' + id + '/decline?blockUser=' + blockUser, {method:"post"});
             if (response.status === 202) {
                 this.props.userId && this.getPending(this.props.userId);
                 this.props.userId && this.getFriends(this.props.userId);
@@ -210,7 +213,7 @@ class MyFriends extends React.Component<Props, State> {
 
     loadImage(name: string, tagName: string) {
         const request = async() => {
-            const response = await fetch('http://localhost:8080/files/' + name);
+            const response = await fetch(url + '/files/' + name);
 
             response.blob().then(blob => {
                 let url = window.URL.createObjectURL(blob);
