@@ -176,6 +176,26 @@ class DatabaseManager(dbPath: String) {
         //Maybe this query should be dynamic
     }
 
+    @Synchronized fun getGift(giftId: Long) : DbGift? {
+        if (!giftExists(giftId)) throw Exception("Unknown gift $giftId")
+
+        val res = conn.executeQuery("SELECT * FROM gifts WHERE id=$giftId")
+        while (res.next()) {
+            val picture = res.getString("picture")
+            return DbGift(
+                res.getLong("id"),
+                res.getLong("userId"),
+                res.getString("name"),
+                res.getString("description"),
+                res.getString("price"),
+                res.getString("whereToBuy"),
+                res.getLong("categoryId"),
+                if (picture.isEmpty()) null else picture)
+        }
+
+        return null
+    }
+
     @Synchronized fun getUserGifts(userId: Long) : List<DbGift> {
         if (!userExists(userId)) throw Exception("Unknown user $userId")
 
@@ -284,7 +304,6 @@ class DatabaseManager(dbPath: String) {
         val res = conn.executeQuery("SELECT * FROM friendActionOnGift WHERE giftId = $giftId")
         return queryAnswerToDbFriendActionOnGift(res)
     }
-
 
     @Synchronized fun getFriendActionOnGiftsUserHasActionOn(userId: Long) : List<DbFriendActionOnGift> {
         if (!userExists(userId)) throw Exception("Unknown user $userId")
@@ -566,7 +585,6 @@ class DatabaseManager(dbPath: String) {
     /**
      * Private
      */
-
     private fun userExists(userId: Long): Boolean {
         val res = conn.executeQuery("SELECT * FROM users WHERE id=$userId")
         return res.next()
