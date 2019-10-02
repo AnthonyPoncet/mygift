@@ -13,6 +13,7 @@ data class FriendRequest(val id: Long, val otherUser: Friend)
 data class PendingFriendRequest(val sent: List<FriendRequest>, val received: List<FriendRequest>)
 data class Participant(val name: String, val status: RequestStatus)
 data class Event(val id: Long, val type: EventType, val name: String, val creatorName: String, val description: String, val endDate: LocalDate, val target: String?, val participants: Set<Participant>)
+data class BuyListByFriend(val friendName: String, val gifts: List<FriendGift>)
 
 /** INPUT CLASSES **/
 data class ConnectionInformation(val name: String?, val password: String?)
@@ -117,6 +118,28 @@ class UserManager(private val databaseManager: DatabaseManager) {
                     actions.filter { it.buy != BuyAction.NONE  || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! to it.buy }.toMap() )
             })
         }
+    }
+
+    fun getBuyList(userId: Long) : List<BuyListByFriend> {
+        val friendActionOnGiftsUserHasActionOn = databaseManager.getFriendActionOnGiftsUserHasActionOn(userId)
+
+        val gifts = friendActionOnGiftsUserHasActionOn
+            .filter { g -> g.buy != BuyAction.NONE }
+            .map { g -> databaseManager.getGift(g.giftId) }
+
+        val map = gifts
+            .filterNotNull()
+            .groupBy({ it.userId }, { it })
+
+        val dummyUserCache = DummyUserCache(databaseManager) //Cache only by call
+        return map
+            .filter { dummyUserCache.queryName(it.key) != null }
+            .map { m -> BuyListByFriend(dummyUserCache.queryName(m.key)!!, m.value.map { g ->
+                val actions = databaseManager.getFriendActionOnGift(g.id)
+                FriendGift(toGift(g),
+                    actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! },
+                    actions.filter { it.buy != BuyAction.NONE  || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! to it.buy }.toMap() )
+            }) }
     }
 
     fun addGift(userId: Long, gift: RestGift) {

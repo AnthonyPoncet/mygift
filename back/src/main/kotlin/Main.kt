@@ -223,6 +223,16 @@ fun main(args: Array<String>) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }
                     }
+                    get("/buy-list") {
+                        val id = getUserId(call.parameters)
+
+                        try {
+                            val buyList = userManager.getBuyList(id)
+                            call.respond(HttpStatusCode.OK, buyList)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
 
                     /** CATEGORIES **/
                     put("/categories") {
