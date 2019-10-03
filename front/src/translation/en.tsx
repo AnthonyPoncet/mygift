@@ -4,7 +4,7 @@ import { Translations } from './itrans';
 class En implements Itrans {
     getTranslation() : Translations {
         return {
-          app: { signin: "Sign In", signup: "Sign Up", myList: "My List", myFriends: "My Friends", myEvents: "My Events", logout: "Log Out" },
+          app: { signin: "Sign In", signup: "Sign Up", myList: "My List", myFriends: "My Friends", myEvents: "My Events", myBuyList: "My Buy List", logout: "Log Out" },
           connection: {
             signUpTitle: "Sign up to MyGift",
             signUpButton: "Sign up",
@@ -73,7 +73,8 @@ class En implements Itrans {
               creator: "Organised by",
               participantsTitle: "Participants",
               targetIsTitle: "Event for",
-          }
+          },
+          myBuyList: { title: "My Buy List" }
         };
     }
 }
