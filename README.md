@@ -20,14 +20,13 @@ As now, the website is quite limited but allows you to:
 - As a friend, be able to say I am interested, I want to bought or I have bought a given gift
 - Possibility to create and manage events
 - A bought list that summarize all you have to buy
+- As a friend, add/propose secretly a gift
 
 ## More to come
 In the future, I plan to add (in that order):
-- As a friend, add/propose secretly a gift
 - In Home page once connected, what's new or coming next or...
 - A chat
 - Mobile App
-- A real deployment (all in server)
 - UT/IT/...
 - Security
 - Offline profile (Doodle like)
@@ -41,6 +40,7 @@ Everything right now but my next work will be:
 - Gift detailed view
 - At some stage, think if page should refresh on new gift/friend request/...
 - A doc for REST end point and once all done, refactor them in meaningful way
+- Refactor typescript
 
 ## Known bug
 - Nothing is encoded so no special char are supported
