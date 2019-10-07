@@ -142,7 +142,13 @@ fun main(args: Array<String>) {
                         }
 
                         try {
-                            userManager.addGift(id, gift)
+                            val forUser = call.request.queryParameters["forUser"] /* being the name of the user --> add a secret gift*/
+                            if (forUser == null) {
+                                userManager.addGift(id, gift)
+                            } else {
+                                userManager.addSecretGift(id, forUser, gift)
+                            }
+
                             call.respond(HttpStatusCode.OK)
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
@@ -154,7 +160,7 @@ fun main(args: Array<String>) {
 
                         val gift = Gson().fromJson(call.receiveText(), RestGift::class.java)
                         if (gift.name == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("missing name or password node in json"))
+                            call.respond(HttpStatusCode.BadRequest, Error("missing name node in json"))
                             return@patch
                         }
 

@@ -5,7 +5,7 @@ import java.time.LocalDate
 
 data class DbUser(val id: Long, val name: String, val password: String, val picture: String?)
 data class DbCategory(val id: Long, val userId: Long, val name: String)
-data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?)
+data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?, val secret: Boolean)
 enum class BuyAction { NONE, WANT_TO_BUY, BOUGHT }
 data class DbFriendActionOnGift(val id: Long, val giftId: Long, val userId: Long, val interested: Boolean, val buy: BuyAction)
 enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
@@ -85,7 +85,8 @@ class DatabaseManager(dbPath: String) {
                 "price          TEXT, " +
                 "whereToBuy     TEXT, " +
                 "categoryId     INTEGER NOT NULL, " +
-                "picture    TEXT, " +
+                "picture        TEXT, " +
+                "secret         INTEGER NOT NULL, " +
                 "FOREIGN KEY(userId) REFERENCES users(id), " +
                 "FOREIGN KEY(categoryId) REFERENCES categories(id))")
         conn.execute("CREATE TABLE IF NOT EXISTS friendActionOnGift (" +
@@ -158,7 +159,7 @@ class DatabaseManager(dbPath: String) {
     /**
      * Gift
      */
-    @Synchronized fun addGift(userId: Long, gift: RestGift) {
+    @Synchronized fun addGift(userId: Long, gift: RestGift, secret: Boolean) {
         if (gift.name == null) {
             throw Exception("Name could not be null")
         }
@@ -170,8 +171,8 @@ class DatabaseManager(dbPath: String) {
         if (!categoryExists(gift.categoryId)) throw Exception("Unknown category " + gift.categoryId)
         if (!categoryBelongToUser(userId, gift.categoryId)) throw Exception("Category " + gift.categoryId + " does not belong to user $userId")
 
-        conn.execute("INSERT INTO gifts(userId,name,description,price,whereToBuy,categoryId,picture) VALUES " +
-                "($userId, '${gift.name}', '${gift.description ?: ""}', '${gift.price ?: ""}', '${gift.whereToBuy ?: ""}', ${gift.categoryId}, '${gift.picture ?: ""}')")
+        conn.execute("INSERT INTO gifts(userId,name,description,price,whereToBuy,categoryId,picture,secret) VALUES " +
+                "($userId, '${gift.name}', '${gift.description ?: ""}', '${gift.price ?: ""}', '${gift.whereToBuy ?: ""}', ${gift.categoryId}, '${gift.picture ?: ""}', $secret)")
         //API return 0 instead of null for price...
         //Maybe this query should be dynamic
     }
@@ -190,17 +191,18 @@ class DatabaseManager(dbPath: String) {
                 res.getString("price"),
                 res.getString("whereToBuy"),
                 res.getLong("categoryId"),
-                if (picture.isEmpty()) null else picture)
+                if (picture.isEmpty()) null else picture,
+                res.getBoolean("secret"))
         }
 
         return null
     }
 
-    @Synchronized fun getUserGifts(userId: Long) : List<DbGift> {
+    private fun getGifts(userId: Long, withSecret: Boolean) : List<DbGift> {
         if (!userExists(userId)) throw Exception("Unknown user $userId")
 
         val gifts = arrayListOf<DbGift>()
-        val res = conn.executeQuery("SELECT * FROM gifts WHERE gifts.userId=$userId")
+        val res = conn.executeQuery("SELECT * FROM gifts WHERE userId=$userId" + (if (withSecret) "" else " AND secret=0"))
         while (res.next()) {
             val picture = res.getString("picture")
             gifts.add(DbGift(
@@ -211,19 +213,26 @@ class DatabaseManager(dbPath: String) {
                 res.getString("price"),
                 res.getString("whereToBuy"),
                 res.getLong("categoryId"),
-                if (picture.isEmpty()) null else picture))
+                if (picture.isEmpty()) null else picture,
+                res.getBoolean("secret")))
         }
 
         return gifts
     }
 
+    /** Return gift for a given user, secret gift will be filter out */
+    @Synchronized fun getUserGifts(userId: Long) : List<DbGift> {
+        return getGifts(userId, false)
+    }
+
+    /** Return gift for a given friend, secret gift will be returned */
     @Synchronized fun getFriendGifts(userId: Long, friendName: String): List<DbGift> {
         if (!userExists(userId)) throw Exception("Unknown user $userId")
 
         val friend = getUser(friendName) ?: throw Exception("Unknown user name $friendName")
         getFriendRequest(userId, friend.id) ?: getFriendRequest(friend.id, userId) ?: throw Exception("You are not friend with $friendName")
 
-        return getUserGifts(friend.id)
+        return getGifts(friend.id, true)
     }
 
     @Synchronized fun modifyGift(userId: Long, giftId: Long, gift: RestGift) {
@@ -236,7 +245,7 @@ class DatabaseManager(dbPath: String) {
 
         if (!userExists(userId)) throw Exception("Unknown user $userId")
         if (!giftExists(giftId)) throw Exception("Unknown gift $giftId")
-        if (!giftBelongToUser(userId, giftId)) throw Exception("Gift $giftId does not belong to user $userId")
+        if (!giftBelongToUser(userId, giftId) && !giftIsSecret(giftId)) throw Exception("Gift $giftId does not belong to user $userId and is not secret") /* secret gift could be modified by anyone */
 
         conn.executeUpdate("UPDATE gifts SET name = '${gift.name}', description = '${gift.description}', price = '${gift.price}', whereToBuy = '${gift.whereToBuy}', categoryId = '${gift.categoryId}' WHERE id = $giftId")
     }
@@ -244,7 +253,7 @@ class DatabaseManager(dbPath: String) {
     @Synchronized fun removeGift(userId: Long, giftId: Long) {
         if (!userExists(userId)) throw Exception("Unknown user $userId")
         if (!giftExists(giftId)) throw Exception("Unknown gift $giftId")
-        if (!giftBelongToUser(userId, giftId)) throw Exception("Gift $giftId does not belong to user $userId")
+        if (!giftBelongToUser(userId, giftId) && !giftIsSecret(giftId)) throw Exception("Gift $giftId does not belong to user $userId and is not secret") /* secret gift could be deleted by anyone */
 
         conn.executeUpdate("DELETE FROM gifts WHERE id = $giftId")
     }
@@ -597,6 +606,11 @@ class DatabaseManager(dbPath: String) {
 
     private fun giftBelongToUser(userId: Long, giftId: Long): Boolean {
         val res = conn.executeQuery("SELECT * FROM gifts WHERE id=$giftId AND userId=$userId")
+        return res.next()
+    }
+
+    private fun giftIsSecret(giftId: Long): Boolean {
+        val res = conn.executeQuery("SELECT * FROM gifts WHERE id=$giftId AND secret=1")
         return res.next()
     }
 

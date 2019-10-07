@@ -20,16 +20,16 @@ class DbInitializerForTest(private val databaseManager: DatabaseManager) {
         println("usernamme: other, pwd; other ==> id: $other")
 
         //Fill gift
-        databaseManager.addGift(aze, RestGift("One", "First description", "10€", "http://mysite.com", azeDCat, null))
-        databaseManager.addGift(aze, RestGift("No desc", null, "20$", "a place", azeDCat, null))
-        databaseManager.addGift(aze, RestGift("No price", "There is no price", null, "http://mysite.com or ici, 75000 Paris", azeDCat, null))
-        databaseManager.addGift(aze, RestGift("No where to buy", "There is no where to buy", "30 - 40£", null, azeDCat, null))
-        databaseManager.addGift(aze, RestGift("Only mandatory", null, null, null, azeDCat, "pc.png"))
+        databaseManager.addGift(aze, RestGift("One", "First description", "10€", "http://mysite.com", azeDCat, null), false)
+        databaseManager.addGift(aze, RestGift("No desc", null, "20$", "a place", azeDCat, null), false)
+        databaseManager.addGift(aze, RestGift("No price", "There is no price", null, "http://mysite.com or ici, 75000 Paris", azeDCat, null), false)
+        databaseManager.addGift(aze, RestGift("No where to buy", "There is no where to buy", "30 - 40£", null, azeDCat, null), false)
+        databaseManager.addGift(aze, RestGift("Only mandatory", null, null, null, azeDCat, "pc.png"), true)
         println("5 gifts added to aze")
 
-        databaseManager.addGift(eza, RestGift("A first one", null, null, null, ezaDCat, "pc.png"))
-        databaseManager.addGift(eza, RestGift("A second one", null, null, null, ezaDCat, null))
-        databaseManager.addGift(eza, RestGift("One in another cat", null, null, null, ezaSCat, "book.png"))
+        databaseManager.addGift(eza, RestGift("A first one", null, null, null, ezaDCat, "pc.png"), false)
+        databaseManager.addGift(eza, RestGift("A second one", null, null, null, ezaDCat, null), false)
+        databaseManager.addGift(eza, RestGift("One in another cat", null, null, null, ezaSCat, "book.png"), false)
         println("3 gift added to eza")
 
         //They are friend

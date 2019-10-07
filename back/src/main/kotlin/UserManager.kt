@@ -7,7 +7,7 @@ data class Friend(val name: String, val picture: String?)
 data class Gift(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?)
 data class Category(val id: Long, val name: String)
 data class CatAndGift(val category: Category, val gifts: List<Gift>)
-data class FriendGift(val gift: Gift, val interestedUser: List<String>, val buyActionUser: Map<String, BuyAction>)
+data class FriendGift(val gift: Gift, val interestedUser: List<String>, val buyActionUser: Map<String, BuyAction>, val secret: Boolean)
 data class CatAndFriendGift(val category: Category, val gifts: List<FriendGift>)
 data class FriendRequest(val id: Long, val otherUser: Friend)
 data class PendingFriendRequest(val sent: List<FriendRequest>, val received: List<FriendRequest>)
@@ -115,7 +115,8 @@ class UserManager(private val databaseManager: DatabaseManager) {
                 val actions = databaseManager.getFriendActionOnGift(g.id)
                 FriendGift(toGift(g),
                     actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! },
-                    actions.filter { it.buy != BuyAction.NONE  || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! to it.buy }.toMap() )
+                    actions.filter { it.buy != BuyAction.NONE  || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! to it.buy }.toMap(),
+                    g.secret)
             })
         }
     }
@@ -138,12 +139,25 @@ class UserManager(private val databaseManager: DatabaseManager) {
                 val actions = databaseManager.getFriendActionOnGift(g.id)
                 FriendGift(toGift(g),
                     actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! },
-                    actions.filter { it.buy != BuyAction.NONE  || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! to it.buy }.toMap() )
+                    actions.filter { it.buy != BuyAction.NONE  || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! to it.buy }.toMap(),
+                    g.secret)
             }) }
     }
 
     fun addGift(userId: Long, gift: RestGift) {
-        databaseManager.addGift(userId, gift)
+        databaseManager.addGift(userId, gift, false)
+    }
+
+    fun addSecretGift(userId: Long, friendName: String, gift: RestGift) {
+        val initiatedRequest = getInitiatedRequest(userId, RequestStatus.ACCEPTED)
+        val receivedRequest = getReceivedRequest(userId, RequestStatus.ACCEPTED)
+
+        if (initiatedRequest.none { it.otherUser.name == friendName } && receivedRequest.none { it.otherUser.name == friendName }) {
+            throw Exception("You are not friend with $friendName.")
+        }
+
+        val friendUserId = (databaseManager.getUser(friendName) ?: throw Exception("No user named $friendName.")).id
+        databaseManager.addGift(friendUserId, gift, true)
     }
 
     fun modifyGift(userId: Long, giftId: Long, gift: RestGift) {
