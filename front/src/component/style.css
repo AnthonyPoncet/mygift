@@ -47,3 +47,26 @@
 .friend-wishlist-title {
   text-align: left;
 }
+
+.wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.left {
+  flex: 0 0 50%;
+  margin: auto;
+  font-size: 18px;
+  transform: translate(10%, 20%);
+}
+
+.small-icon {
+  width: 50px;
+  height: 66px;
+  vertical-align: middle;
+  padding-right: 10px;
+}
+
+.right {
+  flex: 1;
+}

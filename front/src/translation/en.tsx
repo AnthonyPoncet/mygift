@@ -15,7 +15,10 @@ class En implements Itrans {
             image: "Profile picture",
             emptyErrorMessage: "Username and Password could not be empty.",
             newToMygift: "New to MyGift?",
-            createAnAccount: "Create an account"
+            createAnAccount: "Create an account",
+            listDesc: "Create your gift list",
+            friendsDesc: "Find what your friends want and bought the right gift",
+            eventsDesc: "Create birthday, christmas or other events"
           },
           home: { hello: "Hello" },
           mywishlist: {

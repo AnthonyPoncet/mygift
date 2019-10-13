@@ -9,6 +9,11 @@ import { signup, UserSignUp } from '../redux/actions/user'
 
 import { Connection } from '../translation/itrans';
 
+import create_list from './create_list.png';
+import friends from './friends.png';
+import events from './events.png';
+
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
@@ -82,7 +87,7 @@ class SignupPage extends React.Component<Props, State> {
       request();
   }
 
-  render() {
+  renderSignUp() {
     const { username, password, loaded } = this.state;
     const { connection } = this.props;
     return (
@@ -107,6 +112,24 @@ class SignupPage extends React.Component<Props, State> {
           </div>
         </div>
     );
+  }
+
+  renderText() {
+    const { connection } = this.props;
+    return (
+      <div>
+        <p><img className="small-icon" src={create_list} alt="Create list"/>{connection.listDesc}</p>
+        <p><img className="small-icon" src={friends} alt="Friends"/>{connection.friendsDesc}</p>
+        <p><img className="small-icon" src={events} alt="Events"/>{connection.eventsDesc}</p>
+      </div>
+    );
+  }
+
+  render() {
+    return (<div className="wrapper">
+      <div className="left">{this.renderText()}</div>
+      <div className="right">{this.renderSignUp()}</div>
+    </div>);
   }
 }
 

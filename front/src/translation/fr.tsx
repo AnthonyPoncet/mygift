@@ -15,7 +15,10 @@ class Fr implements Itrans {
             image: "Photo de profil",
             emptyErrorMessage: "Username et Mot de passe ne peuvent pas être vide.",
             newToMygift: "Nouveau to MyGift ?",
-            createAnAccount: "Créer un compte"
+            createAnAccount: "Créer un compte",
+            listDesc: "Créer votre liste de cadeaux",
+            friendsDesc: "Trouver ce que veulent vos amis et acheter le bon cadeau",
+            eventsDesc: "Créer des events anniversaire, noël et autre"
           },
           home: { hello: "Bonjour" },
           mywishlist: {

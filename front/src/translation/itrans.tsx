@@ -58,7 +58,10 @@ export interface Connection {
     image: string,
     emptyErrorMessage: string,
     newToMygift: string,
-    createAnAccount: string
+    createAnAccount: string,
+    listDesc: string,
+    friendsDesc: string,
+    eventsDesc: string
 }
 
 export interface MyEventsMessage {
