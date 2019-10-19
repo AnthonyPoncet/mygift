@@ -1,6 +1,6 @@
 import React from 'react';
 
-import Octicon, {Heart, Checklist, Gift} from '@primer/octicons-react'
+import Octicon, {Checklist, Gift} from '@primer/octicons-react'
 
 import { Modal, ModalHeader, ModalBody } from "reactstrap";
 
@@ -119,7 +119,7 @@ class MyBuyList extends React.Component<Props, State> {
         return this.state.friendAndGifts.map((fg, fgi) => {
             return (
             <div key={fgi}>
-                <h5>{fg.friendName}</h5>
+                <h5 style={{margin: "10px"}}>{fg.friendName}</h5>
 
                 <div className="mycard-row">
                 {fg.gifts.map((fGift: any, gi:any) => {

@@ -138,7 +138,7 @@ class Event extends React.Component<Props, State> {
               //Show participants + click on participant show list + icon if already bought something to someone
               out.push(<div className="event-participants">
                 <h5 className="event-participants-title">{eventM.participantsTitle}</h5>
-                <div className="event-participants-add" style={{cursor: "pointer"}} onClick={() => this.openAddParticipant()}><Octicon icon={Plus}/></div>
+                <div className="event-participants-add" style={{cursor: "pointer"}} onClick={() => this.openAddParticipant()}><Octicon icon={Plus} verticalAlign="middle"/></div>
                 <div className="event-card-row">
                 { participants.map((p, pIndex) => {
                     return <div className="event-card" style={{cursor: "pointer"}} onClick={() => this.setState({selectedList: p.name})}>
@@ -151,7 +151,7 @@ class Event extends React.Component<Props, State> {
 
               out.push(<hr/>);
               if (selectedList === null || selectedList === this.props.username) {
-                  out.push(<h2>My List</h2>);
+                  out.push(<h2 style={{margin: "10px"}}>My List</h2>);
                   out.push(<MyWishList/>);
               } else {
                   out.push(<FriendWishList friendName={selectedList}/>)

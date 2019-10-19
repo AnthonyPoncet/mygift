@@ -309,11 +309,11 @@ class MyWishList extends React.Component<Props, State> {
         return this.state.catAndGifts.map((cg, cgi) => {
             return (
             <div key={cgi}>
-                <h5>{cg.category.name}
+                <h5 style={{margin: "10px"}}>{cg.category.name}
                 {' '}
-                <span style={{cursor: "pointer"}} onClick={() => this.openEditCat(cg.category.name, cg.category.id)}><Octicon icon={Pencil}/></span>
+                <span style={{cursor: "pointer"}} onClick={() => this.openEditCat(cg.category.name, cg.category.id)}><Octicon icon={Pencil} verticalAlign='middle'/></span>
                 {' '}
-                <span style={{cursor: "pointer"}} onClick={() => this.deleteCat(cg.category.id)}><Octicon icon={X}/></span>
+                <span style={{cursor: "pointer"}} onClick={() => this.deleteCat(cg.category.id)}><Octicon icon={X} verticalAlign='middle'/></span>
                 </h5>
 
                 <div className="mycard-row">

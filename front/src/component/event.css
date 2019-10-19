@@ -30,6 +30,7 @@
 .event-card-row {
   display: flex;
   width: 100%;
+  flex-wrap: wrap;
 }
 .event-card {
   position: relative;

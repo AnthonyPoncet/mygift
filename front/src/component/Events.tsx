@@ -279,7 +279,7 @@ class Events extends React.Component<Props, State> {
 
         const { myevents } = this.props;
         return (<>
-            <h2>{myevents.myEvents}</h2>
+            <h2 style={{margin: "10px"}}>{myevents.myEvents}</h2>
             <div className="events-card-row">
               {this.state.eventsCreated.map((e, i) => {
                   if ('my-'+i === this.state.hoverId) {
@@ -304,7 +304,7 @@ class Events extends React.Component<Props, State> {
                     }
               })}
             </div>
-            <h2>{myevents.comingEvents}</h2>
+            <h2 style={{margin: "10px"}}>{myevents.comingEvents}</h2>
             <div className="events-card-row">
               {coming.map((e, i) => {
                   if ('coming-'+i === this.state.hoverId) {
@@ -328,7 +328,7 @@ class Events extends React.Component<Props, State> {
                     }
               })}
             </div>
-            <h2>{myevents.pendingEvents}</h2>
+            <h2 style={{margin: "10px"}}>{myevents.pendingEvents}</h2>
             <div className="events-card-row">
               {pending.map((e, i) => {
                 if ('my-'+i === this.state.hoverId) {

@@ -2,6 +2,8 @@ import React from 'react';
 import { Router, Route, Link } from 'react-router-dom';
 import { Input, FormGroup } from "reactstrap";
 
+import "../node_modules/bootstrap/dist/js/bootstrap.min.js";
+
 import { connect } from 'react-redux';
 import { AppState } from './redux/store'
 import { clearError } from './redux/actions/error';
@@ -48,6 +50,10 @@ class App extends React.Component<AppProps> {
               <div>
                 <nav className="navbar navbar-expand-lg navbar-light bg-light">
                   <a className="navbar-brand" href="/">MyGift</a>
+                  <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo03" aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+                    <span className="navbar-toggler-icon"></span>
+                  </button>
+                  <div className="collapse navbar-collapse" id="navbarTogglerDemo03">
                   <ul className="navbar-nav mr-auto">
                     { !username && <>
                       <li className="nav-item"><Link to={'/signin'} className="nav-link">{app.signin}</Link></li>
@@ -71,6 +77,7 @@ class App extends React.Component<AppProps> {
                       </Input>
                     </FormGroup>
                   </form>
+                  </div>
                 </nav>
                   {this.props.username ? <Route exact path="/" component={HomePage}/> : <Route exact path="/" component={SignupPage}/>}
                   <Route path="/signin" component={SigninPage} />

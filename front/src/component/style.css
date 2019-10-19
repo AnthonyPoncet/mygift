@@ -46,6 +46,7 @@
 
 .friend-wishlist-title {
   text-align: left;
+  margin: 10px;
 }
 
 .wrapper {
@@ -65,8 +66,26 @@
   height: 66px;
   vertical-align: middle;
   padding-right: 10px;
+  float: left;
 }
 
 .right {
   flex: 1;
+}
+
+.textMobile {
+  padding: 10px 10px;
+}
+
+.textContainer {
+  width:100%;
+	height:66px;
+}
+
+.textAlign {
+  display: flex;
+	height:66px;
+  justify-content: center;
+  align-content: center;
+  flex-direction: column;
 }

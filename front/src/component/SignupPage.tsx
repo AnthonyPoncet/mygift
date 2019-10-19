@@ -13,6 +13,7 @@ import create_list from './create_list.png';
 import friends from './friends.png';
 import events from './events.png';
 
+import { isMobile } from "react-device-detect";
 
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
@@ -118,15 +119,22 @@ class SignupPage extends React.Component<Props, State> {
     const { connection } = this.props;
     return (
       <div>
-        <p><img className="small-icon" src={create_list} alt="Create list"/>{connection.listDesc}</p>
-        <p><img className="small-icon" src={friends} alt="Friends"/>{connection.friendsDesc}</p>
-        <p><img className="small-icon" src={events} alt="Events"/>{connection.eventsDesc}</p>
+        <div className="textContainer"><img className="small-icon" src={create_list} alt="Create list"/><p className="textAlign">{connection.listDesc}</p></div>
+        <div className="textContainer"><img className="small-icon" src={friends} alt="Friends"/><p className="textAlign">{connection.friendsDesc}</p></div>
+        <div className="textContainer"><img className="small-icon" src={events} alt="Events"/><p className="textAlign">{connection.eventsDesc}</p></div>
       </div>
     );
   }
 
   render() {
-    return (<div className="wrapper">
+    if (isMobile) {
+      return (<div>
+        <div className="textMobile">{this.renderText()}</div>
+        <div>{this.renderSignUp()}</div>
+      </div>);
+    }
+    return (
+    <div className="wrapper">
       <div className="left">{this.renderText()}</div>
       <div className="right">{this.renderSignUp()}</div>
     </div>);

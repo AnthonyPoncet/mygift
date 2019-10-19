@@ -1,6 +1,7 @@
 .events-card-row {
   display: flex;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .events-card {

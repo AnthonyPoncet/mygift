@@ -274,7 +274,7 @@ class FriendWishList extends React.Component<Props, State> {
         return this.state.catAndGifts.map((cg, cgi) => {
             return (
             <div key={cgi}>
-                <h5>{cg.category.name}</h5>
+                <h5 style={{margin: "10px"}}>{cg.category.name}</h5>
 
                 <div className="mycard-row">
                 {cg.gifts.map((fGift: any, gi:any) => {

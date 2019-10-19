@@ -229,10 +229,10 @@ class MyFriends extends React.Component<Props, State> {
         const { myfriends } = this.props;
 
         return (<>
-            <h2>{myfriends.requests}</h2>
+            <h2 style={{margin: "10px"}}>{myfriends.requests}</h2>
             {pendingReceived.length > 0 ?
               pendingReceived.map((req, i) => { return (
-                <li key={i + 'received' + req.to.name }>
+                <li key={i + 'received' + req.to.name } style={{margin: "10px"}}>
                     {req.from.name}
                     {' '}
                     {req.status}
@@ -243,21 +243,21 @@ class MyFriends extends React.Component<Props, State> {
                     {' '}
                     <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(req.id, true)}><Octicon icon={CircleSlash}/></span>
                 </li>);}) :
-              <span>{myfriends.noPendingRequest}</span>}
+              <p style={{margin: "10px"}}>{myfriends.noPendingRequest}</p>}
 
-            <h2>{myfriends.myRequests}</h2>
+            <h2 style={{margin: "10px"}}>{myfriends.myRequests}</h2>
             {pendingSent.length > 0 ?
               pendingSent.map((req, i) => { return (
-                <li key={i + 'initiated' + req.to.name }>
+                <li key={i + 'initiated' + req.to.name } style={{margin: "10px"}}>
                     {req.to.name}
                     {' '}
                     {req.status}
                     {' '}
                     <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
                 </li>);}) :
-              <span>{myfriends.allRequestsAccepted}</span>}
+              <p style={{margin: "10px"}}>{myfriends.allRequestsAccepted}</p>}
 
-            <h2>{myfriends.friends}</h2>
+            <h2 style={{margin: "10px"}}>{myfriends.friends}</h2>
             <div className="mycard-row">
               {friends.map((req, i) => {
                 let image = (req.picture === undefined) ?
