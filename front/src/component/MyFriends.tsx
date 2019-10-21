@@ -232,11 +232,8 @@ class MyFriends extends React.Component<Props, State> {
             <h2 style={{margin: "10px"}}>{myfriends.requests}</h2>
             {pendingReceived.length > 0 ?
               pendingReceived.map((req, i) => { return (
-                <li key={i + 'received' + req.to.name } style={{margin: "10px"}}>
-                    {req.from.name}
-                    {' '}
-                    {req.status}
-                    {' '}
+                <li key={i + 'received' + req.otherUser.name  } style={{margin: "10px"}}>
+                    {req.otherUser.name}
                     <span style={{cursor: "pointer"}} onClick={() => this.acceptRequest(req.id)}><Octicon icon={Check}/></span>
                     {' '}
                     <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(req.id, false)}><Octicon icon={X}/></span>
@@ -248,11 +245,8 @@ class MyFriends extends React.Component<Props, State> {
             <h2 style={{margin: "10px"}}>{myfriends.myRequests}</h2>
             {pendingSent.length > 0 ?
               pendingSent.map((req, i) => { return (
-                <li key={i + 'initiated' + req.to.name } style={{margin: "10px"}}>
-                    {req.to.name}
-                    {' '}
-                    {req.status}
-                    {' '}
+                <li key={i + 'initiated' + req.otherUser.name } style={{margin: "10px"}}>
+                    {req.otherUser.name}
                     <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
                 </li>);}) :
               <p style={{margin: "10px"}}>{myfriends.allRequestsAccepted}</p>}
