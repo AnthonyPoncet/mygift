@@ -28,6 +28,8 @@ import io.ktor.routing.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import java.io.File
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
 
 data class FileAnswer(val name: String)
@@ -74,7 +76,7 @@ fun main(args: Array<String>) {
             routing {
                 route("/user") {
                     post("/connect") {
-                        val connectionInformation = Gson().fromJson(call.receiveText(), ConnectionInformation::class.java)
+                        val connectionInformation = Gson().fromJson(decode(call.receiveText()), ConnectionInformation::class.java)
 
                         try {
                             val user = userManager.connect(connectionInformation)
@@ -92,7 +94,7 @@ fun main(args: Array<String>) {
 
                 route("/users") {
                     put {
-                        val basicUserInformation = Gson().fromJson(call.receiveText(), UserInformation::class.java)
+                        val basicUserInformation = Gson().fromJson(decode(call.receiveText()), UserInformation::class.java)
 
                         try {
                             val user = userManager.addUser(basicUserInformation)
@@ -134,8 +136,7 @@ fun main(args: Array<String>) {
                     put("/gifts") {
                         val id = getUserId(call.parameters)
 
-                        val receiveText = call.receiveText()
-                        val gift = Gson().fromJson(receiveText, RestGift::class.java)
+                        val gift = Gson().fromJson(decode(call.receiveText()), RestGift::class.java)
                         if (gift.name == null) {
                             call.respond(HttpStatusCode.BadRequest, Error("missing name node in json"))
                             return@put
@@ -158,7 +159,7 @@ fun main(args: Array<String>) {
                         val id = getUserId(call.parameters)
                         val gid = getGiftId(call.parameters)
 
-                        val gift = Gson().fromJson(call.receiveText(), RestGift::class.java)
+                        val gift = Gson().fromJson(decode(call.receiveText()), RestGift::class.java)
                         if (gift.name == null) {
                             call.respond(HttpStatusCode.BadRequest, Error("missing name node in json"))
                             return@patch
@@ -244,7 +245,7 @@ fun main(args: Array<String>) {
                     put("/categories") {
                         val id = getUserId(call.parameters)
 
-                        val category = Gson().fromJson(call.receiveText(), RestCategory::class.java)
+                        val category = Gson().fromJson(decode(call.receiveText()), RestCategory::class.java)
                         if (category.name == null) {
                             call.respond(HttpStatusCode.BadRequest, Error("missing name or password node in json"))
                             return@put
@@ -261,7 +262,7 @@ fun main(args: Array<String>) {
                         val id = getUserId(call.parameters)
                         val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException("Category id")
 
-                        val category = Gson().fromJson(call.receiveText(), RestCategory::class.java)
+                        val category = Gson().fromJson(decode(call.receiveText()), RestCategory::class.java)
                         if (category.name == null) {
                             call.respond(HttpStatusCode.BadRequest, Error("missing name or password node in json"))
                             return@patch
@@ -320,7 +321,7 @@ fun main(args: Array<String>) {
                     put("/friend-requests") {
                         val id = getUserId(call.parameters)
 
-                        val receiveText = call.receiveText()
+                        val receiveText = decode(call.receiveText())
                         val friendRequest = Gson().fromJson(receiveText, RestCreateFriendRequest::class.java)
                         if (friendRequest.name == null) {
                             call.respond(HttpStatusCode.BadRequest, Error("missing name node in json"))
@@ -377,7 +378,7 @@ fun main(args: Array<String>) {
                         val id = getUserId(call.parameters)
 
                         try {
-                            val event = Gson().fromJson(call.receiveText(), RestCreateEvent::class.java)
+                            val event = Gson().fromJson(decode(call.receiveText()), RestCreateEvent::class.java)
                             userManager.createEvent(event, id)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
@@ -439,7 +440,7 @@ fun main(args: Array<String>) {
 
                         try {
                             val listType = object : TypeToken<Set<String>>() { }.type
-                            val participants: Set<String> = Gson().fromJson(call.receiveText(), listType)
+                            val participants: Set<String> = Gson().fromJson(decode(call.receiveText()), listType)
                             userManager.addParticipants(eid, participants)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
@@ -558,4 +559,8 @@ fun getGiftId(parameters: Parameters) : Long {
 
 fun getEventId(parameters: Parameters) : Long {
     return parameters["eid"]!!.toLongOrNull() ?: throw NotANumberException("Event id")
+}
+
+fun decode(input: String) : String {
+    return input.toByteArray(StandardCharsets.ISO_8859_1).toString(StandardCharsets.UTF_8)
 }
