@@ -247,7 +247,7 @@ class DatabaseManager(dbPath: String) {
         if (!giftExists(giftId)) throw Exception("Unknown gift $giftId")
         if (!giftBelongToUser(userId, giftId) && !giftIsSecret(giftId)) throw Exception("Gift $giftId does not belong to user $userId and is not secret") /* secret gift could be modified by anyone */
 
-        conn.executeUpdate("UPDATE gifts SET name = '${gift.name}', description = '${gift.description}', price = '${gift.price}', whereToBuy = '${gift.whereToBuy}', categoryId = '${gift.categoryId}' WHERE id = $giftId")
+        conn.executeUpdate("UPDATE gifts SET name = '${gift.name}', description = '${gift.description}', price = '${gift.price}', whereToBuy = '${gift.whereToBuy}', categoryId = '${gift.categoryId}', picture = '${gift.picture}' WHERE id = $giftId")
     }
 
     @Synchronized fun removeGift(userId: Long, giftId: Long) {

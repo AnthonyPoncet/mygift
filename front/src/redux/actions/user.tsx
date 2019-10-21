@@ -62,19 +62,23 @@ export function logout(){
 
 export interface UserSignUp {
   username: String,
-  password: String
+  password: String,
+  image: string | null
 }
 
 export const signup = (user: UserSignUp): ThunkAction<Promise<void>, {}, {}, AnyAction> => {
   return async (dispatch: ThunkDispatch<{}, {}, AnyAction>): Promise<void> => {
     return new Promise<void>(() => {
       const request = async () => {
+          let imageName = (user.image === null) ? "" : user.image;
+          console.log(imageName)
           const response = await fetch(getServerUrl() + '/users', {
               method: 'put',
               headers: {'Content-Type':'application/json'},
               body: JSON.stringify({
                   "name": user.username,
-                  "password": user.password
+                  "password": user.password,
+                  "picture": imageName
               })
           }).catch(err => {
             console.error("Unexpected error: " + err.message);

@@ -26,12 +26,12 @@ interface DispatchProps {
 interface StateProps { errorMessage: String | null, connection: Connection };
 type Props = DispatchProps & StateProps;
 
-interface State { username: string, password: string, loaded: boolean };
+interface State { username: string, password: string, image: string | null, loaded: boolean };
 
 class SignupPage extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { username: '', password: '', loaded: false };
+    this.state = { username: '', password: '', image: null, loaded: false };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -47,9 +47,10 @@ class SignupPage extends React.Component<Props, State> {
   }
 
   handleSubmit() {
-      const { username, password } = this.state;
+      const { username, password, image } = this.state;
+      console.log(this.state);
       if (username && password) {
-          this.props.signup({username: username, password: password});
+          this.props.signup({username: username, password: password, image: image});
       } else {
           this.props.error(this.props.connection.emptyErrorMessage);
       }
@@ -76,9 +77,8 @@ class SignupPage extends React.Component<Props, State> {
       const request = async () => {
           const response = await fetch(url + '/files', {method: 'post', body: formData});
           if (response.status === 202) {
-              console.log("done");
               const json = await response.json();
-              this.setState({ loaded: false });
+              this.setState({ image: json.name, loaded: false });
               this.loadImage(json.name);
           } else {
               const json = await response.json();

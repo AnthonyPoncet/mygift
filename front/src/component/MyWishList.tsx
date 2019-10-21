@@ -63,13 +63,13 @@ class MyWishList extends React.Component<Props, State> {
     openAddGift() {
         const { mywishlist } = this.props;
         this.setState( { show: true, title: mywishlist.addGiftModalTitle, bodyRender: this.giftBodyRender, button: { text: mywishlist.addModalButton, fun: this.addGift },
-            inputs: { name: '', nameValidity: true, description: null, price: null, whereToBuy: null, categoryId: this.state.catAndGifts[0].category.id }, loaded: false, errorMessage: '' });
+            inputs: { name: '', nameValidity: true, description: null, price: null, whereToBuy: null, categoryId: this.state.catAndGifts[0].category.id, picture: null }, loaded: false, errorMessage: '' });
     }
 
     openEditGift(giftId: number, name: string, description: string, price: string, whereToBuy: string, categoryId: number, image: string | null) {
         const { mywishlist } = this.props;
         this.setState( { show: true, title: mywishlist.updateGiftModalTitle, bodyRender: this.giftBodyRender, button: { text: mywishlist.updateModalButton, fun: () => this.updateGift(giftId) },
-            inputs: { name: name, nameValidity: true, description: description, price: price, whereToBuy: whereToBuy, categoryId: categoryId }, loaded: false, errorMessage: '' });
+            inputs: { name: name, nameValidity: true, description: description, price: price, whereToBuy: whereToBuy, categoryId: categoryId, picture: null }, loaded: false, errorMessage: '' });
         if (image !== null) this.loadImage(image, 'gift-picture');
     }
 
@@ -108,9 +108,10 @@ class MyWishList extends React.Component<Props, State> {
         const request = async () => {
             const response = await fetch(url + '/files', {method: 'post', body: formData});
             if (response.status === 202) {
-                console.log("done");
                 const json = await response.json();
-                this.setState({ loaded: false });
+                const { inputs } = this.state;
+                inputs["picture"] = json.name;
+                this.setState({ inputs: inputs, loaded: false });
                 this.loadImage(json.name, 'gift-picture');
             } else {
                 const json = await response.json();
@@ -172,6 +173,7 @@ class MyWishList extends React.Component<Props, State> {
             return;
         }
 
+        let imageName = (inputs.picture === null) ? "" : inputs.picture;
         const request = async () => {
             const response = await fetch(url, {
                 method: method,
@@ -181,7 +183,8 @@ class MyWishList extends React.Component<Props, State> {
                     "description" : inputs.description,
                     "price": inputs.price,
                     "whereToBuy": inputs.whereToBuy,
-                    "categoryId": inputs.categoryId})
+                    "categoryId": inputs.categoryId,
+                    "picture": imageName})
             });
             if (response.status === 200) {
                 this.setState({ show: false });
