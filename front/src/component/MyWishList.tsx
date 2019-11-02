@@ -11,6 +11,8 @@ import { MyWishListMessage } from '../translation/itrans';
 import './card-gift.css';
 import blank_gift from './blank_gift.png';
 
+import { isMobile } from "react-device-detect";
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
@@ -328,7 +330,7 @@ class MyWishList extends React.Component<Props, State> {
                     let imageFull = (gift.picture === undefined) ?
                       <img className="gift-image-full" src={blank_gift} alt="Nothing"/> :
                       <img className="gift-image-full" id={'gift-'+gift.id} alt="Gift"/>;
-                    if (cgi+'-'+gi === this.state.hoverId) {
+                    if ((cgi+'-'+gi === this.state.hoverId) || isMobile) {
                       return (
                           <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
                               {imageFull}

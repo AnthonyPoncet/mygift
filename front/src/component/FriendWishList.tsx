@@ -12,6 +12,8 @@ import { FriendWishListMessage, MyWishListMessage } from '../translation/itrans'
 import './card-gift.css';
 import blank_gift from './blank_gift.png';
 
+import { isMobile } from "react-device-detect";
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
@@ -285,7 +287,7 @@ class FriendWishList extends React.Component<Props, State> {
                       if (buyActionUser[key] === "WANT_TO_BUY") wantToBuy.push(key);
                       if (buyActionUser[key] === "BOUGHT") bought.push(key);
                   });
-                  if (cgi+'-'+gi === this.state.hoverId) {
+                  if ((cgi+'-'+gi === this.state.hoverId) || isMobile) {
                     let imInterested = false;
                     let iWantToBuy = false;
                     let iBought = false;

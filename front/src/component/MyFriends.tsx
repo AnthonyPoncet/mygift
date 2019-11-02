@@ -12,6 +12,8 @@ import './friends.css';
 
 import blank_profile_picture from './blank_profile_picture.png';
 
+import { isMobile } from "react-device-detect";
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
@@ -257,7 +259,7 @@ class MyFriends extends React.Component<Props, State> {
                 let image = (req.picture === undefined) ?
                   <img className="friend-image" src={blank_profile_picture} alt="Nothing"/> :
                   <img className="friend-image" id={req.name+'profile'} alt="Profile"/>;
-                if (i.toString() === this.state.hoverId) {
+                if ((i.toString() === this.state.hoverId) || isMobile) {
                   return (
                     <div key={i + 'friends-' + req.reqId} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
                       {image}

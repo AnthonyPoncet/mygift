@@ -12,6 +12,8 @@ import "react-datepicker/dist/react-datepicker.css";
 
 import './events.css';
 
+import { isMobile } from "react-device-detect";
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
@@ -282,7 +284,7 @@ class Events extends React.Component<Props, State> {
             <h2 style={{margin: "10px"}}>{myevents.myEvents}</h2>
             <div className="events-card-row">
               {this.state.eventsCreated.map((e, i) => {
-                  if ('my-'+i === this.state.hoverId) {
+                  if (('my-'+i === this.state.hoverId) || isMobile) {
                     return (
                         <div className="events-card" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
                             <div className="events-edit-close">
@@ -307,7 +309,7 @@ class Events extends React.Component<Props, State> {
             <h2 style={{margin: "10px"}}>{myevents.comingEvents}</h2>
             <div className="events-card-row">
               {coming.map((e, i) => {
-                  if ('coming-'+i === this.state.hoverId) {
+                  if (('coming-'+i === this.state.hoverId) || isMobile) {
                     return (
                         <div className="events-card" onMouseEnter={() => this.handleEnter("coming", i)} onMouseLeave={() => this.handleOut()}>
                             <div className="events-edit-close">
@@ -331,7 +333,7 @@ class Events extends React.Component<Props, State> {
             <h2 style={{margin: "10px"}}>{myevents.pendingEvents}</h2>
             <div className="events-card-row">
               {pending.map((e, i) => {
-                if ('my-'+i === this.state.hoverId) {
+                if (('my-'+i === this.state.hoverId) || isMobile) {
                   return (
                       <div className="events-card" onMouseEnter={() => this.handleEnter("my", i)} onMouseLeave={() => this.handleOut()}>
                           <div className="events-edit-close">
