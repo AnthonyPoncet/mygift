@@ -17,7 +17,7 @@ export function changeLocale(state = defaultState, action: ChangeLocaleActions) 
       switch(action.locale) {
           case 'English':
             return { messages: new En().getTranslation() };
-          case 'French':
+          case 'Français':
             return { messages: new Fr().getTranslation() };
           default:
             return state;

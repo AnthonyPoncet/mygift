@@ -33,7 +33,7 @@ interface AppProps {
 }
 
 class App extends React.Component<AppProps> {
-    private locales: string[] = ['English', 'French']
+    private locales: string[] = ['English', 'Français']
 
     constructor(props: AppProps) {
         super(props);
@@ -45,6 +45,8 @@ class App extends React.Component<AppProps> {
         const { app } = this.props;
 
         let locale  = localStorage.getItem("locale");
+        if (locale === null) this.props.changeLocale('Français');
+
         return (
           <Router history={history}>
               <div>
