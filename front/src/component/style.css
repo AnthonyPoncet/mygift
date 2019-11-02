@@ -79,13 +79,18 @@
 
 .textContainer {
   width:100%;
-	height:66px;
+  height:66px;
 }
 
 .textAlign {
   display: flex;
-	height:66px;
+  height:66px;
   justify-content: center;
   align-content: center;
   flex-direction: column;
+}
+
+.icon-nav-bar {
+  height: 35px;
+  width: 35px;
 }

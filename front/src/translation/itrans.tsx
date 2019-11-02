@@ -5,7 +5,8 @@ export interface AppMessage {
     myFriends: string,
     myEvents: string,
     myBuyList: string,
-    logout: string
+    logout: string,
+    manageAccount: string
 }
 
 export interface HomeMessage {
@@ -96,6 +97,9 @@ export interface MyBuyListMessage {
    title: string
 }
 
+export interface ManageAccountMessage {
+}
+
 export interface Translations {
     app: AppMessage,
     connection: Connection,
@@ -105,7 +109,8 @@ export interface Translations {
     friendwishlist: FriendWishListMessage,
     myevents: MyEventsMessage,
     event: EventMessage,
-    myBuyList: MyBuyListMessage
+    myBuyList: MyBuyListMessage,
+    manageAccount: ManageAccountMessage
 }
 
 interface Itrans {

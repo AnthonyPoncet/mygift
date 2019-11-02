@@ -11,15 +11,8 @@ import io.ktor.features.StatusPages
 import io.ktor.gson.gson
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.content.defaultResource
-import io.ktor.http.content.files
-import io.ktor.http.content.resource
-import io.ktor.http.content.resources
-import io.ktor.http.content.static
 import io.ktor.http.Parameters
-import io.ktor.http.content.PartData
-import io.ktor.http.content.forEachPart
-import io.ktor.http.content.streamProvider
+import io.ktor.http.content.*
 import io.ktor.request.receiveMultipart
 import io.ktor.request.receiveText
 import io.ktor.response.respond
@@ -28,7 +21,6 @@ import io.ktor.routing.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import java.io.File
-import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 
 
@@ -111,6 +103,24 @@ fun main(args: Array<String>) {
                 }
 
                 route("users/{id}") {
+                    /** USER INFO **/
+                    patch {
+                        val id = getUserId(call.parameters)
+                        val info = Gson().fromJson(decode(call.receiveText()), UserModification::class.java)
+
+                        try {
+                            val user = userManager.modifyUser(id, info)
+                            call.respond(HttpStatusCode.Accepted, user)
+                        } catch (e: BadParamException) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.error))
+                        } catch (e: CreateUserException) {
+                            call.respond(HttpStatusCode.Conflict, Error(e.error))
+                        } catch (e: Exception) {
+                            System.err.println(e)
+                            call.respond(HttpStatusCode.InternalServerError, Error(e.message?: "Unknown error"))
+                        }
+                    }
+
                     /** GIFT **/
                     get("/gifts") {
                         val id = getUserId(call.parameters)
@@ -535,6 +545,10 @@ fun main(args: Array<String>) {
                     defaultResource("static/index.html")
                 }
                 static("/buy-list") {
+                    resources("static")
+                    defaultResource("static/index.html")
+                }
+                static("/manage-account") {
                     resources("static")
                     defaultResource("static/index.html")
                 }

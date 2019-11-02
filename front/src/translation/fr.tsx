@@ -4,7 +4,16 @@ import { Translations } from './itrans';
 class Fr implements Itrans {
     getTranslation() : Translations {
         return {
-          app: { signin: "Se connecter", signup: "S'inscrire", myList: "Ma Liste", myFriends: "Mes Amis", myEvents: "Mes Evenements", myBuyList: "Ma Liste D'achat", logout: "Se déconnecter" },
+          app: {
+            signin: "Se connecter",
+            signup: "S'inscrire",
+            myList: "Ma Liste",
+            myFriends: "Mes Amis",
+            myEvents: "Mes Evenements",
+            myBuyList: "Ma Liste D'achat",
+            logout: "Se déconnecter",
+            manageAccount: "Modifier le compte"
+          },
           connection: {
             signUpTitle: "S'inscrire à MyGift",
             signUpButton: "S'inscrire",
@@ -77,7 +86,8 @@ class Fr implements Itrans {
             participantsTitle: "Participants",
             targetIsTitle: "Evènement pour",
           },
-          myBuyList: { title: "Ma liste d'achat" }
+          myBuyList: { title: "Ma liste d'achat" },
+          manageAccount: {}
         };
     }
 }

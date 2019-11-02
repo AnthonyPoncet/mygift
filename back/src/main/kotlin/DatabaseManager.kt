@@ -134,7 +134,7 @@ class DatabaseManager(dbPath: String) {
     }
 
     @Synchronized fun getUser(userName: String): DbUser? {
-        val res = conn.executeQuery("SELECT * FROM users WHERE users.name='$userName'")
+        val res = conn.executeQuery("SELECT * FROM users WHERE name='$userName'")
         return if (res.next()) {
             val picture = res.getString("picture")
             DbUser(res.getLong("id"),
@@ -147,13 +147,17 @@ class DatabaseManager(dbPath: String) {
     }
 
     @Synchronized fun getUser(userId: Long): NakedUser? {
-        val res = conn.executeQuery("SELECT * FROM users WHERE users.id='$userId'")
+        val res = conn.executeQuery("SELECT * FROM users WHERE id='$userId'")
         return if (res.next()) {
             val picture = res.getString("picture")
             NakedUser(res.getString("name"), if (picture.isEmpty()) null else picture)
         } else {
             null
         }
+    }
+
+    fun modifyUser(userId: Long, name: String, picture: String?) {
+        conn.executeUpdate("UPDATE users SET name = '$name', picture = '$picture' WHERE id = $userId")
     }
 
     /**

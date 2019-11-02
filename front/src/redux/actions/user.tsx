@@ -1,5 +1,5 @@
 import { error } from './error';
-import { SIGNIN, LOGOUT } from '../constants';
+import { SIGNIN, LOGOUT, CHANGE_PROFILE } from '../constants';
 
 import { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { AnyAction } from 'redux';
@@ -10,7 +10,8 @@ import { getServerUrl } from "../../ServerInformation";
 
 interface UserSignIn {
   userId: number,
-  username: string
+  username: string,
+  picture: string | null
 }
 interface SignIn {
   type: typeof SIGNIN,
@@ -19,7 +20,11 @@ interface SignIn {
 interface LogOut {
   type: typeof LOGOUT
 }
-export type UserAction = SignIn | LogOut;
+interface ChangeProfile {
+  type: typeof CHANGE_PROFILE,
+  payload: UserNameAndPicture
+}
+export type UserAction = SignIn | LogOut | ChangeProfile;
 
 export const signin = (username: String, password: String): ThunkAction<Promise<void>, {}, {}, AnyAction> => {
     return async (dispatch: ThunkDispatch<{}, {}, AnyAction>): Promise<void> => {
@@ -43,7 +48,10 @@ export const signin = (username: String, password: String): ThunkAction<Promise<
                   if (response.status === 200) {
                       localStorage.setItem('userId', json.id);
                       localStorage.setItem('username', json.name);
-                      dispatch({ type: SIGNIN, payload: { userId: json.id, username: json.name } });
+                      let picture = (json.picture !== undefined && json.picture.length !== 0) ? json.picture : null;
+                      if (picture !== null) localStorage.setItem('picture', json.picture);
+                      else localStorage.removeItem('picture');
+                      dispatch({ type: SIGNIN, payload: { userId: json.id, username: json.name, picture: picture } });
                       history.push('/');
                   } else {
                       dispatch(error(json.error));
@@ -57,6 +65,7 @@ export const signin = (username: String, password: String): ThunkAction<Promise<
 export function logout(){
   localStorage.removeItem('userId');
   localStorage.removeItem('username');
+  localStorage.removeItem('picture');
   return { type: LOGOUT };
 }
 
@@ -91,7 +100,10 @@ export const signup = (user: UserSignUp): ThunkAction<Promise<void>, {}, {}, Any
           if (response.status === 201) {
               localStorage.setItem('userId', json.id);
               localStorage.setItem('username', json.name);
-              dispatch({ type: SIGNIN, payload: { userId: json.id, username: json.name } });
+              let picture = (json.picture !== undefined && json.picture.length !== 0) ? json.picture : null;
+              if (picture !== null) localStorage.setItem('picture', json.picture);
+              else localStorage.removeItem('picture');
+              dispatch({ type: SIGNIN, payload: { userId: json.id, username: json.name, picture: picture } });
               history.push('/');
           } else {
               dispatch(error(json.error));
@@ -100,4 +112,16 @@ export const signup = (user: UserSignUp): ThunkAction<Promise<void>, {}, {}, Any
       request();
     })
   }
+}
+
+export interface UserNameAndPicture {
+  username: string,
+  picture: string | null
+}
+
+export function changeUserInfo(user: UserNameAndPicture) : UserAction {
+    localStorage.setItem('username', user.username.toString());
+    if (user.picture !== null) localStorage.setItem('picture', user.picture);
+    else localStorage.removeItem('picture');
+    return {type: CHANGE_PROFILE, payload: { username: user.username.toString(), picture: user.picture } };
 }

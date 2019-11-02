@@ -18,6 +18,7 @@ data class BuyListByFriend(val friendName: String, val gifts: List<FriendGift>)
 /** INPUT CLASSES **/
 data class ConnectionInformation(val name: String?, val password: String?)
 data class UserInformation(val name: String?, val password: String?, val picture: String?)
+data class UserModification(val name: String?, val picture: String?)
 data class RestGift(val name: String?, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long?, val picture: String?)
 data class RestCategory(val name: String?)
 data class RestCreateFriendRequest(val name: String?)
@@ -91,6 +92,14 @@ class UserManager(private val databaseManager: DatabaseManager) {
 
         val dbUser = databaseManager.addUser(userInformation.name, userInformation.password, userInformation.picture)
         return User(dbUser.id, dbUser.name, dbUser.picture)
+    }
+
+    fun modifyUser(userId: Long, userModification: UserModification): User {
+        if (userModification.name == null) throw BadParamException("Name could not be null")
+        val user = databaseManager.getUser(userId) ?: throw CreateUserException("User does not exists")
+
+        databaseManager.modifyUser(userId, userModification.name, userModification.picture)
+        return User(userId, userModification.name, userModification.picture)
     }
 
     private fun toGift(g: DbGift): Gift {
