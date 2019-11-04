@@ -182,7 +182,10 @@ class MyFriends extends React.Component<Props, State> {
         const request = async () => {
             const response = await fetch(url + '/users/' + this.props.userId + '/friend-requests/' + id + '/accept');
             if (response.status === 202) {
-                this.props.userId && this.getFriends(this.props.userId);
+                if (this.props.userId !== null) {
+                    this.getPending(this.props.userId);
+                    this.getFriends(this.props.userId);
+                }
             } else {
                 const json = await response.json();
                 console.log(json);
@@ -196,7 +199,6 @@ class MyFriends extends React.Component<Props, State> {
             const response = await fetch(url + '/users/' + this.props.userId + '/friend-requests/' + id + '/decline?blockUser=' + blockUser, {method:"post"});
             if (response.status === 202) {
                 this.props.userId && this.getPending(this.props.userId);
-                this.props.userId && this.getFriends(this.props.userId);
             } else {
                 const json = await response.json();
                 console.log(json);
