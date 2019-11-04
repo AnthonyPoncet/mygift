@@ -109,7 +109,7 @@ class SignupPage extends React.Component<Props, State> {
                 <input type="file" onChange={(e) => this.changeImage(e)}/>
               </div>
               {loaded === true && <img id="profile" height="150" width="150" alt="Profile"/>}
-              <button className="btn btn-primary btn-large" onClick={this.handleSubmit}>{connection.signInButton}</button>
+              <button className="btn btn-primary btn-large" onClick={this.handleSubmit}>{connection.signUpButton}</button>
           </div>
         </div>
     );
