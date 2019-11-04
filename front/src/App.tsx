@@ -116,7 +116,7 @@ class App extends React.Component<AppProps, State> {
                           <span className="dropdown-item"><Link to={'/manage-account'} className="nav-link">{app.manageAccount}</Link></span>
                         </div>
                       </div>
-                      <button className="btn" type="button" onClick={() => this.props.logout()}>{app.logout}</button>
+                      <button className="btn" type="button" onClick={() => this.props.logout()}><Link to={'/'} className="nav-link">{app.logout}</Link></button>
                       </>
                     }
                     <FormGroup>
