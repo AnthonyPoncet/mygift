@@ -159,7 +159,8 @@ class MyFriends extends React.Component<Props, State> {
                 this.props.userId !== null && this.getPending(this.props.userId);
             } else {
                 const json = await response.json();
-                this.setState({ show: true, errorMessage: this.generateMessage(json, name) });
+                const errorMessage = (response.status === 409) ? this.generateMessage(json, name) : json.error;
+                this.setState({ show: true, errorMessage: errorMessage });
             }
         };
         request();
