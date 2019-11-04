@@ -170,7 +170,10 @@ class MyFriends extends React.Component<Props, State> {
         const request = async () => {
             const response = await fetch(url + '/users/' + this.props.userId + '/friend-requests/' + id, {method: 'delete'});
             if (response.status === 202) {
-                this.props.userId && this.getPending(this.props.userId);
+                if (this.props.userId !== null) {
+                    this.getPending(this.props.userId);
+                    this.getFriends(this.props.userId);
+                }
             } else {
                 const json = await response.json();
                 console.log(json);
@@ -259,27 +262,28 @@ class MyFriends extends React.Component<Props, State> {
             <h2 style={{margin: "10px"}}>{myfriends.friends}</h2>
             <div className="mycard-row">
               {friends.map((req, i) => {
-                let image = (req.picture === undefined) ?
+                const user = req.otherUser;
+                let image = (user.picture === undefined) ?
                   <img className="friend-image" src={blank_profile_picture} alt="Nothing"/> :
-                  <img className="friend-image" id={req.name+'profile'} alt="Profile"/>;
+                  <img className="friend-image" id={user.name+'profile'} alt="Profile"/>;
                 if ((i.toString() === this.state.hoverId) || isMobile) {
                   return (
-                    <div key={i + 'friends-' + req.reqId} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
+                    <div key={i + 'friends-' + req.id} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
                       {image}
                       <div className="friend-card-delete" >
-                        <Link to={'/friend/' + req.name} className="btn btn-link" style={{ textDecoration: 'none', color: 'black' }}><Octicon icon={ListUnordered}/></Link>
-                        <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.reqId)}><Octicon icon={X}/></span>
+                        <Link to={'/friend/' + user.name} className="btn btn-link" style={{ textDecoration: 'none', color: 'black' }}><Octicon icon={ListUnordered}/></Link>
+                        <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
                       </div>
                       <div className="friend-footer">
-                        <div className="friend-name">{req.name}</div>
+                        <div className="friend-name">{user.name}</div>
                       </div>
                     </div>);
                 } else {
                   return (
-                    <div key={i + 'friends-' + req.reqId} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
+                    <div key={i + 'friends-' + req.id} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
                       {image}
                       <div className="friend-footer">
-                        <div className="friend-name">{req.name}</div>
+                        <div className="friend-name">{user.name}</div>
                       </div>
                     </div>);
                 }})}

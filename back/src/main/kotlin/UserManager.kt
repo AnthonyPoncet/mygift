@@ -214,17 +214,17 @@ class UserManager(private val databaseManager: DatabaseManager) {
         databaseManager.createFriendRequest(userId, user.id)
     }
 
-    fun getFriends(userId: Long) : List<Friend> {
+    fun getFriends(userId: Long) : List<FriendRequest> {
         val initiatedFriendRequests = databaseManager.getInitiatedFriendRequests(userId).filter { it.status == RequestStatus.ACCEPTED }
         val receivedFriendRequests = databaseManager.getReceivedFriendRequests(userId).filter { it.status == RequestStatus.ACCEPTED }
 
-        val ini = initiatedFriendRequests.map { toFriend(it.userTwo) }
-        val rec = receivedFriendRequests.map { toFriend(it.userOne) }
+        val ini = initiatedFriendRequests.map { FriendRequest(it.id, toFriend(it.userTwo)) }
+        val rec = receivedFriendRequests.map { FriendRequest(it.id, toFriend(it.userOne)) }
 
-        val mut: MutableList<Friend> = mutableListOf()
+        val mut: MutableList<FriendRequest> = mutableListOf()
         mut.addAll(ini)
         mut.addAll(rec)
-        mut.sortBy { it.name }
+        mut.sortBy { it.otherUser.name }
         return mut
     }
 
