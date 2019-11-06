@@ -124,7 +124,7 @@ class MyBuyList extends React.Component<Props, State> {
                     }
                     return (
                         <div className="mycard" onMouseEnter={() => this.handleEnter(fgi, gi)} onMouseLeave={() => this.handleOut()} style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
-                            <SquareImage imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                            <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                             <div className="card-edit-close">
                               <span className={iWantToBuy ? "icon-selected" : ""} style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
                               {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
@@ -141,7 +141,7 @@ class MyBuyList extends React.Component<Props, State> {
                     } else {
                       return (
                           <div className="mycard" onMouseEnter={() => this.handleEnter(fgi, gi)} onMouseLeave={() => this.handleOut()}>
-                              <SquareImage imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                              <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                               <div className="card-name-only">{gift.name}</div>
                           </div>);
                     }
@@ -180,7 +180,7 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
             <ModalHeader toggle={() => close() }>{gift.name}</ModalHeader>
             <ModalBody>
                 <div>
-                  <SquareImage imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
+                  <SquareImage className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
                   {gift.description !== "" && gift.description}
                 </div>
                 <div>{gift.price}</div>

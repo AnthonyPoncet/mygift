@@ -236,7 +236,7 @@ class MyFriends extends React.Component<Props, State> {
             <div className="mycard-row">
               {friends.map((req, i) => {
                 const user = req.otherUser;
-                let image = <SquareImage imageName={user.picture} size={150} alt="Profile" alternateImage={blank_profile_picture}/>;
+                let image = <SquareImage className="profile-image" imageName={user.picture} size={150} alt="Profile" alternateImage={blank_profile_picture}/>;
                 if ((i.toString() === this.state.hoverId) || isMobile) {
                   return (
                     <div key={i + 'friends-' + req.id} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>

@@ -149,7 +149,7 @@ class MyWishList extends React.Component<Props, State> {
               <Label>{mywishlist.image}</Label>
               <Input type="file" onChange={(e) => this.changeImage(e)}/>
             </FormGroup>
-            <SquareImage imageName={this.state.inputs.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+            <SquareImage className="card-image" imageName={this.state.inputs.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
             </>);
     }
 
@@ -307,7 +307,7 @@ class MyWishList extends React.Component<Props, State> {
                     if ((cgi+'-'+gi === this.state.hoverId) || isMobile) {
                       return (
                           <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
-                              <SquareImage imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                              <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                               <div className="card-edit-close">
                                 <span className="text-right" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture)}><Octicon icon={Pencil}/></span>{' '}
                                 <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
@@ -322,7 +322,7 @@ class MyWishList extends React.Component<Props, State> {
                       } else {
                         return (
                             <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
-                                <SquareImage imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                                <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                                 <div className="card-name-only">{gift.name}</div>
                             </div>);
                       }

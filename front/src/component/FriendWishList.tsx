@@ -127,7 +127,7 @@ class FriendWishList extends React.Component<Props, State> {
               <Label>{mywishlist.image}</Label>
               <Input type="file" onChange={(e) => this.changeImage(e)}/>
             </FormGroup>
-            <SquareImage imageName={this.state.inputs.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+            <SquareImage className="card-image" imageName={this.state.inputs.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
             </>);
     }
 
@@ -281,7 +281,7 @@ class FriendWishList extends React.Component<Props, State> {
                     }
                     return (
                         <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()} style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
-                            <SquareImage imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                            <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                             <div className="card-edit-close">
                               <span className={imInterested ? "text-right icon-selected" : "text-right"} style={{cursor: "pointer"}} onClick={() => this.interested(this.props.userId, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
                               {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
@@ -303,7 +303,7 @@ class FriendWishList extends React.Component<Props, State> {
                     } else {
                       return (
                           <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
-                              <SquareImage imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                              <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                               <div className="card-name-only">{gift.name}</div>
                           </div>);
                     }
@@ -359,7 +359,7 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
             <ModalHeader toggle={() => close() }>{gift.name}</ModalHeader>
             <ModalBody>
                 <div>
-                    <SquareImage imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
+                    <SquareImage className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
                     {gift.description !== "" && gift.description}
                 </div>
                 <div>{gift.price}</div>

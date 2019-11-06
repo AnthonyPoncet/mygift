@@ -1,9 +1,11 @@
 import React from 'react';
 
+import './style/style.css';
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
-interface Props { imageName: string | null, size: number, alt: string, alternateImage: any };
+interface Props { className: string, imageName: string | null, size: number, alt: string, alternateImage: any };
 interface State { loadedUrl: any | null };
 
 class SquareImage extends React.Component<Props, State> {
@@ -40,13 +42,13 @@ class SquareImage extends React.Component<Props, State> {
     }
 
     render() {
-        const { size, alt, alternateImage } = this.props;
+        const { className, size, alt, alternateImage } = this.props;
         const { loadedUrl } = this.state;
 
         if (loadedUrl !== null){
-            return <img height={size} width={size} src={loadedUrl} alt={alt}/>;
+            return <img className={className} height={size} width={size} src={loadedUrl} alt={alt}/>;
         } else {
-            return <img height={size} width={size} src={alternateImage} alt="Nothing"/>;
+            return <img className={className} height={size} width={size} src={alternateImage} alt="Nothing"/>;
         }
     }
 }

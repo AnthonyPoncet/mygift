@@ -94,7 +94,7 @@ class SignupPage extends React.Component<Props, State> {
                 <label>{connection.image}</label>
                 <input type="file" onChange={(e) => this.changeImage(e)}/>
               </div>
-              <SquareImage imageName={image} size={150} alt="Profile" alternateImage={blank_profile_picture}/>
+              <SquareImage className="profile-image" imageName={image} size={150} alt="Profile" alternateImage={blank_profile_picture}/>
               <button className="btn btn-primary btn-large" onClick={this.handleSubmit}>{connection.signUpButton}</button>
           </div>
         </div>

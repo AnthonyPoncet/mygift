@@ -81,7 +81,7 @@ class ManageAccount extends React.Component<Props, State> {
                     <Label>Profile picture</Label>
                     <Input type="file" onChange={(e) => this._changeImage(e)}/>
                 </FormGroup>
-                <SquareImage imageName={image} size={150} alt="Profile" alternateImage={blank_profile_picture}/>
+                <SquareImage className="profile-image" imageName={image} size={150} alt="Profile" alternateImage={blank_profile_picture}/>
                 <br/>
                 <Button className="btn btn-primary" onClick={() => this._save()}>Save</Button>
             </Form>

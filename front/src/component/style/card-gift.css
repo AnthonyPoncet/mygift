@@ -6,10 +6,12 @@
 
 .mycard {
   position: relative;
-  background-color: #DFDFDF;
+  background-color: #FFFFFF;
   border-radius: 5px;
+  border: 0.5px solid;
+  z-index: 10;
   height: 250px;
-  width: 150px;
+  width: 152px;
   margin: 10px;
 }
 
