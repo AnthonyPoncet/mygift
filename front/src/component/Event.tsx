@@ -12,8 +12,8 @@ import FriendWishList from './FriendWishList';
 import MyWishList from './MyWishList'
 
 import { EventMessage } from '../translation/itrans';
-import './event.css';
-import blank_profile_picture from './blank_profile_picture.png';
+import './style/event.css';
+import blank_profile_picture from './image/blank_profile_picture.png';
 
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
@@ -102,21 +102,6 @@ class Event extends React.Component<Props, State> {
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ event: json, participants: json.participants });
-        } else {
-            console.log(json.error);
-        }
-    };
-
-    async getFriend(userId: number) {
-        const response = await fetch(url + '/users/' + userId + '/friends');
-        const json = await response.json();
-        if (response.status === 200) {
-            //this.setState({ friends: json });
-            //json.forEach((friend: any) => {
-            //    if (friend.picture !== undefined) {
-            //        this.loadImage(friend.picture, friend.name + 'profile')
-            //    }
-            //});
         } else {
             console.log(json.error);
         }

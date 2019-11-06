@@ -1,17 +1,19 @@
 import React from 'react';
-import "./style.css";
+import "./style/style.css";
 
-import { connect } from 'react-redux'
-import { ThunkDispatch } from 'redux-thunk'
-import { AppState } from '../redux/store'
-import { error } from '../redux/actions/error'
-import { signup, UserSignUp } from '../redux/actions/user'
+import { connect } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk';
+import { AppState } from '../redux/store';
+import { error } from '../redux/actions/error';
+import { signup, UserSignUp } from '../redux/actions/user';
 
 import { Connection } from '../translation/itrans';
 
-import create_list from './create_list.png';
-import friends from './friends.png';
-import events from './events.png';
+import SquareImage from './SquareImage';
+import blank_profile_picture from './image/blank_profile_picture.png';
+import create_list from './image/create_list.png';
+import friends from './image/friends.png';
+import events from './image/events.png';
 
 import { isMobile } from "react-device-detect";
 
@@ -26,12 +28,12 @@ interface DispatchProps {
 interface StateProps { errorMessage: String | null, connection: Connection };
 type Props = DispatchProps & StateProps;
 
-interface State { username: string, password: string, image: string | null, loaded: boolean };
+interface State { username: string, password: string, image: string | null };
 
 class SignupPage extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { username: '', password: '', image: null, loaded: false };
+    this.state = { username: '', password: '', image: null };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -56,21 +58,6 @@ class SignupPage extends React.Component<Props, State> {
       }
   }
 
-  loadImage(name: string) {
-      const request = async() => {
-          const response = await fetch(url + '/files/' + name);
-
-          response.blob().then(blob => {
-              let url = window.URL.createObjectURL(blob);
-              let tag = document.querySelector('#profile');
-              if (tag instanceof HTMLImageElement) tag.src = url;
-          });
-
-          this.setState({ loaded: true });
-      };
-      request();
-  }
-
   changeImage(e: any) {
       const formData = new FormData();
       formData.append("0", e.target.files[0]);
@@ -78,18 +65,17 @@ class SignupPage extends React.Component<Props, State> {
           const response = await fetch(url + '/files', {method: 'post', body: formData});
           if (response.status === 202) {
               const json = await response.json();
-              this.setState({ image: json.name, loaded: false });
-              this.loadImage(json.name);
+              this.setState({ image: json.name });
           } else {
               const json = await response.json();
-              console.log(json);
+              console.error(json);
           }
       };
       request();
   }
 
   renderSignUp() {
-    const { username, password, loaded } = this.state;
+    const { username, password, image } = this.state;
     const { connection } = this.props;
     return (
         <div className="auth-form">
@@ -108,7 +94,7 @@ class SignupPage extends React.Component<Props, State> {
                 <label>{connection.image}</label>
                 <input type="file" onChange={(e) => this.changeImage(e)}/>
               </div>
-              {loaded === true && <img id="profile" height="150" width="150" alt="Profile"/>}
+              <SquareImage imageName={image} size={150} alt="Profile" alternateImage={blank_profile_picture}/>
               <button className="btn btn-primary btn-large" onClick={this.handleSubmit}>{connection.signUpButton}</button>
           </div>
         </div>

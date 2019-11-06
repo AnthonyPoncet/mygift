@@ -8,9 +8,10 @@ import { AppState } from '../redux/store';
 import Octicon, {Check, X, CircleSlash, ListUnordered} from '@primer/octicons-react';
 
 import { MyFriendsMessage } from '../translation/itrans';
-import './friends.css';
+import './style/friends.css';
 
-import blank_profile_picture from './blank_profile_picture.png';
+import SquareImage from './SquareImage';
+import blank_profile_picture from './image/blank_profile_picture.png';
 
 import { isMobile } from "react-device-detect";
 
@@ -94,16 +95,6 @@ class MyFriends extends React.Component<Props, State> {
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ pendingSent: json.sent, pendingReceived: json.received });
-            json.sent.forEach((req: any) => {
-                if (req.otherUser.picture !== undefined) {
-                    this.loadImage(req.otherUser.picture, req.otherUser.name + 'profile')
-                }
-            });
-            json.received.forEach((req: any) => {
-                if (req.otherUser.picture !== undefined) {
-                    this.loadImage(req.otherUser.picture, req.otherUser.name + 'profile')
-                }
-            });
         } else {
             console.log(json.error);
         }
@@ -114,11 +105,6 @@ class MyFriends extends React.Component<Props, State> {
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ friends: json });
-            json.forEach((friend: any) => {
-                if (friend.picture !== undefined) {
-                    this.loadImage(friend.picture, friend.name + 'profile')
-                }
-            });
         } else {
             console.log(json.error);
         }
@@ -219,19 +205,6 @@ class MyFriends extends React.Component<Props, State> {
       this.setState({ hoverId: '' });
     }
 
-    loadImage(name: string, tagName: string) {
-        const request = async() => {
-            const response = await fetch(url + '/files/' + name);
-
-            response.blob().then(blob => {
-                let url = window.URL.createObjectURL(blob);
-                let tag = document.querySelector('#' + tagName);
-                if (tag instanceof HTMLImageElement) tag.src = url;
-            });
-        };
-        request();
-    }
-
     renderRequests() {
         const { pendingSent, pendingReceived, friends } = this.state;
         const { myfriends } = this.props;
@@ -263,9 +236,7 @@ class MyFriends extends React.Component<Props, State> {
             <div className="mycard-row">
               {friends.map((req, i) => {
                 const user = req.otherUser;
-                let image = (user.picture === undefined) ?
-                  <img className="friend-image" src={blank_profile_picture} alt="Nothing"/> :
-                  <img className="friend-image" id={user.name+'profile'} alt="Profile"/>;
+                let image = <SquareImage imageName={user.picture} size={150} alt="Profile" alternateImage={blank_profile_picture}/>;
                 if ((i.toString() === this.state.hoverId) || isMobile) {
                   return (
                     <div key={i + 'friends-' + req.id} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>

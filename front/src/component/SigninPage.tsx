@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import "./style.css";
+import "./style/style.css";
 
 import { connect } from 'react-redux'
 import { ThunkDispatch } from 'redux-thunk'

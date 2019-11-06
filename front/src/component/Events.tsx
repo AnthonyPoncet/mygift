@@ -10,7 +10,7 @@ import Octicon, {Check, X, CircleSlash, ListUnordered} from '@primer/octicons
 import { MyEventsMessage } from '../translation/itrans';
 import "react-datepicker/dist/react-datepicker.css";
 
-import './events.css';
+import './style/events.css';
 
 import { isMobile } from "react-device-detect";
 

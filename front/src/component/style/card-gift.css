@@ -17,11 +17,6 @@
   color: #007bff;
 }
 
-.gift-image-full {
-  width: inherit;
-  height: 150px;
-}
-
 .card-edit-close {
   text-align: right;
   padding: 5px;
@@ -80,11 +75,6 @@
   overflow: hidden;
 }
 
-.gift-image-name-only {
-  width: inherit;
-  height: 150px;
-  vertical-align: middle;
-}
 .card-name-only {
   display: table-cell;
   height: 100px;
@@ -92,11 +82,4 @@
   padding: 10px;
   text-align: center;
   vertical-align: middle;
-}
-
-
-/*display gift*/
-.dg-image {
-  width: 300px;
-  height: 300px;
 }

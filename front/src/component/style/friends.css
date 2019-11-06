@@ -20,12 +20,6 @@
   cursor: "pointer";
 }
 
-.friend-image {
-  background-color: #DFDFDF;
-  height: 150px;
-  width: inherit;
-}
-
 .friend-no-image {
   background-color: #DFDFDF;
   height: 150px;

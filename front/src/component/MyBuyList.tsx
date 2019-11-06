@@ -1,16 +1,16 @@
 import React from 'react';
 
-import Octicon, {Checklist, Gift} from '@primer/octicons-react'
+import Octicon, {Checklist, Gift} from '@primer/octicons-react';
 
 import { Modal, ModalHeader, ModalBody } from "reactstrap";
-
 
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
 
 import { FriendWishListMessage, MyBuyListMessage } from '../translation/itrans';
-import './card-gift.css';
-import blank_gift from './blank_gift.png';
+import './style/card-gift.css';
+import SquareImage from './SquareImage';
+import blank_gift from './image/blank_gift.png';
 
 import { isMobile } from "react-device-detect";
 
@@ -39,30 +39,13 @@ class MyBuyList extends React.Component<Props, State> {
         }
     }
 
-    loadImage(name: string, tagName: string) {
-        const request = async() => {
-            const response = await fetch(url + '/files/' + name);
-            response.blob().then(blob => {
-                let url = window.URL.createObjectURL(blob);
-                let tag = document.querySelector('#' + tagName);
-                if (tag instanceof HTMLImageElement) tag.src = url;
-            });
-        };
-        request();
-    }
-
     async getBuyList(userId: number) {
         const response = await fetch(url + '/users/' + userId + '/buy-list');
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ friendAndGifts: json });
-            json.forEach((friendAndGift: any) => {
-                friendAndGift.gifts.forEach((gift: any) => {
-                  if (gift.gift.picture !== undefined) this.loadImage(gift.gift.picture, 'gift-'+gift.gift.id);
-                });
-            });
         } else {
-            console.log(json.error);
+            console.error(json.error);
         }
     };
 
@@ -81,7 +64,7 @@ class MyBuyList extends React.Component<Props, State> {
             this.getBuyList(userId);
         } else {
             const json = await response.json();
-            console.log(json.error);
+            console.error(json.error);
         }
     }
 
@@ -100,7 +83,7 @@ class MyBuyList extends React.Component<Props, State> {
             this.getBuyList(userId);
         } else {
             const json = await response.json();
-            console.log(json.error);
+            console.error(json.error);
         }
     }
 
@@ -125,7 +108,6 @@ class MyBuyList extends React.Component<Props, State> {
 
                 <div className="mycard-row">
                 {fg.gifts.map((fGift: any, gi:any) => {
-                   console.log(fGift);
                   const { gift, buyActionUser } = fGift;
                   let wantToBuy: string[] = [];
                   let bought: string[] = [];
@@ -140,12 +122,9 @@ class MyBuyList extends React.Component<Props, State> {
                         for (const [, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
                         for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
                     }
-                    let imageFull = (gift.picture === undefined) ?
-                      <img className="gift-image-full" style={{cursor: "pointer"}} onClick={() => this.showGift(gift)} src={blank_gift} alt="Nothing"/> :
-                      <img className="gift-image-full" style={{cursor: "pointer"}} onClick={() => this.showGift(gift)} id={'gift-'+gift.id} alt="Gift"/>;
                     return (
-                        <div className="mycard" onMouseEnter={() => this.handleEnter(fgi, gi)} onMouseLeave={() => this.handleOut()}>
-                            {imageFull}
+                        <div className="mycard" onMouseEnter={() => this.handleEnter(fgi, gi)} onMouseLeave={() => this.handleOut()} style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
+                            <SquareImage imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                             <div className="card-edit-close">
                               <span className={iWantToBuy ? "icon-selected" : ""} style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
                               {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
@@ -160,12 +139,9 @@ class MyBuyList extends React.Component<Props, State> {
                             </div>
                         </div>);
                     } else {
-                      let imageOnly = (gift.picture === undefined) ?
-                        <img className="gift-image-name-only" src={blank_gift} alt="Nothing"/> :
-                        <img className="gift-image-name-only" id={'gift-'+gift.id} alt="Gift"/>;
                       return (
                           <div className="mycard" onMouseEnter={() => this.handleEnter(fgi, gi)} onMouseLeave={() => this.handleOut()}>
-                              {imageOnly}
+                              <SquareImage imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                               <div className="card-name-only">{gift.name}</div>
                           </div>);
                     }
@@ -194,50 +170,17 @@ interface DisplayGiftProps {
 };
 
 class DisplayGift extends React.Component<DisplayGiftProps> {
-    private oldGift: any | null = null;
-    private url: any | null = null;
-
-    componentWillReceiveProps(nextProps: any) {
-        // You don't have to do this check first, but it can help prevent an unneeded render
-        if (nextProps.gift !== this.oldGift) {
-            this.oldGift = nextProps.gift;
-            if (nextProps.gift !== null && nextProps.gift.picture !== undefined) {
-                this.url = null;
-                this.loadImage(nextProps.gift.picture, 'gift-'+nextProps.gift.id);
-            }
-        }
-    }
-
-    loadImage(name: string, tagName: string) {
-        console.log("load " + name + " in " + tagName)
-
-        const request = async() => {
-            const response = await fetch(url + '/files/' + name);
-            response.blob().then(blob => {
-                let url = window.URL.createObjectURL(blob);
-                this.url = url;
-            });
-        };
-        request();
-    }
-
     render() {
         const { show, gift, close } = this.props;
 
         if (gift === null) return <div/>;
-
-        console.log(gift)
 
         return (
           <Modal isOpen={show} toggle={() => close()}>
             <ModalHeader toggle={() => close() }>{gift.name}</ModalHeader>
             <ModalBody>
                 <div>
-                  {
-                    (gift.picture === undefined) ?
-                    <img className="dg-image" src={blank_gift} alt="Nothing"/> :
-                    <img className="dg-image" src={this.url} alt="Gift"/>
-                  }
+                  <SquareImage imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
                   {gift.description !== "" && gift.description}
                 </div>
                 <div>{gift.price}</div>

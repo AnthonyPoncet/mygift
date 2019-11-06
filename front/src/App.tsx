@@ -22,7 +22,7 @@ import SigninPage from './component/SigninPage';
 import SignupPage from './component/SignupPage';
 import { history } from './component/history';
 
-import blank_profile_picture from './component/blank_profile_picture.png';
+import blank_profile_picture from './component/image/blank_profile_picture.png';
 
 import { AppMessage } from './translation/itrans';
 
