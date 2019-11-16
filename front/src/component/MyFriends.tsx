@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
 
-import Octicon, {Check, X, CircleSlash, ListUnordered} from '@primer/octicons-react';
+import Octicon, {Check, X, CircleSlash} from '@primer/octicons-react';
 
 import { MyFriendsMessage } from '../translation/itrans';
 import './style/friends.css';
@@ -210,55 +210,55 @@ class MyFriends extends React.Component<Props, State> {
         const { myfriends } = this.props;
 
         return (<>
+            <h2 style={{margin: "10px"}}>{myfriends.friends}</h2>
+            <div className="mycard-row">
+                {friends.map((req, i) => {
+                    const user = req.otherUser;
+                    let image = <SquareImage className="profile-image" imageName={user.picture} size={150} alt="Profile" alternateImage={blank_profile_picture}/>;
+                    if ((i.toString() === this.state.hoverId) || isMobile) {
+                        return (
+                            <div key={i + 'friends-' + req.id} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
+                                <Link to={'/friend/' + user.name}>{image}</Link>
+                                <div className="friend-card-delete" >
+                                    <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
+                                </div>
+                                <div className="friend-footer">
+                                    <Link to={'/friend/' + user.name} className="friend-name">{user.name}</Link>
+                                </div>
+                            </div>);
+                    } else {
+                        return (
+                            <div key={i + 'friends-' + req.id} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
+                                {image}
+                                <div className="friend-footer">
+                                    <div className="friend-name">{user.name}</div>
+                                </div>
+                            </div>);
+                    }
+                })}
+            </div>
+
             <h2 style={{margin: "10px"}}>{myfriends.requests}</h2>
             {pendingReceived.length > 0 ?
-              pendingReceived.map((req, i) => { return (
-                <li key={i + 'received' + req.otherUser.name  } style={{margin: "10px"}}>
-                    {req.otherUser.name}
-                    <span style={{cursor: "pointer"}} onClick={() => this.acceptRequest(req.id)}><Octicon icon={Check}/></span>
-                    {' '}
-                    <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(req.id, false)}><Octicon icon={X}/></span>
-                    {' '}
-                    <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(req.id, true)}><Octicon icon={CircleSlash}/></span>
-                </li>);}) :
-              <p style={{margin: "10px"}}>{myfriends.noPendingRequest}</p>}
+                pendingReceived.map((req, i) => { return (
+                    <li key={i + 'received' + req.otherUser.name  } style={{margin: "10px"}}>
+                        {req.otherUser.name}
+                        <span style={{cursor: "pointer"}} onClick={() => this.acceptRequest(req.id)}><Octicon icon={Check}/></span>
+                        {' '}
+                        <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(req.id, false)}><Octicon icon={X}/></span>
+                        {' '}
+                        <span style={{cursor: "pointer"}} onClick={() => this.declineRequest(req.id, true)}><Octicon icon={CircleSlash}/></span>
+                    </li>);}) :
+                <p style={{margin: "10px"}}>{myfriends.noPendingRequest}</p>}
 
             <h2 style={{margin: "10px"}}>{myfriends.myRequests}</h2>
             {pendingSent.length > 0 ?
-              pendingSent.map((req, i) => { return (
-                <li key={i + 'initiated' + req.otherUser.name } style={{margin: "10px"}}>
-                    {req.otherUser.name}
-                    <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
-                </li>);}) :
-              <p style={{margin: "10px"}}>{myfriends.allRequestsAccepted}</p>}
-
-            <h2 style={{margin: "10px"}}>{myfriends.friends}</h2>
-            <div className="mycard-row">
-              {friends.map((req, i) => {
-                const user = req.otherUser;
-                let image = <SquareImage className="profile-image" imageName={user.picture} size={150} alt="Profile" alternateImage={blank_profile_picture}/>;
-                if ((i.toString() === this.state.hoverId) || isMobile) {
-                  return (
-                    <div key={i + 'friends-' + req.id} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
-                      {image}
-                      <div className="friend-card-delete" >
-                        <Link to={'/friend/' + user.name} className="btn btn-link" style={{ textDecoration: 'none', color: 'black' }}><Octicon icon={ListUnordered}/></Link>
+                pendingSent.map((req, i) => { return (
+                    <li key={i + 'initiated' + req.otherUser.name } style={{margin: "10px"}}>
+                        {req.otherUser.name}
                         <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
-                      </div>
-                      <div className="friend-footer">
-                        <div className="friend-name">{user.name}</div>
-                      </div>
-                    </div>);
-                } else {
-                  return (
-                    <div key={i + 'friends-' + req.id} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
-                      {image}
-                      <div className="friend-footer">
-                        <div className="friend-name">{user.name}</div>
-                      </div>
-                    </div>);
-                }})}
-              </div>
+                    </li>);}) :
+                <p style={{margin: "10px"}}>{myfriends.allRequestsAccepted}</p>}
         </>);
     }
 
