@@ -129,7 +129,7 @@ class MyWishList extends React.Component<Props, State> {
             </FormGroup>
             <FormGroup>
                 <Label>{mywishlist.description}</Label>
-                <Input name="description" placeholder={mywishlist.description} value={this.state.inputs.description} onChange={(e) => this.handleChangeGift(e)}/>
+                <Input type="textarea" name="description" placeholder={mywishlist.description} value={this.state.inputs.description} onChange={(e) => this.handleChangeGift(e)}/>
             </FormGroup>
             <FormGroup>
                 <Label>{mywishlist.price}</Label>
