@@ -22,6 +22,9 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.awt.Image
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
 
 
 data class FileAnswer(val name: String)
@@ -37,12 +40,16 @@ fun main(args: Array<String>) {
 
         if (arguments.resetDB) {
             println("Reset DB with default values")
-            val dbInitializerForTest = DbInitializerForTest(databaseManager)
+            DbInitializerForTest(databaseManager)
         }
 
-        val directory = File("uploads")
-        if (!directory.exists()) {
-            directory.mkdir()
+        val uploadsDir = File("uploads")
+        if (!uploadsDir.exists()) {
+            uploadsDir.mkdir()
+        }
+        val tmpDir = File("tmp")
+        if (!tmpDir.exists()) {
+            tmpDir.mkdir()
         }
 
         println("Start server on port ${arguments.port}")
@@ -491,8 +498,8 @@ fun main(args: Array<String>) {
                     multipart.forEachPart { part ->
                         when (part) {
                             is PartData.FileItem -> {
-                                val name = File(part.originalFileName).name
-                                val ext = File(part.originalFileName).extension
+                                val name = File(part.originalFileName!!).name
+                                val ext = File(part.originalFileName!!).extension
                                 fileName = "upload-${System.currentTimeMillis()}-${name.hashCode()}.$ext"
                                 val file = File("uploads", fileName)
                                 part.streamProvider().use {
@@ -505,9 +512,22 @@ fun main(args: Array<String>) {
                     call.respond(HttpStatusCode.Accepted, FileAnswer(fileName))
                 }
                 get("/files/{name}") {
+                    //All the conversion part should be moved somewhere else
+                    //It also write all file in jpg. Could be an issue.
                     val filename = call.parameters["name"]!!
+                    val tmpFile = File("tmp/$filename")
+                    if (tmpFile.exists()) {
+                        call.respondFile(tmpFile)
+                        return@get
+                    }
+
                     val file = File("uploads/$filename")
-                    if(file.exists()) { call.respondFile(file) }
+                    if(file.exists()) {
+                        val resized = resize(file, 300.toDouble())
+                        val output = File("tmp/$filename")
+                        ImageIO.write(resized, "jpg", output)
+                        call.respondFile(output)
+                    }
                     else call.respond(HttpStatusCode.NotFound)
                 }
 
@@ -577,4 +597,23 @@ fun getEventId(parameters: Parameters) : Long {
 
 fun decode(input: String) : String {
     return input.toByteArray(StandardCharsets.ISO_8859_1).toString(StandardCharsets.UTF_8)
+}
+
+//will be squared resize, size being a side
+private fun resize(file: File, size: Double): BufferedImage {
+    val img = ImageIO.read(file)
+
+    /** Keep proportion **/
+    val oHeight = img.height.toDouble()
+    val oWidth = img.width.toDouble()
+    var scale: Double = if (oHeight < oWidth) oHeight / size else oWidth / size
+    val width = (oWidth / scale).toInt()
+    val height = (oHeight / scale).toInt()
+
+    val tmp = img.getScaledInstance(width, height, Image.SCALE_SMOOTH)
+    val resized = BufferedImage(width, height, if (img.colorModel.hasAlpha()) BufferedImage.TYPE_INT_RGB else BufferedImage.TYPE_INT_RGB)
+    val g2d = resized.createGraphics()
+    g2d.drawImage(tmp, 0, 0, null)
+    g2d.dispose()
+    return resized
 }
