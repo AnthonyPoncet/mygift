@@ -328,7 +328,12 @@ class FriendWishList extends React.Component<Props, State> {
           {this.props.userId && <Button color="link" onClick={() => this.openAddGift()}>{mywishlist.addGiftButton}</Button> }
           <div>{this.renderGifts()}</div>
 
-          <DisplayGift show={this.state.showGift} gift={this.state.giftToShow} close={() => this.setState({showGift: false, giftToShow: null})}/>
+          <DisplayGift
+            show={this.state.showGift}
+            gift={this.state.giftToShow}
+            close={() => this.setState({showGift: false, giftToShow: null})}
+            friendwishlist={this.props.friendwishlist}
+            mywishlist={this.props.mywishlist}/>
 
           <Modal isOpen={this.state.show} toggle={() => this.closeModal()}>
               <ModalHeader toggle={() => this.closeModal()}>{this.state.title}</ModalHeader>
@@ -345,25 +350,47 @@ class FriendWishList extends React.Component<Props, State> {
 interface DisplayGiftProps {
     show: boolean
     gift: any | null,
-    close(): void
+    close(): void,
+    friendwishlist: FriendWishListMessage,
+    mywishlist: MyWishListMessage
 };
 
 class DisplayGift extends React.Component<DisplayGiftProps> {
     render() {
-        const { show, gift, close } = this.props;
+        const { show, gift, close, friendwishlist, mywishlist } = this.props;
 
         if (gift === null) return <div/>;
 
+        const isContainer = isMobile ? "" : "container";
+
+        const wtb = gift.whereToBuy.split(" ");
         return (
-          <Modal isOpen={show} toggle={() => close()}>
+          <Modal isOpen={show} toggle={() => close()} size="lg">
             <ModalHeader toggle={() => close() }>{gift.name}</ModalHeader>
             <ModalBody>
-                <div>
+                <div className={isContainer}>
                     <SquareImage className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
-                    {gift.description !== "" && gift.description}
+                    <div>
+                        {(gift.description !== "") && <>
+                            <div>{gift.description}</div>
+                            <br/>
+                            </>
+                        }
+
+                        {(gift.price !== "") &&
+                            <div>{mywishlist.price}: {gift.price}</div>
+                        }
+                        {(gift.whereToBuy !== "") &&
+                            <div>{mywishlist.whereToBuy}: {wtb.map((word: string) => {
+                                if (word.startsWith("http")) {
+                                    return <a href={word}>{word}{' '}</a>;
+                                } else {
+                                    return word + " ";
+                                }
+                            })}</div>
+                        }
+                    </div>
                 </div>
-                <div>{gift.price}</div>
-                <div>{gift.whereToBuy}</div>
             </ModalBody>
           </Modal>);
     }
