@@ -305,18 +305,22 @@ class MyWishList extends React.Component<Props, State> {
                 <div className="mycard-row">
                 {cg.gifts.map((gift: any, gi:any) => {
                     if ((cgi+'-'+gi === this.state.hoverId) || isMobile) {
+                      const fun = () => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture);
                       return (
                           <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
-                              <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                              <div style={{cursor: "pointer"}} onClick={fun}>
+                                <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                              </div>
                               <div className="card-edit-close">
-                                <span className="text-right" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture)}><Octicon icon={Pencil}/></span>{' '}
                                 <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
                               </div>
-                              <div className="card-name">{gift.name}</div>
-                              <div className="card-description">{gift.description}</div>
-                              <div className="mycard-footer">
-                                <div className="card-wtb">{gift.whereToBuy}</div>
-                                <div className="card-price">{gift.price}</div>
+                              <div style={{cursor: "pointer"}} onClick={fun}>
+                                  <div className="card-name">{gift.name}</div>
+                                  <div className="card-description">{gift.description}</div>
+                                  <div className="mycard-footer">
+                                    <div className="card-wtb">{gift.whereToBuy}</div>
+                                    <div className="card-price">{gift.price}</div>
+                                  </div>
                               </div>
                           </div>);
                       } else {

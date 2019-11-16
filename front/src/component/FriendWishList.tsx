@@ -280,8 +280,10 @@ class FriendWishList extends React.Component<Props, State> {
                         for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
                     }
                     return (
-                        <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()} style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
-                            <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                        <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
+                            <div style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
+                                <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                            </div>
                             <div className="card-edit-close">
                               <span className={imInterested ? "text-right icon-selected" : "text-right"} style={{cursor: "pointer"}} onClick={() => this.interested(this.props.userId, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
                               {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
@@ -293,11 +295,13 @@ class FriendWishList extends React.Component<Props, State> {
                               {' '}
                               {secret && <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>}
                             </div>
-                            <div className="card-name">{gift.name}</div>
-                            <div className="card-description">{gift.description}</div>
-                            <div className="mycard-footer">
-                              <div className="card-wtb">{gift.whereToBuy}</div>
-                              <div className="card-price">{gift.price}</div>
+                            <div style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
+                                <div className="card-name">{gift.name}</div>
+                                <div className="card-description">{gift.description}</div>
+                                <div className="mycard-footer">
+                                  <div className="card-wtb">{gift.whereToBuy}</div>
+                                  <div className="card-price">{gift.price}</div>
+                                </div>
                             </div>
                         </div>);
                     } else {
