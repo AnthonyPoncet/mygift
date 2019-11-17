@@ -114,20 +114,20 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         return getGifts(friendId, true)
     }
 
-    fun modifyGift(userId: Long, giftId: Long, gift: RestGift) {
+    fun modifyGift(giftId: Long, gift: RestGift) {
         conn.safeExecute(UPDATE, {
             with(it) {
-                setLong(1, userId)
-                setString(2, gift.name)
-                setString(3, gift.description ?: "")
-                setString(4, gift.price ?: "")
-                setString(5, gift.whereToBuy ?: "")
-                setLong(6, gift.categoryId!!)
-                setString(7, gift.picture ?: "")
+                setString(1, gift.name)
+                setString(2, gift.description ?: "")
+                setString(3, gift.price ?: "")
+                setString(4, gift.whereToBuy ?: "")
+                setLong(5, gift.categoryId!!)
+                setString(6, gift.picture ?: "")
+                setLong(7, giftId)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
             }
-        }, errorMessage(INSERT, userId.toString(), gift.toString()))
+        }, errorMessage(UPDATE, giftId.toString(), gift.toString()))
     }
 
     fun removeGift(giftId: Long) {

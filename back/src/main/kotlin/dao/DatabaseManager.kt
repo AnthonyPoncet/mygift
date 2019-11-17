@@ -131,7 +131,7 @@ class DatabaseManager(dbPath: String) {
         if (!giftAccessor.giftExists(giftId)) throw Exception("Unknown gift $giftId")
         if (!giftAccessor.giftBelongToUser(userId, giftId) && !giftAccessor.giftIsSecret(giftId)) throw Exception("Gift $giftId does not belong to user $userId and is not secret") /* secret gift could be modified by anyone */
 
-        giftAccessor.modifyGift(userId, giftId, gift)
+        giftAccessor.modifyGift(giftId, gift)
     }
 
     @Synchronized fun removeGift(userId: Long, giftId: Long) {
