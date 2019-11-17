@@ -1,3 +1,4 @@
+import dao.DatabaseManager
 import java.time.LocalDate
 
 class DbInitializerForTest(private val databaseManager: DatabaseManager) {
@@ -20,7 +21,7 @@ class DbInitializerForTest(private val databaseManager: DatabaseManager) {
         println("usernamme: other, pwd; other ==> id: $other")
 
         //Fill gift
-        databaseManager.addGift(aze, RestGift("One", "First description", "10€", "http://mysite.com", azeDCat, null), false)
+        databaseManager.addGift(aze, RestGift("One", "First description with spécial char and ' ", "10€", "http://mysite.com", azeDCat, null), false)
         databaseManager.addGift(aze, RestGift("No desc", null, "20$", "a place", azeDCat, null), false)
         databaseManager.addGift(aze, RestGift("No price", "There is no price", null, "http://mysite.com or ici, 75000 Paris", azeDCat, null), false)
         databaseManager.addGift(aze, RestGift("No where to buy", "There is no where to buy", "30 - 40£", null, azeDCat, null), false)
