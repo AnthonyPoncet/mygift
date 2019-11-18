@@ -32,6 +32,10 @@ class SquareImage extends React.Component<Props, State> {
                 console.error("file " + this.props.imageName + " could not be found on server");
                 return;
             }
+            if (response.status === 500) {
+                console.error("Internal server error: " + response)
+                return;
+            }
 
             response.blob().then(blob => {
                 let url = window.URL.createObjectURL(blob);
