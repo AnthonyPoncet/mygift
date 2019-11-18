@@ -270,6 +270,8 @@ class FriendWishList extends React.Component<Props, State> {
                       if (buyActionUser[key] === "WANT_TO_BUY") wantToBuy.push(key);
                       if (buyActionUser[key] === "BOUGHT") bought.push(key);
                   });
+                  const boughtClassName = (bought.length === 0) ? "" : " card-already-bought";
+
                   if ((cgi+'-'+gi === this.state.hoverId) || isMobile) {
                     let imInterested = false;
                     let iWantToBuy = false;
@@ -280,21 +282,31 @@ class FriendWishList extends React.Component<Props, State> {
                         for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
                     }
                     return (
-                        <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
+                        <div className={"mycard" + boughtClassName} onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
                             <div style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
                                 <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                             </div>
+                            { (bought.length === 0 || imInterested || iWantToBuy || iWantToBuy) &&
                             <div className="card-edit-close">
-                              <span className={imInterested ? "text-right icon-selected" : "text-right"} style={{cursor: "pointer"}} onClick={() => this.interested(this.props.userId, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
-                              {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
-                              <span className={iWantToBuy ? "icon-selected" : ""} style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
-                              {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
-                              <span className={iBought ? "icon-selected" : ""} style={{cursor: "pointer"}} onClick={() => this.bought(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Gift}/></span>{' '}
-                              {bought.length !== 0 && <><span>{bought.length}</span>{' '}</>}
-                              {secret && <span className="text-right" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture)}><Octicon icon={Pencil}/></span>}
-                              {' '}
-                              {secret && <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>}
-                            </div>
+                                <span className={imInterested ? "text-right icon-selected" : "text-right"} style={{cursor: "pointer"}} onClick={() => this.interested(this.props.userId, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
+                                {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
+                                <span className={iWantToBuy ? "icon-selected" : ""} style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
+                                {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
+                                { (bought.length !== 0 && !iBought) ?
+                                <span className={iBought ? "icon-selected" : ""}><Octicon icon={Gift}/></span>
+                                :
+                                <span
+                                    className={iBought ? "icon-selected" : ""}
+                                    style={{cursor: "pointer"}}
+                                    onClick={() => this.bought(this.props.userId, gift.id, iWantToBuy, iBought)}>
+                                        <Octicon icon={Gift}/>
+                                </span>
+                                }{' '}
+                                {bought.length !== 0 && <><span>{bought.length}</span>{' '}</>}
+                                {secret && <span className="text-right" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture)}><Octicon icon={Pencil}/></span>}
+                                {' '}
+                                {secret && <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>}
+                            </div> }
                             <div style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
                                 <div className="card-name">{gift.name}</div>
                                 <div className="card-description">{gift.description}</div>
@@ -306,10 +318,10 @@ class FriendWishList extends React.Component<Props, State> {
                         </div>);
                     } else {
                       return (
-                          <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
-                              <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
-                              <div className="card-name-only">{gift.name}</div>
-                          </div>);
+                        <div className={"mycard" + boughtClassName} onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
+                            <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                            <div className="card-name-only">{gift.name}</div>
+                        </div>);
                     }
                 })}
                 </div>

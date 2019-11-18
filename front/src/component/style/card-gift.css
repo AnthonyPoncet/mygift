@@ -33,7 +33,6 @@
   color: #007bff;
 }
 
-
 .card-name {
   text-align: center;
   padding: 0 5px 5px;
@@ -43,6 +42,7 @@
   overflow: hidden;
   transform: translateY(-18px);
 }
+
 .card-description {
   padding: 5px;
   font-size: 12px;
@@ -84,4 +84,9 @@
   padding: 10px;
   text-align: center;
   vertical-align: middle;
+}
+
+.card-already-bought {
+  background-color: #C0C0C0;
+  opacity: 0.5;
 }
