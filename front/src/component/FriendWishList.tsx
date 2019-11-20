@@ -254,6 +254,53 @@ class FriendWishList extends React.Component<Props, State> {
         this.setState({ showGift: true, giftToShow: gift });
     }
 
+    _renderInsideGift(wantToBuy: string[], bought: string[], cgi: number, gi: number, fGift: any) {
+        const { gift, interestedUser, buyActionUser, secret } = fGift;
+        if ((cgi+'-'+gi === this.state.hoverId) || isMobile) {
+            let imInterested = false;
+            let iWantToBuy = false;
+            let iBought = false;
+            if (this.props.username !== null) {
+                for (const [, value] of interestedUser.entries()) { if (value === this.props.username) imInterested = true; }
+                for (const [, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
+                for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
+            }
+            return (<>
+                { (bought.length === 0 || imInterested || iWantToBuy || iWantToBuy) &&
+                <div className="card-edit-close">
+                    <span className={imInterested ? "text-right icon-selected" : "text-right"} style={{cursor: "pointer"}} onClick={() => this.interested(this.props.userId, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
+                    {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
+                    <span className={iWantToBuy ? "icon-selected" : ""} style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
+                    {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
+                    { (bought.length !== 0 && !iBought) ?
+                    <span className={iBought ? "icon-selected" : ""}><Octicon icon={Gift}/></span>
+                    :
+                    <span
+                        className={iBought ? "icon-selected" : ""}
+                        style={{cursor: "pointer"}}
+                        onClick={() => this.bought(this.props.userId, gift.id, iWantToBuy, iBought)}>
+                            <Octicon icon={Gift}/>
+                    </span>
+                    }{' '}
+                    {bought.length !== 0 && <><span>{bought.length}</span>{' '}</>}
+                    {secret && <span className="text-right" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture)}><Octicon icon={Pencil}/></span>}
+                    {' '}
+                    {secret && <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>}
+                </div> }
+                <div style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
+                    <div className="card-name">{gift.name}</div>
+                    <div className="card-description">{gift.description}</div>
+                    <div className="mycard-footer">
+                      <div className="card-wtb">{gift.whereToBuy}</div>
+                      <div className="card-price">{gift.price}</div>
+                    </div>
+                </div>
+            </>);
+        } else {
+          return (<div className="card-name-only">{gift.name}</div>);
+        }
+    }
+
     renderGifts() {
       if (this.state.catAndGifts) {
         return this.state.catAndGifts.map((cg, cgi) => {
@@ -272,57 +319,13 @@ class FriendWishList extends React.Component<Props, State> {
                   });
                   const boughtClassName = (bought.length === 0) ? "" : " card-already-bought";
 
-                  if ((cgi+'-'+gi === this.state.hoverId) || isMobile) {
-                    let imInterested = false;
-                    let iWantToBuy = false;
-                    let iBought = false;
-                    if (this.props.username !== null) {
-                        for (const [, value] of interestedUser.entries()) { if (value === this.props.username) imInterested = true; }
-                        for (const [, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
-                        for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
-                    }
-                    return (
-                        <div className={"mycard" + boughtClassName} onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
-                            <div style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
-                                <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
-                            </div>
-                            { (bought.length === 0 || imInterested || iWantToBuy || iWantToBuy) &&
-                            <div className="card-edit-close">
-                                <span className={imInterested ? "text-right icon-selected" : "text-right"} style={{cursor: "pointer"}} onClick={() => this.interested(this.props.userId, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
-                                {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
-                                <span className={iWantToBuy ? "icon-selected" : ""} style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
-                                {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
-                                { (bought.length !== 0 && !iBought) ?
-                                <span className={iBought ? "icon-selected" : ""}><Octicon icon={Gift}/></span>
-                                :
-                                <span
-                                    className={iBought ? "icon-selected" : ""}
-                                    style={{cursor: "pointer"}}
-                                    onClick={() => this.bought(this.props.userId, gift.id, iWantToBuy, iBought)}>
-                                        <Octicon icon={Gift}/>
-                                </span>
-                                }{' '}
-                                {bought.length !== 0 && <><span>{bought.length}</span>{' '}</>}
-                                {secret && <span className="text-right" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture)}><Octicon icon={Pencil}/></span>}
-                                {' '}
-                                {secret && <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>}
-                            </div> }
-                            <div style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
-                                <div className="card-name">{gift.name}</div>
-                                <div className="card-description">{gift.description}</div>
-                                <div className="mycard-footer">
-                                  <div className="card-wtb">{gift.whereToBuy}</div>
-                                  <div className="card-price">{gift.price}</div>
-                                </div>
-                            </div>
-                        </div>);
-                    } else {
-                      return (
-                        <div className={"mycard" + boughtClassName} onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
-                            <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
-                            <div className="card-name-only">{gift.name}</div>
-                        </div>);
-                    }
+                  return (
+                      <div className={"mycard" + boughtClassName} onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
+                          <div style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
+                              <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                          </div>
+                          {this._renderInsideGift(wantToBuy, bought, cgi, gi, fGift)}
+                      </div>);
                 })}
                 </div>
             </div>)
@@ -378,6 +381,7 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
         if (gift === null) return <div/>;
 
         const isContainer = isMobile ? "" : "container";
+        const padding: string = isMobile ? "0px" : "10px";
 
         const wtb = gift.whereToBuy.split(" ");
         return (
@@ -386,9 +390,9 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
             <ModalBody>
                 <div className={isContainer}>
                     <SquareImage className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
-                    <div>
+                    <div style={{padding: padding}}>
                         {(gift.description !== "") && <>
-                            <div>{gift.description}</div>
+                            <div>{mywishlist.description}: {gift.description}</div>
                             <br/>
                             </>
                         }

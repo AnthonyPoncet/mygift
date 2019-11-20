@@ -205,6 +205,24 @@ class MyFriends extends React.Component<Props, State> {
       this.setState({ hoverId: '' });
     }
 
+    _renderInsideFriend(i: number, req: any, user: any) {
+        if ((i.toString() === this.state.hoverId) || isMobile) {
+            return (<>
+                <div className="friend-card-delete" >
+                    <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
+                </div>
+                <div className="friend-footer">
+                    <Link to={'/friend/' + user.name} className="friend-name">{user.name}</Link>
+                </div>
+            </>);
+        } else {
+            return (
+                <div className="friend-footer">
+                    <div className="friend-name">{user.name}</div>
+                </div>);
+        }
+    }
+
     renderRequests() {
         const { pendingSent, pendingReceived, friends } = this.state;
         const { myfriends } = this.props;
@@ -215,26 +233,11 @@ class MyFriends extends React.Component<Props, State> {
                 {friends.map((req, i) => {
                     const user = req.otherUser;
                     let image = <SquareImage className="profile-image" imageName={user.picture} size={150} alt="Profile" alternateImage={blank_profile_picture}/>;
-                    if ((i.toString() === this.state.hoverId) || isMobile) {
-                        return (
-                            <div key={i + 'friends-' + req.id} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
-                                <Link to={'/friend/' + user.name}>{image}</Link>
-                                <div className="friend-card-delete" >
-                                    <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
-                                </div>
-                                <div className="friend-footer">
-                                    <Link to={'/friend/' + user.name} className="friend-name">{user.name}</Link>
-                                </div>
-                            </div>);
-                    } else {
-                        return (
-                            <div key={i + 'friends-' + req.id} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
-                                {image}
-                                <div className="friend-footer">
-                                    <div className="friend-name">{user.name}</div>
-                                </div>
-                            </div>);
-                    }
+                    return (
+                        <div key={i + 'friends-' + req.id} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
+                            <Link to={'/friend/' + user.name}>{image}</Link>
+                            {this._renderInsideFriend(i, req, user)}
+                        </div>);
                 })}
             </div>
 
