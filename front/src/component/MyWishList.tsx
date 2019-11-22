@@ -293,10 +293,7 @@ class MyWishList extends React.Component<Props, State> {
     _renderInsideGift(cgi: number, gi: number, gift: any) {
         const fun = () => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture);
         if ((cgi+'-'+gi === this.state.hoverId) || isMobile) {
-            return (<>
-              <div className="card-edit-close">
-                <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
-              </div>
+            return (
               <div style={{cursor: "pointer"}} onClick={fun}>
                   <div className="card-name">{gift.name}</div>
                   <div className="card-description">{gift.description}</div>
@@ -304,8 +301,7 @@ class MyWishList extends React.Component<Props, State> {
                     <div className="card-wtb">{gift.whereToBuy}</div>
                     <div className="card-price">{gift.price}</div>
                   </div>
-              </div>
-            </>);
+              </div>);
         } else {
             return <div className="card-name-only">{gift.name}</div>;
         }
@@ -328,6 +324,9 @@ class MyWishList extends React.Component<Props, State> {
                   const fun = () => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture);
                   return (
                       <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
+                          <div className="card-edit-close one-icon">
+                            <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
+                          </div>
                           <div style={{cursor: "pointer"}} onClick={fun}>
                             <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                           </div>

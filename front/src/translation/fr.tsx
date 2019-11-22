@@ -59,7 +59,12 @@ class Fr implements Itrans {
             allRequestsAccepted: "Toutes vos demandes d'amis ont été accepté ou refusé.",
             friends: "Amis"
           },
-          friendwishlist: { title: "Liste de " },
+          friendwishlist: {
+            title: "Liste de ",
+            imInterested: "J'aime",
+            iWantToBuy: "Je veux acheter",
+            iBought: "J'ai acheté"
+          },
           myevents: {
             createEventButton: "Créer un évènement",
             createEventModalTitle: "Créer un nouveau évènement",

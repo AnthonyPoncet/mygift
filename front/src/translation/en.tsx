@@ -59,7 +59,12 @@ class En implements Itrans {
             allRequestsAccepted: "All requests has been accepted or declined.",
             friends: "Friends"
           },
-          friendwishlist: { title: "Wish list of " },
+          friendwishlist: {
+            title: "Wish list of ",
+            imInterested: "Like",
+            iWantToBuy: "Add to my buy list",
+            iBought: "I bought"
+          },
           myevents: {
             createEventButton: "Create event",
             createEventModalTitle: "Create a new event",

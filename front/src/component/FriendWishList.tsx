@@ -2,7 +2,7 @@ import React from 'react';
 
 import Octicon, {Heart, Checklist, Gift, Pencil, X} from '@primer/octicons-react';
 
-import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
 
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
@@ -187,6 +187,18 @@ class FriendWishList extends React.Component<Props, State> {
         const json = await response.json();
         if (response.status === 200) {
             this.setState({ catAndGifts: json });
+            if (this.state.showGift) {
+                const { id } = this.state.giftToShow.gift
+                let newGiftToShow: any;
+                json.forEach(function (cat: any) {
+                    cat.gifts.forEach(function (fGift: any) {
+                        if (fGift.gift.id === id) {
+                            newGiftToShow = fGift;
+                        }
+                    });
+                });
+                this.setState({giftToShow: newGiftToShow});
+            }
         } else {
             console.log(json.error);
         }
@@ -254,40 +266,11 @@ class FriendWishList extends React.Component<Props, State> {
         this.setState({ showGift: true, giftToShow: gift });
     }
 
-    _renderInsideGift(wantToBuy: string[], bought: string[], cgi: number, gi: number, fGift: any) {
-        const { gift, interestedUser, buyActionUser, secret } = fGift;
+    _renderInsideGift(cgi: number, gi: number, fGift: any) {
+        const { gift, secret } = fGift;
         if ((cgi+'-'+gi === this.state.hoverId) || isMobile) {
-            let imInterested = false;
-            let iWantToBuy = false;
-            let iBought = false;
-            if (this.props.username !== null) {
-                for (const [, value] of interestedUser.entries()) { if (value === this.props.username) imInterested = true; }
-                for (const [, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
-                for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
-            }
             return (<>
-                { (bought.length === 0 || imInterested || iWantToBuy || iWantToBuy) &&
-                <div className="card-edit-close">
-                    <span className={imInterested ? "text-right icon-selected" : "text-right"} style={{cursor: "pointer"}} onClick={() => this.interested(this.props.userId, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
-                    {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
-                    <span className={iWantToBuy ? "icon-selected" : ""} style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
-                    {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
-                    { (bought.length !== 0 && !iBought) ?
-                    <span className={iBought ? "icon-selected" : ""}><Octicon icon={Gift}/></span>
-                    :
-                    <span
-                        className={iBought ? "icon-selected" : ""}
-                        style={{cursor: "pointer"}}
-                        onClick={() => this.bought(this.props.userId, gift.id, iWantToBuy, iBought)}>
-                            <Octicon icon={Gift}/>
-                    </span>
-                    }{' '}
-                    {bought.length !== 0 && <><span>{bought.length}</span>{' '}</>}
-                    {secret && <span className="text-right" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture)}><Octicon icon={Pencil}/></span>}
-                    {' '}
-                    {secret && <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>}
-                </div> }
-                <div style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
+                <div style={{cursor: "pointer"}} onClick={() => this.showGift(fGift)}>
                     <div className="card-name">{gift.name}</div>
                     <div className="card-description">{gift.description}</div>
                     <div className="mycard-footer">
@@ -297,7 +280,8 @@ class FriendWishList extends React.Component<Props, State> {
                 </div>
             </>);
         } else {
-          return (<div className="card-name-only">{gift.name}</div>);
+          const className = (secret) ? "card-name-only-secret" : "card-name-only";
+          return (<div className={className}>{gift.name}</div>);
         }
     }
 
@@ -318,13 +302,54 @@ class FriendWishList extends React.Component<Props, State> {
                       if (buyActionUser[key] === "BOUGHT") bought.push(key);
                   });
                   const boughtClassName = (bought.length === 0) ? "" : " card-already-bought";
+                  let imInterested = false;
+                  let iWantToBuy = false;
+                  let iBought = false;
+                  if (this.props.username !== null) {
+                      for (const [, value] of interestedUser.entries()) { if (value === this.props.username) imInterested = true; }
+                      for (const [, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
+                      for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
+                  }
+
+                  const secretClassName = (secret) ? " secret-border" : "";
 
                   return (
-                      <div className={"mycard" + boughtClassName} onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
-                          <div style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
+                      <div className={"mycard" + boughtClassName + secretClassName} onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
+                          {secret &&
+                            <div className="card-edit-close">
+                              <span className="three-icon-first" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture)}><Octicon icon={Pencil}/></span>
+                              {' '}
+                              <div className="three-icon-second secret-text">Secret</div>
+                              <span className="three-icon-third" style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
+                            </div>
+                            }
+                          { (bought.length === 0 || imInterested || iWantToBuy || iWantToBuy) &&
+                          <div className="card-edit-close">
+                              <div className={imInterested ? "icon-selected three-icon-first" : "three-icon-first"}>
+                                <span style={{cursor: "pointer"}} onClick={() => this.interested(this.props.userId, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
+                                {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
+                              </div>
+                              <div className={iWantToBuy ? "icon-selected three-icon-second" : "three-icon-second"}>
+                                  <span style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
+                                  {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
+                              </div>
+                              <div className={iBought ? "icon-selected three-icon-third" : "three-icon-third"}>
+                                  { (bought.length !== 0 && !iBought) ?
+                                  <Octicon icon={Gift}/>
+                                  :
+                                  <span
+                                      style={{cursor: "pointer"}}
+                                      onClick={() => this.bought(this.props.userId, gift.id, iWantToBuy, iBought)}>
+                                          <Octicon icon={Gift}/>
+                                  </span>
+                                  }{' '}
+                                  {bought.length !== 0 && <><span>{bought.length}</span>{' '}</>}
+                              </div>
+                          </div> }
+                          <div style={{cursor: "pointer"}} onClick={() => this.showGift(fGift)}>
                               <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                           </div>
-                          {this._renderInsideGift(wantToBuy, bought, cgi, gi, fGift)}
+                          {this._renderInsideGift(cgi, gi, fGift)}
                       </div>);
                 })}
                 </div>
@@ -348,11 +373,15 @@ class FriendWishList extends React.Component<Props, State> {
           <div>{this.renderGifts()}</div>
 
           <DisplayGift
+            username={this.props.username}
             show={this.state.showGift}
-            gift={this.state.giftToShow}
+            fGift={this.state.giftToShow}
             close={() => this.setState({showGift: false, giftToShow: null})}
             friendwishlist={this.props.friendwishlist}
-            mywishlist={this.props.mywishlist}/>
+            mywishlist={this.props.mywishlist}
+            interested={(giftId: number, imInterested: boolean) => this.interested(this.props.userId, giftId, imInterested)}
+            wantToBuy={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.wantToBuy(this.props.userId, giftId, iWantToBuy, iBought)}
+            bought={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.bought(this.props.userId, giftId, iWantToBuy, iBought)}/>
 
           <Modal isOpen={this.state.show} toggle={() => this.closeModal()}>
               <ModalHeader toggle={() => this.closeModal()}>{this.state.title}</ModalHeader>
@@ -367,23 +396,47 @@ class FriendWishList extends React.Component<Props, State> {
 }
 
 interface DisplayGiftProps {
+    username: String | null,
     show: boolean
-    gift: any | null,
+    fGift: any | null,
     close(): void,
     friendwishlist: FriendWishListMessage,
-    mywishlist: MyWishListMessage
+    mywishlist: MyWishListMessage,
+    interested: Function,
+    wantToBuy: Function,
+    bought: Function
 };
 
 class DisplayGift extends React.Component<DisplayGiftProps> {
     render() {
-        const { show, gift, close, friendwishlist, mywishlist } = this.props;
+        const { show, fGift, close, friendwishlist, mywishlist } = this.props;
 
-        if (gift === null) return <div/>;
+        if (fGift === null) return <div/>;
+
+        const { gift } = fGift;
 
         const isContainer = isMobile ? "" : "container";
         const padding: string = isMobile ? "0px" : "10px";
 
         const wtb = gift.whereToBuy.split(" ");
+
+        //Duplicated
+        const { interestedUser, buyActionUser } = fGift;
+        let wantToBuy: string[] = [];
+        let bought: string[] = [];
+        Object.keys(buyActionUser).forEach(key => {
+            if (buyActionUser[key] === "WANT_TO_BUY") wantToBuy.push(key);
+            if (buyActionUser[key] === "BOUGHT") bought.push(key);
+        });
+        let imInterested = false;
+        let iWantToBuy = false;
+        let iBought = false;
+        if (this.props.username !== null) {
+            for (const [, value] of interestedUser.entries()) { if (value === this.props.username) imInterested = true; }
+            for (const [, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
+            for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
+        }
+
         return (
           <Modal isOpen={show} toggle={() => close()} size="lg">
             <ModalHeader toggle={() => close() }>{gift.name}</ModalHeader>
@@ -403,7 +456,8 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
                         {(gift.whereToBuy !== "") &&
                             <div>{mywishlist.whereToBuy}: {wtb.map((word: string) => {
                                 if (word.startsWith("http")) {
-                                    return <a href={word}>{word}{' '}</a>;
+                                    let smallWord = word.length > 20 ? word.substring(0,20) + '...' : word;
+                                    return <a href={word}>{smallWord}{' '}</a>;
                                 } else {
                                     return word + " ";
                                 }
@@ -412,6 +466,11 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
                     </div>
                 </div>
             </ModalBody>
+            { (bought.length === 0 || imInterested || iWantToBuy || iBought) && <ModalFooter>
+              <Button color={imInterested ? "primary" : "secondary"} onClick={() => this.props.interested(gift.id, imInterested)}><Octicon icon={Heart}/> {friendwishlist.imInterested}</Button>{' '}
+              <Button color={iWantToBuy ? "primary" : "secondary"} onClick={() => this.props.wantToBuy(gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/> {friendwishlist.iWantToBuy}</Button>
+              <Button color={iBought ? "primary" : "secondary"} onClick={() => this.props.bought(gift.id, iWantToBuy, iBought)}><Octicon icon={Gift}/> {friendwishlist.iBought}</Button>
+            </ModalFooter> }
           </Modal>);
     }
 }

@@ -46,7 +46,10 @@ export interface MyFriendsMessage {
 }
 
 export interface FriendWishListMessage {
-    title: string
+    title: string,
+    imInterested: string,
+    iWantToBuy: string,
+    iBought: string
 }
 
 export interface Connection {

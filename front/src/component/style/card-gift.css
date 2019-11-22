@@ -10,27 +10,63 @@
   border-radius: 5px;
   border: 0.5px solid;
   z-index: 10;
-  height: 250px;
+  height: 275px;
   width: 152px;
   margin: 10px;
 }
 
-.icon-selected {
-  color: #007bff;
-}
-
 .card-edit-close {
-  text-align: right;
   padding: 5px;
   font-size: 12px;
-  transform: translateY(-150px);
-}
-.card-edit-close span {
-  cursor: "pointer";
+  display: inline-block;
+  width: 100%;
 }
 
 .icon-selected {
   color: #007bff;
+}
+
+.one-icon {
+  width: 100%;
+  display: inline-block;
+  text-align: right;
+}
+
+.two-icon-first {
+  width: 48%;
+  display: inline-block;
+  text-align: center;
+}
+.two-icon-second {
+  width: 49%;
+  display: inline-block;
+  text-align: center;
+}
+
+.three-icon-first {
+  width: 32%;
+  display: inline-block;
+  text-aline: left;
+}
+.three-icon-second {
+  width: 33%;
+  display: inline-block;
+  text-align: center;
+}
+.three-icon-third {
+  width: 32%;
+  display: inline-block;
+  text-align: right;
+}
+
+.secret-text {
+  color: red;
+  font-style: italic;
+  font-weight: lighter;
+}
+
+.secret-border {
+  border-color: red;
 }
 
 .card-name {
@@ -40,7 +76,6 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  transform: translateY(-18px);
 }
 
 .card-description {
@@ -50,13 +85,12 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  transform: translateY(-18px);
 }
 .mycard-footer {
   width: 151px;
   padding: 5px;
   position: absolute;
-  top: 220px;
+  top: 245px;
   overflow: hidden;
 }
 .card-wtb { /*want to buy*/
@@ -79,11 +113,18 @@
 
 .card-name-only {
   display: table-cell;
-  height: 100px;
+  height: 97px;
   width: 150px;
   padding: 10px;
   text-align: center;
   vertical-align: middle;
+}
+.card-name-only-secret {
+  display: table-cell;
+  height: 69px;
+  width: 150px;
+  padding: 10px;
+  text-align: center;
 }
 
 .card-already-bought {

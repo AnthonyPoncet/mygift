@@ -208,7 +208,7 @@ class MyFriends extends React.Component<Props, State> {
     _renderInsideFriend(i: number, req: any, user: any) {
         if ((i.toString() === this.state.hoverId) || isMobile) {
             return (<>
-                <div className="friend-card-delete" >
+                <div className="friend-card-delete one-icon" >
                     <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
                 </div>
                 <div className="friend-footer">
