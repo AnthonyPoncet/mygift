@@ -233,7 +233,7 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
         console.log(iBought)
 
         return (
-          <Modal isOpen={show} toggle={() => close()}>
+          <Modal isOpen={show} toggle={() => close()} size="lg">
             <ModalHeader toggle={() => close() }>{gift.name}</ModalHeader>
             <ModalBody>
                 <div className={isContainer}>
@@ -252,7 +252,7 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
                             <div>{mywishlist.whereToBuy}: {wtb.map((word: string) => {
                                 if (word.startsWith("http")) {
                                     let smallWord = word.length > 20 ? word.substring(0,20) + '...' : word;
-                                    return <a href={word}>{smallWord}{' '}</a>;
+                                    return <a href={word} target="_blank">{smallWord}{' '}</a>;
                                 } else {
                                     return word + " ";
                                 }
