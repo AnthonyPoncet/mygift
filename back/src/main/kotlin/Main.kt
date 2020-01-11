@@ -2,10 +2,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
-import dao.BuyAction
-import dao.DatabaseManager
-import dao.FriendRequestAlreadyExistException
-import dao.RequestStatus
+import dao.*
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.CORS
@@ -24,10 +21,10 @@ import io.ktor.response.respondFile
 import io.ktor.routing.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import java.io.File
-import java.nio.charset.StandardCharsets
 import java.awt.Image
 import java.awt.image.BufferedImage
+import java.io.File
+import java.nio.charset.StandardCharsets
 import javax.imageio.ImageIO
 
 
@@ -39,6 +36,12 @@ data class NotANumberException(val target: String) : Exception()
 fun main(args: Array<String>) {
     mainBody {
         val arguments = ArgParser(args).parseInto(::ArgumentParser)
+        if (arguments.adaptTable.isNotEmpty()) {
+            val adaptTable = AdaptTable(arguments.db)
+            adaptTable.execute(AdaptTable.STEP.valueOf(arguments.adaptTable.toString()))
+            return@mainBody
+        }
+
         val databaseManager = DatabaseManager(arguments.db)
         val userManager = UserManager(databaseManager)
 
@@ -302,6 +305,21 @@ fun main(args: Array<String>) {
 
                         try {
                             userManager.removeCategory(id, cid)
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
+                    post("/categories/{cid}/rank-actions/{action}") {
+                        val id = getUserId(call.parameters)
+                        val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException("Category id")
+                        val action = call.parameters["action"] ?: throw IllegalStateException("Missing action")
+                        if (action != "down" && action != "up") {
+                            throw IllegalStateException("Only allowed action are up or down")
+                        }
+
+                        try {
+                            userManager.changeCategoryRank(id, cid, RankAction.valueOf(action.toUpperCase()))
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
