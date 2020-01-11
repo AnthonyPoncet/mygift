@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
 
-import Octicon, {Pencil, X} from '@primer/octicons-react';
+import Octicon, {Pencil, X, ArrowDown, ArrowUp} from '@primer/octicons-react';
 
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
@@ -22,7 +22,8 @@ interface Props { userId: number | null, mywishlist: MyWishListMessage };
 interface State {
   catAndGifts: any[],
   show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string,
-  hoverId: string
+  hoverId: string,
+  editMode: boolean
 };
 
 class MyWishList extends React.Component<Props, State> {
@@ -46,7 +47,8 @@ class MyWishList extends React.Component<Props, State> {
         this.state = {
             catAndGifts: [],
             show: false, title: '', bodyRender: null, button: { text: '', fun: null }, inputs: { }, errorMessage: '',
-            hoverId: ''
+            hoverId: '',
+            editMode: false
         }
     }
 
@@ -209,10 +211,10 @@ class MyWishList extends React.Component<Props, State> {
             inputs: { name: '', nameValidity: true }, errorMessage: '' });
     }
 
-    openEditCat(name: string, categoryId: number) {
+    openEditCat(name: string, categoryId: number, rank: number) {
         const { mywishlist } = this.props;
         this.setState( { show: true, title: mywishlist.updateCategoryModalTitle, bodyRender: this.catBodyRender, button: { text: mywishlist.updateModalButton, fun: () => this.updateCat(categoryId) },
-            inputs: { name: name, nameValidity: true }, errorMessage: '' });
+            inputs: { name: name, nameValidity: true, rank: rank }, errorMessage: '' });
     }
 
     handleChangeCat = async (event: any) => {
@@ -240,7 +242,7 @@ class MyWishList extends React.Component<Props, State> {
             const response = await fetch(url, {
                 method: method,
                 headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({"name": inputs.name})
+                body: JSON.stringify({"name": inputs.name, "rank": inputs.rank})
             });
             if (response.status === 200) {
                 this.setState({ show: false });
@@ -260,6 +262,20 @@ class MyWishList extends React.Component<Props, State> {
     deleteCat(id: number) {
         const request = async () => {
             const response = await fetch(url + '/users/' + this.props.userId + '/categories/' + id, {method: 'delete'});
+            if (response.status === 202) {
+                this.props.userId && this.getGifts(this.props.userId);
+            } else {
+                const json = await response.json();
+                console.log(json);
+            }
+        };
+        request();
+    }
+
+    rank(id: number, downUp: number) { //0 = down , other = up
+        const val = (downUp === 0) ? "down" : "up";
+        const request = async () => {
+            const response = await fetch(url + '/users/' + this.props.userId + '/categories/' + id + "/rank-actions/" + val, {method: 'post'});
             if (response.status === 202) {
                 this.props.userId && this.getGifts(this.props.userId);
             } else {
@@ -314,7 +330,7 @@ class MyWishList extends React.Component<Props, State> {
             <div key={cgi}>
                 <h5 style={{margin: "10px"}}>{cg.category.name}
                 {' '}
-                <span style={{cursor: "pointer"}} onClick={() => this.openEditCat(cg.category.name, cg.category.id)}><Octicon icon={Pencil} verticalAlign='middle'/></span>
+                <span style={{cursor: "pointer"}} onClick={() => this.openEditCat(cg.category.name, cg.category.id, cg.category.rank)}><Octicon icon={Pencil} verticalAlign='middle'/></span>
                 {' '}
                 <span style={{cursor: "pointer"}} onClick={() => this.deleteCat(cg.category.id)}><Octicon icon={X} verticalAlign='middle'/></span>
                 </h5>
@@ -339,8 +355,38 @@ class MyWishList extends React.Component<Props, State> {
       }
     }
 
+    renderGiftsEditMode() {
+    if (this.state.catAndGifts) {
+        return this.state.catAndGifts.map((cg, cgi) => {
+            return (
+            <div key={cgi}>
+                <h5 style={{margin: "10px"}}>{cg.category.name} - {cg.category.rank}
+                {' '}
+                <span style={{cursor: "pointer"}} onClick={() => this.rank(cg.category.id, 1)}><Octicon icon={ArrowDown} verticalAlign='middle'/></span>
+                {' '}
+                <span style={{cursor: "pointer"}} onClick={() => this.rank(cg.category.id, 0)}><Octicon icon={ArrowUp} verticalAlign='middle'/></span>
+                </h5>
+
+                <div className="mycard-row">
+                    {cg.gifts.map((gift: any, gi:any) => {
+                        return (
+                        <div className="mycard">
+                            <div className="card-edit-close one-icon">
+                            </div>
+                            <div>
+                                <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                            </div>
+                            {this._renderInsideGift(cgi, gi, gift)}
+                        </div>);
+                    })}
+                </div>
+            </div>)
+            });
+          }
+        }
+
     render() {
-        const { button } = this.state;
+        const { button, editMode } = this.state;
         const { mywishlist } = this.props;
         let modalBody = [];
         if (this.state.bodyRender !== null) {
@@ -350,9 +396,10 @@ class MyWishList extends React.Component<Props, State> {
         return (
             <div>
                 {this.props.userId && <>
-                    <Button color="link" onClick={this.openAddGift}>{mywishlist.addGiftButton}</Button>
-                    <Button color="link" onClick={this.openAddCat}>{mywishlist.addCategoryButton}</Button>
-                    {this.renderGifts()}</>}
+                    <Button color="link" disabled={editMode} onClick={this.openAddGift}>{mywishlist.addGiftButton}</Button>
+                    <Button color="link" disabled={editMode} onClick={this.openAddCat}>{mywishlist.addCategoryButton}</Button>
+                    <Button color="link" onClick={() => {this.setState({editMode: !editMode});}}>{mywishlist.reorderButtonTitle}</Button>
+                    {editMode ? this.renderGiftsEditMode() : this.renderGifts()}</>}
 
                 <Modal isOpen={this.state.show} toggle={this.closeModal}>
                     <ModalHeader toggle={this.closeModal}>{this.state.title}</ModalHeader>

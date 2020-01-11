@@ -2,11 +2,10 @@ package dao
 
 import RestCategory
 import RestGift
-import java.sql.ResultSet
 import java.time.LocalDate
 
 data class DbUser(val id: Long, val name: String, val password: String, val picture: String?)
-data class DbCategory(val id: Long, val userId: Long, val name: String)
+data class DbCategory(val id: Long, val userId: Long, val name: String, val rank: Long)
 data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?, val secret: Boolean)
 enum class BuyAction { NONE, WANT_TO_BUY, BOUGHT }
 data class DbFriendActionOnGift(val id: Long, val giftId: Long, val userId: Long, val interested: Boolean, val buy: BuyAction)
@@ -65,7 +64,7 @@ class DatabaseManager(dbPath: String) {
      */
     @Synchronized fun addUser(userName: String, password: String, picture: String?): DbUser {
         val newUser = usersAccessor.addUser(userName, password, picture ?: "")
-        addCategory(newUser.id, RestCategory(DEFAULT_CATEGORY_NAME))
+        addCategory(newUser.id, RestCategory(DEFAULT_CATEGORY_NAME, null))
         return newUser
     }
 
@@ -204,20 +203,33 @@ class DatabaseManager(dbPath: String) {
         if (category.name == null) {
             throw Exception("Name could not be null")
         }
+        if (category.rank == null) {
+            throw Exception("Rank could not be null")
+        }
 
-        if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
-        if (!categoryAccessor.categoryExists(categoryId)) throw Exception("Unknown category $categoryId")
-        if (!categoryAccessor.categoryBelongToUser(userId, categoryId)) throw Exception("Category $categoryId does not belong to user $userId")
-
+        checkCategoryInputs(userId, categoryId)
         categoryAccessor.modifyCategory(categoryId, category)
     }
 
     @Synchronized fun removeCategory(userId: Long, categoryId: Long) {
+        checkCategoryInputs(userId, categoryId)
+        categoryAccessor.removeCategory(categoryId)
+    }
+
+    @Synchronized fun rankDownCategory(userId: Long, categoryId: Long) {
+        checkCategoryInputs(userId, categoryId)
+        categoryAccessor.rankDownCategory(userId, categoryId)
+    }
+
+    @Synchronized fun rankUpCategory(userId: Long, categoryId: Long) {
+        checkCategoryInputs(userId, categoryId)
+        categoryAccessor.rankUpCategory(userId, categoryId)
+    }
+
+    private fun checkCategoryInputs(userId: Long, categoryId: Long) {
         if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
         if (!categoryAccessor.categoryExists(categoryId)) throw Exception("Unknown category $categoryId")
         if (!categoryAccessor.categoryBelongToUser(userId, categoryId)) throw Exception("Category $categoryId does not belong to user $userId")
-
-        categoryAccessor.removeCategory(categoryId)
     }
 
     /**

@@ -6,7 +6,7 @@ import kotlin.Exception
 data class User(val id: Long, val name: String, val picture: String?)
 data class Friend(val name: String, val picture: String?)
 data class Gift(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?)
-data class Category(val id: Long, val name: String)
+data class Category(val id: Long, val name: String, val rank: Long)
 data class CatAndGift(val category: Category, val gifts: List<Gift>)
 data class FriendGift(val gift: Gift, val interestedUser: List<String>, val buyActionUser: Map<String, BuyAction>, val secret: Boolean)
 data class CatAndFriendGift(val category: Category, val gifts: List<FriendGift>)
@@ -21,10 +21,11 @@ data class ConnectionInformation(val name: String?, val password: String?)
 data class UserInformation(val name: String?, val password: String?, val picture: String?)
 data class UserModification(val name: String?, val picture: String?)
 data class RestGift(val name: String?, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long?, val picture: String?)
-data class RestCategory(val name: String?)
+data class RestCategory(val name: String?, val rank: Long?)
 data class RestCreateFriendRequest(val name: String?)
 enum class EventType { ALL_FOR_ALL, ALL_FOR_ONE }
 data class RestCreateEvent(val type: EventType?, val name: String?, val description: String?, val endDate: LocalDate?, val target: Long?) //end date being epoch
+enum class RankAction { DOWN, UP }
 
 /** Exceptions **/
 class BadParamException(val error: String) : Exception("Bad parameter $error")
@@ -97,7 +98,7 @@ class UserManager(private val databaseManager: DatabaseManager) {
 
     fun modifyUser(userId: Long, userModification: UserModification): User {
         if (userModification.name == null) throw BadParamException("Name could not be null")
-        val user = databaseManager.getUser(userId) ?: throw CreateUserException("User does not exists")
+        databaseManager.getUser(userId) ?: throw CreateUserException("User does not exists")
 
         databaseManager.modifyUser(userId, userModification.name, userModification.picture)
         return User(userId, userModification.name, userModification.picture)
@@ -111,7 +112,7 @@ class UserManager(private val databaseManager: DatabaseManager) {
         val categories = databaseManager.getUserCategories(userId)
         val gifts = databaseManager.getUserGifts(userId)
         return categories.map { c ->
-            CatAndGift(Category(c.id, c.name), gifts.filter { g -> g.categoryId == c.id }.map { g -> toGift(g) }) }
+            CatAndGift(Category(c.id, c.name, c.rank), gifts.filter { g -> g.categoryId == c.id }.map { g -> toGift(g) }) }
     }
 
     //Not optimal at all!
@@ -121,7 +122,7 @@ class UserManager(private val databaseManager: DatabaseManager) {
 
         val dummyUserCache = DummyUserCache(databaseManager) //Cache only by call
         return categories.map { c ->
-            CatAndFriendGift(Category(c.id, c.name), gifts.filter { g -> g.categoryId == c.id }.map { g ->
+            CatAndFriendGift(Category(c.id, c.name, c.rank), gifts.filter { g -> g.categoryId == c.id }.map { g ->
                 val actions = databaseManager.getFriendActionOnGift(g.id)
                 FriendGift(toGift(g),
                     actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! },
@@ -206,6 +207,12 @@ class UserManager(private val databaseManager: DatabaseManager) {
         databaseManager.removeCategory(userId, categoryId)
     }
 
+    fun changeCategoryRank(id: Long, cid: Long, rankAction: RankAction) {
+        when (rankAction) {
+            RankAction.DOWN -> databaseManager.rankDownCategory(id, cid)
+            RankAction.UP -> databaseManager.rankUpCategory(id, cid)
+        }
+    }
 
     fun createFriendRequest(userId: Long, otherUser: RestCreateFriendRequest) {
         if (otherUser.name == null) throw BadParamException("Username to send request to could not be null")
@@ -342,5 +349,4 @@ class UserManager(private val databaseManager: DatabaseManager) {
             if (dbEvent.target == null) null else dummyUserCache.queryName(dbEvent.target),
             databaseManager.getParticipants(dbEvent.id).filterNot { p -> dummyUserCache.queryName(p.userId) == null }.map { p -> Participant(dummyUserCache.queryName(p.userId)!!, p.status) }.toSet())
     }
-
 }

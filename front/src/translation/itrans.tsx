@@ -29,7 +29,8 @@ export interface MyWishListMessage {
     updateModalButton: string,
     addCategoryButton: string,
     addCategoryModalTitle: string,
-    updateCategoryModalTitle: string
+    updateCategoryModalTitle: string,
+    reorderButtonTitle: string
 }
 
 export interface MyFriendsMessage {

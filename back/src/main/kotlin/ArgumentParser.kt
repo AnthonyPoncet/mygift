@@ -20,4 +20,8 @@ class ArgumentParser(parser: ArgParser) {
         help = "Reset db with some default values") {
             toBoolean()
         }.default(false)
+
+    val adaptTable : String by parser.storing(
+        "-a", "--adaptTable",
+        help = "Adapt table step X").default("")
 }

@@ -46,7 +46,8 @@ class En implements Itrans {
             updateModalButton: "Modify",
             addCategoryButton: "Add Category",
             addCategoryModalTitle: "Add a new category",
-            updateCategoryModalTitle: "Modify category" },
+            updateCategoryModalTitle: "Modify category",
+            reorderButtonTitle: "Reorder"},
           myfriends: {
             addFriendButton: "Add friend",
             addFriendModalTitle: "Add a new friend",

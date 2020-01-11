@@ -46,7 +46,8 @@ class Fr implements Itrans {
             updateModalButton: "Modifier",
             addCategoryButton: "Ajouter une catégorie",
             addCategoryModalTitle: "Ajouter une nouvelle catégorie",
-            updateCategoryModalTitle: "Modifier cette catégorie" },
+            updateCategoryModalTitle: "Modifier cette catégorie",
+            reorderButtonTitle: "Réorganiser"},
           myfriends: {
             addFriendButton: "Ajouter un ami",
             addFriendModalTitle: "Ajouter un nouvel ami",

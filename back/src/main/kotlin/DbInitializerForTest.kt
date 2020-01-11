@@ -12,7 +12,7 @@ class DbInitializerForTest(private val databaseManager: DatabaseManager) {
         val azeDCat = databaseManager.getUserCategories(aze)[0].id
         println("username: aze, pwd: aze ==> id: $aze - Default category id: $azeDCat")
         val eza = databaseManager.addUser("eza", "eza", "red_cat.png").id
-        databaseManager.addCategory(eza, RestCategory("Second catégorie"))
+        databaseManager.addCategory(eza, RestCategory("Second catégorie", null))
         val ezaCats = databaseManager.getUserCategories(eza)
         val ezaDCat = ezaCats[0].id
         val ezaSCat = ezaCats[1].id
