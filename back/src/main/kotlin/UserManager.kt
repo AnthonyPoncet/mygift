@@ -20,7 +20,7 @@ data class BuyListByFriend(val friendName: String, val gifts: List<FriendGift>)
 data class ConnectionInformation(val name: String?, val password: String?)
 data class UserInformation(val name: String?, val password: String?, val picture: String?)
 data class UserModification(val name: String?, val picture: String?)
-data class RestGift(val name: String?, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long?, val picture: String?)
+data class RestGift(val name: String?, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long?, val picture: String?, val rank: Long?)
 data class RestCategory(val name: String?, val rank: Long?)
 data class RestCreateFriendRequest(val name: String?)
 enum class EventType { ALL_FOR_ALL, ALL_FOR_ONE }
@@ -179,6 +179,13 @@ class UserManager(private val databaseManager: DatabaseManager) {
         databaseManager.removeGift(userId, giftId)
     }
 
+    fun changeGiftRank(userId: Long, giftId: Long, rankAction: RankAction) {
+        when (rankAction) {
+            RankAction.DOWN -> databaseManager.rankDownGift(userId, giftId)
+            RankAction.UP -> databaseManager.rankUpGift(userId, giftId)
+        }
+    }
+
     fun interested(giftId: Long, userId: Long) {
         databaseManager.interested(giftId, userId, true)
     }
@@ -207,10 +214,10 @@ class UserManager(private val databaseManager: DatabaseManager) {
         databaseManager.removeCategory(userId, categoryId)
     }
 
-    fun changeCategoryRank(id: Long, cid: Long, rankAction: RankAction) {
+    fun changeCategoryRank(userId: Long, categoryId: Long, rankAction: RankAction) {
         when (rankAction) {
-            RankAction.DOWN -> databaseManager.rankDownCategory(id, cid)
-            RankAction.UP -> databaseManager.rankUpCategory(id, cid)
+            RankAction.DOWN -> databaseManager.rankDownCategory(userId, categoryId)
+            RankAction.UP -> databaseManager.rankUpCategory(userId, categoryId)
         }
     }
 

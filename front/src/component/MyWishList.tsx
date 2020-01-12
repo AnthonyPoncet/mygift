@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
 
-import Octicon, {Pencil, X, ArrowDown, ArrowUp} from '@primer/octicons-react';
+import Octicon, {Pencil, X, ArrowDown, ArrowUp, ArrowLeft, ArrowRight} from '@primer/octicons-react';
 
 import { connect } from 'react-redux';
 import { AppState } from '../redux/store';
@@ -71,10 +71,10 @@ class MyWishList extends React.Component<Props, State> {
             inputs: { name: '', nameValidity: true, description: null, price: null, whereToBuy: null, categoryId: this.state.catAndGifts[0].category.id, picture: null }, errorMessage: '' });
     }
 
-    openEditGift(giftId: number, name: string, description: string, price: string, whereToBuy: string, categoryId: number, image: string | null) {
+    openEditGift(giftId: number, name: string, description: string, price: string, whereToBuy: string, categoryId: number, image: string | null, rank: number) {
         const { mywishlist } = this.props;
         this.setState( { show: true, title: mywishlist.updateGiftModalTitle, bodyRender: this.giftBodyRender, button: { text: mywishlist.updateModalButton, fun: () => this.updateGift(giftId) },
-            inputs: { name: name, nameValidity: true, description: description, price: price, whereToBuy: whereToBuy, categoryId: categoryId, picture: image }, errorMessage: '' });
+            inputs: { name: name, nameValidity: true, description: description, price: price, whereToBuy: whereToBuy, categoryId: categoryId, picture: image, rank: rank }, errorMessage: '' });
     }
 
     handleChangeGift = async (event: any) => {
@@ -174,7 +174,8 @@ class MyWishList extends React.Component<Props, State> {
                     "price": inputs.price,
                     "whereToBuy": inputs.whereToBuy,
                     "categoryId": inputs.categoryId,
-                    "picture": imageName})
+                    "picture": imageName,
+                    "rank": inputs.rank})
             });
             if (response.status === 200) {
                 this.setState({ show: false });
@@ -194,6 +195,20 @@ class MyWishList extends React.Component<Props, State> {
     deleteGift(id: number) {
         const request = async () => {
             const response = await fetch(url + '/users/' + this.props.userId + '/gifts/' + id, {method: 'delete'});
+            if (response.status === 202) {
+                this.props.userId && this.getGifts(this.props.userId);
+            } else {
+                const json = await response.json();
+                console.log(json);
+            }
+        };
+        request();
+    }
+
+    rankGift(id: number, downUp: number) { //0 = down , other = up
+        const val = (downUp === 0) ? "up" : "down";
+        const request = async () => {
+            const response = await fetch(url + '/users/' + this.props.userId + '/gifts/' + id + "/rank-actions/" + val, {method: 'post'});
             if (response.status === 202) {
                 this.props.userId && this.getGifts(this.props.userId);
             } else {
@@ -272,7 +287,7 @@ class MyWishList extends React.Component<Props, State> {
         request();
     }
 
-    rank(id: number, downUp: number) { //0 = down , other = up
+    rankCategory(id: number, downUp: number) { //0 = down , other = up
         const val = (downUp === 0) ? "down" : "up";
         const request = async () => {
             const response = await fetch(url + '/users/' + this.props.userId + '/categories/' + id + "/rank-actions/" + val, {method: 'post'});
@@ -307,7 +322,7 @@ class MyWishList extends React.Component<Props, State> {
     }
 
     _renderInsideGift(cgi: number, gi: number, gift: any) {
-        const fun = () => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture);
+        const fun = () => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture, gift.rank);
         if ((cgi+'-'+gi === this.state.hoverId) || isMobile) {
             return (
               <div style={{cursor: "pointer"}} onClick={fun}>
@@ -337,7 +352,7 @@ class MyWishList extends React.Component<Props, State> {
 
                 <div className="mycard-row">
                 {cg.gifts.map((gift: any, gi:any) => {
-                  const fun = () => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture);
+                  const fun = () => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture, gift.rank);
                   return (
                       <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
                           <div className="card-edit-close one-icon">
@@ -358,20 +373,30 @@ class MyWishList extends React.Component<Props, State> {
     renderGiftsEditMode() {
     if (this.state.catAndGifts) {
         return this.state.catAndGifts.map((cg, cgi) => {
+            let displayDown = cgi !== (this.state.catAndGifts.length - 1);
+            let displayUp = cgi !== 0;
             return (
             <div key={cgi}>
                 <h5 style={{margin: "10px"}}>{cg.category.name} - {cg.category.rank}
                 {' '}
-                <span style={{cursor: "pointer"}} onClick={() => this.rank(cg.category.id, 1)}><Octicon icon={ArrowDown} verticalAlign='middle'/></span>
+                {displayDown && <span style={{cursor: "pointer"}} onClick={() => this.rankCategory(cg.category.id, 1)}><Octicon icon={ArrowDown} verticalAlign='middle'/></span>}
                 {' '}
-                <span style={{cursor: "pointer"}} onClick={() => this.rank(cg.category.id, 0)}><Octicon icon={ArrowUp} verticalAlign='middle'/></span>
+                {displayUp && <span style={{cursor: "pointer"}} onClick={() => this.rankCategory(cg.category.id, 0)}><Octicon icon={ArrowUp} verticalAlign='middle'/></span>}
                 </h5>
 
                 <div className="mycard-row">
                     {cg.gifts.map((gift: any, gi:any) => {
+                        let displayLeft = gi !== 0;
+                        let displayRight = gi !== (cg.gifts.length - 1);
                         return (
                         <div className="mycard">
-                            <div className="card-edit-close one-icon">
+                            <div className="card-edit-close">
+                                <div className="two-icon-first">
+                                    {displayLeft && <span style={{cursor: "pointer"}} onClick={() => this.rankGift(gift.id, 1)}><Octicon icon={ArrowLeft} verticalAlign='middle'/></span>}
+                                </div>
+                                <div className="two-icon-second">
+                                    {displayRight && <span style={{cursor: "pointer"}} onClick={() => this.rankGift(gift.id, 0)}><Octicon icon={ArrowRight} verticalAlign='middle'/></span>}
+                                </div>
                             </div>
                             <div>
                                 <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>

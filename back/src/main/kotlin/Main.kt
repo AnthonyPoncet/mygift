@@ -207,6 +207,21 @@ fun main(args: Array<String>) {
                             call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
                         }
                     }
+                    post("/gifts/{gid}/rank-actions/{action}") {
+                        val id = getUserId(call.parameters)
+                        val gid = getGiftId(call.parameters)
+                        val action = call.parameters["action"] ?: throw IllegalStateException("Missing action")
+                        if (action != "down" && action != "up") {
+                            throw IllegalStateException("Only allowed action are up or down")
+                        }
+
+                        try {
+                            userManager.changeGiftRank(id, gid, RankAction.valueOf(action.toUpperCase()))
+                            call.respond(HttpStatusCode.Accepted)
+                        } catch (e: Exception) {
+                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                        }
+                    }
 
                     //These end points should be without the owner id or else the owner id should be used
                     post("/gifts/{gid}/interested") {

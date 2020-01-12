@@ -6,7 +6,7 @@ import java.time.LocalDate
 
 data class DbUser(val id: Long, val name: String, val password: String, val picture: String?)
 data class DbCategory(val id: Long, val userId: Long, val name: String, val rank: Long)
-data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?, val secret: Boolean)
+data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?, val secret: Boolean, val rank: Long)
 enum class BuyAction { NONE, WANT_TO_BUY, BOUGHT }
 data class DbFriendActionOnGift(val id: Long, val giftId: Long, val userId: Long, val interested: Boolean, val buy: BuyAction)
 enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
@@ -125,20 +125,37 @@ class DatabaseManager(dbPath: String) {
         if (gift.categoryId == null) {
             throw Exception("CategoryId could not be null, a default one exist")
         }
+        if (gift.rank == null) {
+            throw Exception("Rank could not be null")
+        }
 
-        if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
-        if (!giftAccessor.giftExists(giftId)) throw Exception("Unknown gift $giftId")
-        if (!giftAccessor.giftBelongToUser(userId, giftId) && !giftAccessor.giftIsSecret(giftId)) throw Exception("Gift $giftId does not belong to user $userId and is not secret") /* secret gift could be modified by anyone */
-
+        checkUpdateGiftsInputs(userId, giftId)
         giftAccessor.modifyGift(giftId, gift)
     }
 
     @Synchronized fun removeGift(userId: Long, giftId: Long) {
+        checkUpdateGiftsInputs(userId, giftId)
+        giftAccessor.removeGift(giftId)
+    }
+
+    @Synchronized fun rankDownGift(userId: Long, giftId: Long) {
+        checkUpdateGiftsInputs(userId, giftId)
+        giftAccessor.rankDownGift(userId, giftId)
+    }
+
+    @Synchronized fun rankUpGift(userId: Long, giftId: Long) {
+        checkUpdateGiftsInputs(userId, giftId)
+        giftAccessor.rankUpGift(userId, giftId)
+    }
+
+    private fun checkUpdateGiftsInputs(userId: Long, giftId: Long) {
         if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
         if (!giftAccessor.giftExists(giftId)) throw Exception("Unknown gift $giftId")
-        if (!giftAccessor.giftBelongToUser(userId, giftId) && !giftAccessor.giftIsSecret(giftId)) throw Exception("Gift $giftId does not belong to user $userId and is not secret") /* secret gift could be deleted by anyone */
-
-        giftAccessor.removeGift(giftId)
+        if (!giftAccessor.giftBelongToUser(
+                userId,
+                giftId
+            ) && !giftAccessor.giftIsSecret(giftId)
+        ) throw Exception("Gift $giftId does not belong to user $userId and is not secret") /* secret gift could be modified by anyone */
     }
 
     /**

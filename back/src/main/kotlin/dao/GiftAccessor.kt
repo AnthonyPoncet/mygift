@@ -5,15 +5,20 @@ import RestGift
 class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     companion object {
-        const val INSERT = "INSERT INTO gifts (userId,name,description,price,whereToBuy,categoryId,picture,secret) VALUES " +
-                "(?,?,?,?,?,?,?,?)"
+        const val INSERT = "INSERT INTO gifts (userId,name,description,price,whereToBuy,categoryId,picture,secret,rank) " +
+                "VALUES (?,?,?,?,?,?,?,?,?)"
         const val SELECT_BY_ID = "SELECT * FROM gifts WHERE id=?"
-        const val SELECT_SOME_BY_USER = "SELECT * FROM gifts WHERE userId=?"
-        const val SELECT_SOME_BY_USER_NO_SECRET = "SELECT * FROM gifts WHERE userId=? AND secret=0"
+        const val SELECT_SOME_BY_USER = "SELECT * FROM gifts WHERE userId=? ORDER BY rank ASC"
+        const val SELECT_SOME_BY_USER_NO_SECRET = "SELECT * FROM gifts WHERE userId=? AND secret=0 ORDER BY rank ASC"
         const val SELECT_BY_ID_AND_USER = "SELECT * FROM gifts WHERE id=? AND userId=?"
-        const val UPDATE = "UPDATE gifts SET name = ?, description = ?, price = ?, whereToBuy = ?, categoryId = ?, picture = ? WHERE id = ?"
-        const val DELETE = "DELETE FROM gifts WHERE id = ?"
+        const val SELECT_MAX_RANK_OF_GIVEN_CATEGORY = "SELECT MAX(rank) FROM gifts WHERE userId=? AND categoryId=?"
+        const val UPDATE = "UPDATE gifts SET name=?, description=?, price=?, whereToBuy=?, categoryId=?, picture=?, rank=? WHERE id=?"
+        const val DELETE = "DELETE FROM gifts WHERE id=?"
         const val IS_SECRET = "SELECT * FROM gifts WHERE id=? AND secret=1"
+
+        const val SELECT_NO_SECRET_GIFT_WITH_SMALLER_RANK = "SELECT * FROM gifts WHERE userId=? AND categoryId=? AND rank=(SELECT MAX(rank) FROM gifts WHERE userId=? AND categoryId=? AND rank<? AND secret=0)"
+        const val SELECT_NO_SECRET_GIFT_WITH_HIGHER_RANK = "SELECT * FROM gifts WHERE userId=? AND categoryId=? AND rank=(SELECT MIN(rank) FROM gifts WHERE userId=? AND categoryId=? AND rank>? AND secret=0)"
+
     }
 
     override fun getTableName(): String {
@@ -31,11 +36,13 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
             "categoryId     INTEGER NOT NULL, " +
             "picture        TEXT, " +
             "secret         INTEGER NOT NULL, " +
+            "rank           INTEGER NOT NULL," +
             "FOREIGN KEY(userId) REFERENCES users(id), " +
             "FOREIGN KEY(categoryId) REFERENCES categories(id))")
     }
 
     fun addGift(userId: Long, gift: RestGift, secret: Boolean) {
+        val maxId = getCurrentMaxRankOfGivenCategory(userId, gift.categoryId!!)
         conn.safeExecute(INSERT, {
             with(it) {
                 setLong(1, userId)
@@ -43,13 +50,14 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                 setString(3, gift.description ?: "")
                 setString(4, gift.price ?: "")
                 setString(5, gift.whereToBuy ?: "")
-                setLong(6, gift.categoryId!!)
+                setLong(6, gift.categoryId)
                 setString(7, gift.picture ?: "")
                 setBoolean(8, secret)
+                setLong(9, maxId + 1)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
             }
-        }, errorMessage(INSERT, userId.toString(), gift.toString(), secret.toString()))
+        }, errorMessage(INSERT, userId.toString(), gift.toString(), secret.toString(), (maxId + 1).toString()))
     }
 
     fun getGift(giftId: Long) : DbGift? {
@@ -68,7 +76,8 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                         res.getString("whereToBuy"),
                         res.getLong("categoryId"),
                         if (picture.isEmpty()) null else picture,
-                        res.getBoolean("secret")
+                        res.getBoolean("secret"),
+                        res.getLong("rank")
                     )
                 } else {
                     null
@@ -95,7 +104,8 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                             res.getString("whereToBuy"),
                             res.getLong("categoryId"),
                             if (picture.isEmpty()) null else picture,
-                            res.getBoolean("secret")
+                            res.getBoolean("secret"),
+                            res.getLong("rank")
                         )
                     )
                 }
@@ -123,7 +133,8 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                 setString(4, gift.whereToBuy ?: "")
                 setLong(5, gift.categoryId!!)
                 setString(6, gift.picture ?: "")
-                setLong(7, giftId)
+                setLong(7, gift.rank!!)
+                setLong(8, giftId)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
             }
@@ -166,5 +177,76 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                 return@with executeQuery().next()
             }
         }, errorMessage(IS_SECRET, giftId.toString()))
+    }
+
+    private fun getCurrentMaxRankOfGivenCategory(userId: Long, categoryId: Long) : Long {
+        return conn.safeExecute(SELECT_MAX_RANK_OF_GIVEN_CATEGORY, {
+            with(it) {
+                setLong(1, userId)
+                setLong(2, categoryId)
+                val res = executeQuery()
+                if (res.next()) {
+                    return@with res.getLong(1)
+                }
+                return@with 0
+            }
+        }, errorMessage(SELECT_MAX_RANK_OF_GIVEN_CATEGORY, userId.toString(), categoryId.toString()))
+    }
+
+    fun rankDownGift(userId: Long, giftId: Long) {
+        val gift = getGift(giftId)!!
+        val otherGift = getOtherGift(userId, gift, SELECT_NO_SECRET_GIFT_WITH_SMALLER_RANK)
+            ?: throw Exception("There is no gift with smaller rank, could not proceed.")
+
+        switchGift(gift, otherGift)
+    }
+
+    fun rankUpGift(userId: Long, giftId: Long) {
+        val gift = getGift(giftId)!!
+        val otherGift = getOtherGift(userId, gift, SELECT_NO_SECRET_GIFT_WITH_HIGHER_RANK)
+            ?: throw Exception("There is no gift with higher rank, could not proceed.")
+
+        switchGift(gift, otherGift)
+    }
+
+    private fun getOtherGift(userId: Long, gift: DbGift, query: String): DbGift? {
+        return conn.safeExecute(query, {
+            with(it) {
+                setLong(1, userId)
+                setLong(2, gift.categoryId)
+                setLong(3, userId)
+                setLong(4, gift.categoryId)
+                setLong(5, gift.rank)
+                val rs = executeQuery()
+                if (!rs.next()) return@with null
+                val picture = rs.getString("picture")
+                return@with DbGift(
+                    rs.getLong("id"),
+                    rs.getLong("userId"),
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getString("price"),
+                    rs.getString("whereToBuy"),
+                    rs.getLong("categoryId"),
+                    if (picture.isEmpty()) null else picture,
+                    rs.getBoolean("secret"),
+                    rs.getLong("rank"))
+            }
+        }, errorMessage(query, userId.toString(), userId.toString(), gift.rank.toString()))
+    }
+
+    private fun switchGift(gift: DbGift, otherGift: DbGift) {
+        modifyGift(gift.id, to(gift, otherGift.rank))
+        try {
+            modifyGift(otherGift.id, to(otherGift, gift.rank))
+        } catch (e: DbException) {
+            //Try to reverse first switch
+            modifyGift(gift.id, to(gift, gift.rank))
+            throw DbException("No change applied", e)
+        }
+    }
+
+    private fun to(gift: DbGift, newRank: Long): RestGift {
+        return RestGift(gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture, newRank)
     }
 }
