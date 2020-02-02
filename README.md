@@ -11,7 +11,7 @@ On top of that, I plan to have "events" that allow either some people to buy stu
 to one people (birthday) or people to offer gifts each other (christmas). Basically
 you can say "I or we want to buy this" and avoid two people buying it. Of course
 what you will receive will be hide to you. As a buyer, you will also have the possibility
-to have a "buy list" (no good name in mind right now).
+to have a "buy list".
 
 As now, the website is quite limited but allows you to:
 - Create and manage your own wishlist
@@ -34,7 +34,6 @@ In the future, I plan to add (in that order):
 
 ## Things that need upgrade
 Everything right now but my next work will be:
-- Ordering on gift list
 - In event, participants should come from friends name.
 - Friend list UI (be able to unblock and better UI in general)
 - Manage profile (such as modify password)

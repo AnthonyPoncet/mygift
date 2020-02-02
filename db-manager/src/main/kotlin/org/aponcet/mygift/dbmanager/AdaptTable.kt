@@ -1,11 +1,8 @@
-package dao
-
-import RestCategory
-import RestGift
+package org.aponcet.mygift.dbmanager
 
 /** Adapt table used only ad-hoc when needed **/
 class AdaptTable(dbPath: String) {
-    private val conn = DbConnection(dbPath)
+    private val conn = DbConnection("sqlite", dbPath)
 
     enum class STEP { ADD_RANK_TO_CATEGORY, ADD_RANK_TO_GIFT }
 
@@ -51,7 +48,7 @@ class AdaptTable(dbPath: String) {
             println("User $userId will now have categories as $newCategories")
 
             for (category in newCategories) {
-                categoryAccessor.modifyCategory(category.id, RestCategory(category.name, category.rank))
+                categoryAccessor.modifyCategory(category.id, Category(category.name, category.rank))
             }
             println("User $userId done")
         }
@@ -98,7 +95,7 @@ class AdaptTable(dbPath: String) {
                 println("\tCategory $category will now have gifts ${newGifts.map { g -> "(${g.id}, ${g.rank})" }}")
 
                 for (gift in newGifts) {
-                    giftAccessor.modifyGift(gift.id, RestGift(gift.name, gift.description, gift.price,
+                    giftAccessor.modifyGift(gift.id, Gift(gift.name, gift.description, gift.price,
                         gift.whereToBuy, gift.categoryId, gift.picture, gift.rank))
                 }
                 println("\tCategory $category done\n")

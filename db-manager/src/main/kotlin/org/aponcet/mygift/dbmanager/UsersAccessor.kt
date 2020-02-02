@@ -1,4 +1,4 @@
-package dao
+package org.aponcet.mygift.dbmanager
 
 class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
 
@@ -15,25 +15,30 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     override fun createIfNotExists() {
         conn.execute("CREATE TABLE IF NOT EXISTS users (" +
-            "id         INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "id         INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
             "name       TEXT NOT NULL, " +
             "password   TEXT NOT NULL, " +
             "picture    TEXT)")
     }
 
     fun addUser(userName: String, password: String, picture: String): DbUser {
-        conn.safeExecute(INSERT, {
+        val nextUserId = conn.safeExecute(
+            INSERT, {
             with(it) {
                 setString(1, userName)
                 setString(2, password)
                 setString(3, picture)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
+                if (generatedKeys.next()) {
+                    return@with generatedKeys.getLong(1)
+                } else {
+                    throw Exception("executeUpdate, no key generated")
+                }
             }
         },
         errorMessage(INSERT, userName, password, picture))
 
-        val nextUserId = conn.executeQuery("SELECT last_insert_rowid()").getLong(1)
         return DbUser(nextUserId, userName, password, picture)
     }
 
@@ -64,7 +69,10 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
                 val res = executeQuery()
                 return@with if(res.next()) {
                     val picture = res.getString("picture")
-                    NakedUser(res.getString("name"), if (picture.isEmpty()) null else picture)
+                    NakedUser(
+                        res.getString("name"),
+                        if (picture.isEmpty()) null else picture
+                    )
                 } else {
                     null
                 }

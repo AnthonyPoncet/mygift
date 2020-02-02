@@ -1,4 +1,4 @@
-package dao
+package org.aponcet.mygift.dbmanager
 
 import java.sql.ResultSet
 import java.time.LocalDate
@@ -28,7 +28,7 @@ class EventsAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     fun insertEvent(name: String, creatorId: Long, description: String?, endDate: LocalDate, target: Long): Long {
-        conn.safeExecute(INSERT, {
+        return conn.safeExecute(INSERT, {
             with(it) {
                 setString(1, name)
                 setLong(2, creatorId)
@@ -37,10 +37,13 @@ class EventsAccessor(private val conn: DbConnection) : DaoAccessor() {
                 setLong(5, target)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
+                if (generatedKeys.next()) {
+                    return@with generatedKeys.getLong(1)
+                } else {
+                    throw Exception("executeUpdate, no key generated")
+                }
             }
         }, errorMessage(INSERT, name, creatorId.toString(), description ?: "", endDate.toEpochDay().toString(), target.toString()))
-
-        return conn.executeQuery("SELECT last_insert_rowid()").getLong(1)
     }
 
     fun deleteEvent(eventId: Long) {

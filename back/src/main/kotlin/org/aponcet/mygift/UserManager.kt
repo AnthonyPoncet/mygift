@@ -1,4 +1,7 @@
-import dao.*
+package org.aponcet.mygift
+
+//TODO: remove linked to db model?
+import org.aponcet.mygift.dbmanager.*
 import java.time.LocalDate
 import kotlin.Exception
 
@@ -81,8 +84,12 @@ class UserManager(private val databaseManager: DatabaseManager) {
         if (connectionInformation.name == null) throw BadParamException("Username could not be null")
         if (connectionInformation.password == null) throw BadParamException("Password could not be null")
 
-        val user = databaseManager.getUser(connectionInformation.name) ?: throw ConnectionException("Unknown user")
-        if (user.password != connectionInformation.password) throw ConnectionException("Wrong password")
+        val user = databaseManager.getUser(connectionInformation.name) ?: throw ConnectionException(
+            "Unknown user"
+        )
+        if (user.password != connectionInformation.password) throw ConnectionException(
+            "Wrong password"
+        )
 
         return User(user.id, user.name, user.picture)
     }
@@ -90,7 +97,9 @@ class UserManager(private val databaseManager: DatabaseManager) {
     fun addUser(userInformation: UserInformation): User {
         if (userInformation.name == null) throw BadParamException("Name could not be null")
         if (userInformation.password == null) throw BadParamException("Password could not be null")
-        if (databaseManager.getUser(userInformation.name) != null) throw CreateUserException("User already exists")
+        if (databaseManager.getUser(userInformation.name) != null) throw CreateUserException(
+            "User already exists"
+        )
 
         val dbUser = databaseManager.addUser(userInformation.name, userInformation.password, userInformation.picture)
         return User(dbUser.id, dbUser.name, dbUser.picture)
@@ -105,14 +114,28 @@ class UserManager(private val databaseManager: DatabaseManager) {
     }
 
     private fun toGift(g: DbGift): Gift {
-        return Gift(g.id, g.name, g.description, g.price, g.whereToBuy, g.categoryId, g.picture)
+        return Gift(
+            g.id,
+            g.name,
+            g.description,
+            g.price,
+            g.whereToBuy,
+            g.categoryId,
+            g.picture
+        )
     }
 
     fun getUserGifts(userId: Long): List<CatAndGift> {
         val categories = databaseManager.getUserCategories(userId)
         val gifts = databaseManager.getUserGifts(userId)
         return categories.map { c ->
-            CatAndGift(Category(c.id, c.name, c.rank), gifts.filter { g -> g.categoryId == c.id }.map { g -> toGift(g) }) }
+            CatAndGift(
+                Category(
+                    c.id,
+                    c.name,
+                    c.rank
+                ), gifts.filter { g -> g.categoryId == c.id }.map { g -> toGift(g) })
+        }
     }
 
     //Not optimal at all!
@@ -122,13 +145,27 @@ class UserManager(private val databaseManager: DatabaseManager) {
 
         val dummyUserCache = DummyUserCache(databaseManager) //Cache only by call
         return categories.map { c ->
-            CatAndFriendGift(Category(c.id, c.name, c.rank), gifts.filter { g -> g.categoryId == c.id }.map { g ->
-                val actions = databaseManager.getFriendActionOnGift(g.id)
-                FriendGift(toGift(g),
-                    actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! },
-                    actions.filter { it.buy != BuyAction.NONE  || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! to it.buy }.toMap(),
-                    g.secret)
-            })
+            CatAndFriendGift(
+                Category(
+                    c.id,
+                    c.name,
+                    c.rank
+                ), gifts.filter { g -> g.categoryId == c.id }.map { g ->
+                    val actions = databaseManager.getFriendActionOnGift(g.id)
+                    FriendGift(toGift(g),
+                        actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }.map {
+                            dummyUserCache.queryName(
+                                it.userId
+                            )!!
+                        },
+                        actions.filter { it.buy != BuyAction.NONE || dummyUserCache.queryName(it.userId) != null }.map {
+                            dummyUserCache.queryName(
+                                it.userId
+                            )!! to it.buy
+                        }.toMap(),
+                        g.secret
+                    )
+                })
         }
     }
 
@@ -146,17 +183,30 @@ class UserManager(private val databaseManager: DatabaseManager) {
         val dummyUserCache = DummyUserCache(databaseManager) //Cache only by call
         return map
             .filter { dummyUserCache.queryName(it.key) != null }
-            .map { m -> BuyListByFriend(dummyUserCache.queryName(m.key)!!, m.value.map { g ->
-                val actions = databaseManager.getFriendActionOnGift(g.id)
-                FriendGift(toGift(g),
-                    actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! },
-                    actions.filter { it.buy != BuyAction.NONE  || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! to it.buy }.toMap(),
-                    g.secret)
-            }) }
+            .map { m ->
+                BuyListByFriend(
+                    dummyUserCache.queryName(m.key)!!,
+                    m.value.map { g ->
+                        val actions = databaseManager.getFriendActionOnGift(g.id)
+                        FriendGift(toGift(g),
+                            actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }.map {
+                                dummyUserCache.queryName(
+                                    it.userId
+                                )!!
+                            },
+                            actions.filter { it.buy != BuyAction.NONE || dummyUserCache.queryName(it.userId) != null }.map {
+                                dummyUserCache.queryName(
+                                    it.userId
+                                )!! to it.buy
+                            }.toMap(),
+                            g.secret
+                        )
+                    })
+            }
     }
 
     fun addGift(userId: Long, gift: RestGift) {
-        databaseManager.addGift(userId, gift, false)
+        databaseManager.addGift(userId, toNewGift(gift), false)
     }
 
     fun addSecretGift(userId: Long, friendName: String, gift: RestGift) {
@@ -168,11 +218,33 @@ class UserManager(private val databaseManager: DatabaseManager) {
         }
 
         val friendUserId = (databaseManager.getUser(friendName) ?: throw Exception("No user named $friendName.")).id
-        databaseManager.addGift(friendUserId, gift, true)
+        databaseManager.addGift(friendUserId, toNewGift(gift), true)
+    }
+
+    private fun validateRestGift(restGift: RestGift, withRank: Boolean) {
+        if (restGift.name == null) {
+            throw BadParamException("Gift JSON need to contain 'name' node")
+        }
+        if (restGift.categoryId == null) {
+            throw BadParamException("Gift JSON need to contain 'categoryId' node")
+        }
+        if (withRank && restGift.rank == null) {
+            throw BadParamException("Gift JSON need to contain 'rank' node")
+        }
+    }
+
+    private fun toNewGift(restGift: RestGift): NewGift {
+        validateRestGift(restGift, false)
+        return NewGift(restGift.name!!, restGift.description, restGift.price, restGift.whereToBuy, restGift.categoryId!!, restGift.picture)
     }
 
     fun modifyGift(userId: Long, giftId: Long, gift: RestGift) {
-        databaseManager.modifyGift(userId, giftId, gift)
+        databaseManager.modifyGift(userId, giftId, toGift(gift))
+    }
+
+    private fun toGift(restGift: RestGift) : org.aponcet.mygift.dbmanager.Gift {
+        validateRestGift(restGift, true)
+        return Gift(restGift.name!!, restGift.description, restGift.price, restGift.whereToBuy, restGift.categoryId!!, restGift.picture, restGift.rank!!)
     }
 
     fun removeGift(userId: Long, giftId: Long) {
@@ -203,11 +275,30 @@ class UserManager(private val databaseManager: DatabaseManager) {
     }
 
     fun addCategory(userId: Long, category: RestCategory) {
-        databaseManager.addCategory(userId, category)
+        databaseManager.addCategory(userId, toNewCategory(category))
+    }
+
+    private fun validateRestCategory(category: RestCategory, withRank: Boolean) {
+        if (category.name == null) {
+            throw BadParamException("Category JSON need to contain 'name' node")
+        }
+        if (withRank && category.rank == null) {
+            throw BadParamException("Gift JSON need to contain 'name' node")
+        }
+    }
+
+    private fun toNewCategory(category: RestCategory) : NewCategory {
+        validateRestCategory(category, false)
+        return NewCategory(category.name!!)
     }
 
     fun modifyCategory(userId: Long, categoryId: Long, category: RestCategory) {
-        databaseManager.modifyCategory(userId, categoryId, category)
+        databaseManager.modifyCategory(userId, categoryId, toCategory(category))
+    }
+
+    private fun toCategory(category: RestCategory) : org.aponcet.mygift.dbmanager.Category {
+        validateRestCategory(category, true)
+        return Category(category.name!!, category.rank!!)
     }
 
     fun removeCategory(userId: Long, categoryId: Long) {
@@ -233,8 +324,18 @@ class UserManager(private val databaseManager: DatabaseManager) {
         val initiatedFriendRequests = databaseManager.getInitiatedFriendRequests(userId).filter { it.status == RequestStatus.ACCEPTED }
         val receivedFriendRequests = databaseManager.getReceivedFriendRequests(userId).filter { it.status == RequestStatus.ACCEPTED }
 
-        val ini = initiatedFriendRequests.map { FriendRequest(it.id, toFriend(it.userTwo)) }
-        val rec = receivedFriendRequests.map { FriendRequest(it.id, toFriend(it.userOne)) }
+        val ini = initiatedFriendRequests.map {
+            FriendRequest(
+                it.id,
+                toFriend(it.userTwo)
+            )
+        }
+        val rec = receivedFriendRequests.map {
+            FriendRequest(
+                it.id,
+                toFriend(it.userOne)
+            )
+        }
 
         val mut: MutableList<FriendRequest> = mutableListOf()
         mut.addAll(ini)
@@ -288,15 +389,14 @@ class UserManager(private val databaseManager: DatabaseManager) {
         if (event.endDate == null) throw Exception("Event End Date is mandatory")
         if (event.type == EventType.ALL_FOR_ONE && event.target == null) throw Exception("Event End Date is mandatory")
 
-        when {
-            event.type == EventType.ALL_FOR_ALL -> databaseManager.createEventAllForAll(event.name, userId, event.description, event.endDate, setOf(userId))
-            event.type == EventType.ALL_FOR_ONE -> databaseManager.createEventAllForOne(event.name, userId, event.description, event.endDate, event.target!!, if (userId != event.target) setOf(userId) else setOf())
-            else -> throw Exception("Unknown type")
+        when (event.type) {
+            EventType.ALL_FOR_ALL -> databaseManager.createEventAllForAll(event.name, userId, event.description, event.endDate, setOf(userId))
+            EventType.ALL_FOR_ONE -> databaseManager.createEventAllForOne(event.name, userId, event.description, event.endDate, event.target!!, if (userId != event.target) setOf(userId) else setOf())
         }
     }
 
     fun deleteEvent(eventId: Long) {
-        databaseManager.deleteEvent(eventId);
+        databaseManager.deleteEvent(eventId)
     }
 
     fun addParticipants(eventId: Long, participants: Set<String>) {
@@ -353,7 +453,13 @@ class UserManager(private val databaseManager: DatabaseManager) {
             dummyUserCache.queryName(dbEvent.creatorId)!!,
             dbEvent.description,
             dbEvent.endDate,
-            if (dbEvent.target == null) null else dummyUserCache.queryName(dbEvent.target),
-            databaseManager.getParticipants(dbEvent.id).filterNot { p -> dummyUserCache.queryName(p.userId) == null }.map { p -> Participant(dummyUserCache.queryName(p.userId)!!, p.status) }.toSet())
+            if (dbEvent.target == null) null else dummyUserCache.queryName(dbEvent.target as Long),
+            databaseManager.getParticipants(dbEvent.id).filterNot { p -> dummyUserCache.queryName(p.userId) == null }.map { p ->
+                Participant(
+                    dummyUserCache.queryName(p.userId)!!,
+                    p.status
+                )
+            }.toSet()
+        )
     }
 }
