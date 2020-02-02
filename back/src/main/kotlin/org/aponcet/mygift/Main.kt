@@ -1,8 +1,9 @@
+package org.aponcet.mygift
+
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
-import dao.*
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.CORS
@@ -21,6 +22,7 @@ import io.ktor.response.respondFile
 import io.ktor.routing.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import org.aponcet.mygift.dbmanager.*
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.File
@@ -38,7 +40,7 @@ fun main(args: Array<String>) {
         val arguments = ArgParser(args).parseInto(::ArgumentParser)
         if (arguments.adaptTable.isNotEmpty()) {
             val adaptTable = AdaptTable(arguments.db)
-            adaptTable.execute(AdaptTable.STEP.valueOf(arguments.adaptTable.toString()))
+            adaptTable.execute(AdaptTable.STEP.valueOf(arguments.adaptTable))
             return@mainBody
         }
 
@@ -76,7 +78,9 @@ fun main(args: Array<String>) {
             }
 
             install(StatusPages) {
-                exception<NotANumberException> { e -> call.respond(HttpStatusCode.BadRequest, Error("Provided ${e.target} must be a number.")) }
+                exception<NotANumberException> { e -> call.respond(HttpStatusCode.BadRequest,
+                    Error("Provided ${e.target} must be a number.")
+                ) }
             }
 
             routing {
@@ -88,12 +92,16 @@ fun main(args: Array<String>) {
                             val user = userManager.connect(connectionInformation)
                             call.respond(HttpStatusCode.OK, user)
                         } catch (e: BadParamException) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.error))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.error)
+                            )
                         } catch (e: ConnectionException) {
                             call.respond(HttpStatusCode.Conflict, Error(e.error))
                         } catch (e: Exception) {
                             System.err.println(e)
-                            call.respond(HttpStatusCode.InternalServerError, Error(e.message?: "Unknown error"))
+                            call.respond(HttpStatusCode.InternalServerError,
+                                Error(e.message ?: "Unknown error")
+                            )
                         }
                     }
                 }
@@ -106,12 +114,16 @@ fun main(args: Array<String>) {
                             val user = userManager.addUser(basicUserInformation)
                             call.respond(HttpStatusCode.Created, user)
                         } catch (e: BadParamException) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.error))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.error)
+                            )
                         } catch (e: CreateUserException) {
                             call.respond(HttpStatusCode.Conflict, Error(e.error))
                         } catch (e: Exception) {
                             System.err.println(e)
-                            call.respond(HttpStatusCode.InternalServerError, Error(e.message?: "Unknown error"))
+                            call.respond(HttpStatusCode.InternalServerError,
+                                Error(e.message ?: "Unknown error")
+                            )
                         }
                     }
                 }
@@ -126,12 +138,16 @@ fun main(args: Array<String>) {
                             val user = userManager.modifyUser(id, info)
                             call.respond(HttpStatusCode.Accepted, user)
                         } catch (e: BadParamException) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.error))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.error)
+                            )
                         } catch (e: CreateUserException) {
                             call.respond(HttpStatusCode.Conflict, Error(e.error))
                         } catch (e: Exception) {
                             System.err.println(e)
-                            call.respond(HttpStatusCode.InternalServerError, Error(e.message?: "Unknown error"))
+                            call.respond(HttpStatusCode.InternalServerError,
+                                Error(e.message ?: "Unknown error")
+                            )
                         }
                     }
 
@@ -143,7 +159,9 @@ fun main(args: Array<String>) {
                             val userGifts = userManager.getUserGifts(id)
                             call.respond(HttpStatusCode.OK, userGifts)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     get("/gifts/{friendName}") {
@@ -154,7 +172,9 @@ fun main(args: Array<String>) {
                             val userGifts = userManager.getFriendGifts(id, friendName)
                             call.respond(HttpStatusCode.OK, userGifts)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     put("/gifts") {
@@ -162,7 +182,9 @@ fun main(args: Array<String>) {
 
                         val gift = Gson().fromJson(decode(call.receiveText()), RestGift::class.java)
                         if (gift.name == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("missing name node in json"))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error("missing name node in json")
+                            )
                             return@put
                         }
 
@@ -176,7 +198,9 @@ fun main(args: Array<String>) {
 
                             call.respond(HttpStatusCode.OK)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     patch("/gifts/{gid}") {
@@ -185,7 +209,9 @@ fun main(args: Array<String>) {
 
                         val gift = Gson().fromJson(decode(call.receiveText()), RestGift::class.java)
                         if (gift.name == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("missing name node in json"))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error("missing name node in json")
+                            )
                             return@patch
                         }
 
@@ -193,7 +219,9 @@ fun main(args: Array<String>) {
                             userManager.modifyGift(id, gid, gift)
                             call.respond(HttpStatusCode.OK)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     delete("/gifts/{gid}") {
@@ -204,7 +232,9 @@ fun main(args: Array<String>) {
                             userManager.removeGift(id, gid)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     post("/gifts/{gid}/rank-actions/{action}") {
@@ -219,7 +249,9 @@ fun main(args: Array<String>) {
                             userManager.changeGiftRank(id, gid, RankAction.valueOf(action.toUpperCase()))
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
 
@@ -232,7 +264,9 @@ fun main(args: Array<String>) {
                             userManager.interested(gid, userId)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     delete("/gifts/{gid}/interested") {
@@ -243,7 +277,9 @@ fun main(args: Array<String>) {
                             userManager.notInterested(gid, userId)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     post("/gifts/{gid}/buy-action") {
@@ -255,7 +291,9 @@ fun main(args: Array<String>) {
                             userManager.buy(gid, userId, action)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     delete("/gifts/{gid}/buy-action") {
@@ -266,7 +304,9 @@ fun main(args: Array<String>) {
                             userManager.stopBuy(gid, userId)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     get("/buy-list") {
@@ -276,7 +316,9 @@ fun main(args: Array<String>) {
                             val buyList = userManager.getBuyList(id)
                             call.respond(HttpStatusCode.OK, buyList)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
 
@@ -286,7 +328,9 @@ fun main(args: Array<String>) {
 
                         val category = Gson().fromJson(decode(call.receiveText()), RestCategory::class.java)
                         if (category.name == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("missing name or password node in json"))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error("missing name or password node in json")
+                            )
                             return@put
                         }
 
@@ -294,16 +338,22 @@ fun main(args: Array<String>) {
                             userManager.addCategory(id, category)
                             call.respond(HttpStatusCode.OK)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     patch("/categories/{cid}") {
                         val id = getUserId(call.parameters)
-                        val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException("Category id")
+                        val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException(
+                            "Category id"
+                        )
 
                         val category = Gson().fromJson(decode(call.receiveText()), RestCategory::class.java)
                         if (category.name == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("missing name or password node in json"))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error("missing name or password node in json")
+                            )
                             return@patch
                         }
 
@@ -311,23 +361,31 @@ fun main(args: Array<String>) {
                             userManager.modifyCategory(id, cid, category)
                             call.respond(HttpStatusCode.OK)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     delete("/categories/{cid}") {
                         val id = getUserId(call.parameters)
-                        val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException("Category id")
+                        val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException(
+                            "Category id"
+                        )
 
                         try {
                             userManager.removeCategory(id, cid)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     post("/categories/{cid}/rank-actions/{action}") {
                         val id = getUserId(call.parameters)
-                        val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException("Category id")
+                        val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException(
+                            "Category id"
+                        )
                         val action = call.parameters["action"] ?: throw IllegalStateException("Missing action")
                         if (action != "down" && action != "up") {
                             throw IllegalStateException("Only allowed action are up or down")
@@ -337,7 +395,9 @@ fun main(args: Array<String>) {
                             userManager.changeCategoryRank(id, cid, RankAction.valueOf(action.toUpperCase()))
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
 
@@ -349,7 +409,9 @@ fun main(args: Array<String>) {
                             val friends = userManager.getFriends(id)
                             call.respond(HttpStatusCode.OK, friends)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     get("/friend-requests/pending") {
@@ -359,7 +421,9 @@ fun main(args: Array<String>) {
                             val requests = userManager.getPendingFriendRequests(id)
                             call.respond(HttpStatusCode.OK, requests)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     get("/friend-requests/received-blocked") {
@@ -369,7 +433,9 @@ fun main(args: Array<String>) {
                             val requests = userManager.getReceivedBlockedFriendRequests(id)
                             call.respond(HttpStatusCode.OK, requests)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     put("/friend-requests") {
@@ -378,7 +444,9 @@ fun main(args: Array<String>) {
                         val receiveText = decode(call.receiveText())
                         val friendRequest = Gson().fromJson(receiveText, RestCreateFriendRequest::class.java)
                         if (friendRequest.name == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("missing name node in json"))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error("missing name node in json")
+                            )
                             return@put
                         }
 
@@ -386,9 +454,17 @@ fun main(args: Array<String>) {
                             userManager.createFriendRequest(id, friendRequest)
                             call.respond(HttpStatusCode.OK)
                         } catch (e: FriendRequestAlreadyExistException) {
-                            call.respond(HttpStatusCode.Conflict, FriendRequestConflict(id == e.dbFriendRequest.userOne, e.dbFriendRequest.status, e.message!!))
+                            call.respond(HttpStatusCode.Conflict,
+                                FriendRequestConflict(
+                                    id == e.dbFriendRequest.userOne,
+                                    e.dbFriendRequest.status,
+                                    e.message!!
+                                )
+                            )
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     delete("/friend-requests/{fid}") {
@@ -399,7 +475,9 @@ fun main(args: Array<String>) {
                             userManager.deleteFriendRequest(id, fid)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     //not convince by get
@@ -411,7 +489,9 @@ fun main(args: Array<String>) {
                             userManager.acceptFriendRequest(id, fid)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                     post("/friend-requests/{fid}/decline") {
@@ -423,7 +503,9 @@ fun main(args: Array<String>) {
                             userManager.declineFriendRequest(id, fid, blockUser)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
 
@@ -436,7 +518,9 @@ fun main(args: Array<String>) {
                             userManager.createEvent(event, id)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
 
@@ -447,7 +531,9 @@ fun main(args: Array<String>) {
                             userManager.deleteEvent(eid)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
 
@@ -458,7 +544,9 @@ fun main(args: Array<String>) {
                             val event = userManager.getEvent(eid)
                             call.respond(HttpStatusCode.OK, event)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
 
@@ -474,7 +562,9 @@ fun main(args: Array<String>) {
                             }
                             call.respond(HttpStatusCode.OK, events)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
 
@@ -485,7 +575,9 @@ fun main(args: Array<String>) {
                             val events = userManager.getEventsAsParticipants(id)
                             call.respond(HttpStatusCode.OK, events)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
 
@@ -494,11 +586,16 @@ fun main(args: Array<String>) {
 
                         try {
                             val listType = object : TypeToken<Set<String>>() { }.type
-                            val participants: Set<String> = Gson().fromJson(decode(call.receiveText()), listType)
+                            val participants: Set<String> = Gson().fromJson(
+                                decode(
+                                    call.receiveText()
+                                ), listType)
                             userManager.addParticipants(eid, participants)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
 
@@ -510,7 +607,9 @@ fun main(args: Array<String>) {
                             userManager.acceptEventInvitation(id, eid)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
 
@@ -523,7 +622,9 @@ fun main(args: Array<String>) {
                             userManager.declineEventInvitation(id, eid, blockEvent)
                             call.respond(HttpStatusCode.Accepted)
                         } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.message!!))
+                            call.respond(HttpStatusCode.BadRequest,
+                                Error(e.message!!)
+                            )
                         }
                     }
                 }

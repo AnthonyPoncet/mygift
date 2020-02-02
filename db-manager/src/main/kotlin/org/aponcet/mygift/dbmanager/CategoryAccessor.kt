@@ -1,6 +1,7 @@
-package dao
+package org.aponcet.mygift.dbmanager
 
-import RestCategory
+data class NewCategory(val name: String)
+data class Category(val name: String, val rank: Long)
 
 class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
 
@@ -22,14 +23,14 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     override fun createIfNotExists() {
         conn.execute("CREATE TABLE IF NOT EXISTS categories (" +
-            "id     INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "id     INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
             "userId INTEGER NOT NULL, " +
             "name   TEXT NOT NULL, " +
             "rank   INTEGER NOT NULL," +
             "FOREIGN KEY(userId) REFERENCES users(id))")
     }
 
-    fun addCategory(userId: Long, category: RestCategory) {
+    fun addCategory(userId: Long, category: NewCategory) {
         val maxId = getCurrentMaxRank(userId)
         conn.safeExecute(INSERT, {
             with(it) {
@@ -39,7 +40,7 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
             }
-        }, errorMessage(INSERT, userId.toString(), category.name ?: "no name", (maxId + 1).toString()))
+        }, errorMessage(INSERT, userId.toString(), category.name, (maxId + 1).toString()))
     }
 
     fun getUserCategories(userId: Long) : List<DbCategory> {
@@ -49,7 +50,14 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
                 val res = executeQuery()
                 val categories = arrayListOf<DbCategory>()
                 while (res.next()) {
-                    categories.add(DbCategory(res.getLong("id"), userId, res.getString("name"), res.getLong("rank")))
+                    categories.add(
+                        DbCategory(
+                            res.getLong("id"),
+                            userId,
+                            res.getString("name"),
+                            res.getLong("rank")
+                        )
+                    )
                 }
                 return@with categories
             }
@@ -60,16 +68,16 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
         return getUserCategories(friendId)
     }
 
-    fun modifyCategory(categoryId: Long, category: RestCategory) {
+    fun modifyCategory(categoryId: Long, category: Category) {
         conn.safeExecute(UPDATE, {
             with(it) {
                 setString(1, category.name)
-                setLong(2, category.rank!!)
+                setLong(2, category.rank)
                 setLong(3, categoryId)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
             }
-        }, errorMessage(UPDATE, category.name ?: "no name", category.rank.toString(), categoryId.toString()))
+        }, errorMessage(UPDATE, category.name, category.rank.toString(), categoryId.toString()))
     }
 
     fun removeCategory(categoryId: Long) {
@@ -105,7 +113,9 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     fun rankDownCategory(userId: Long, categoryId: Long) {
         val dbCategory = getCategory(categoryId)
-        val otherCat = getOtherCategory(userId, dbCategory, SELECT_CAT_WITH_SMALLER_RANK)
+        val otherCat = getOtherCategory(userId, dbCategory,
+            SELECT_CAT_WITH_SMALLER_RANK
+        )
             ?: throw Exception("There is no category with smaller rank, could not proceed.")
 
         switchCategory(dbCategory, otherCat)
@@ -113,7 +123,9 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     fun rankUpCategory(userId: Long, categoryId: Long) {
         val dbCategory = getCategory(categoryId)
-        val otherCat = getOtherCategory(userId, dbCategory, SELECT_CAT_WITH_HIGHER_RANK)
+        val otherCat = getOtherCategory(userId, dbCategory,
+            SELECT_CAT_WITH_HIGHER_RANK
+        )
             ?: throw Exception("There is no category with higher rank, could not proceed.")
 
         switchCategory(dbCategory, otherCat)
@@ -143,18 +155,23 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
                 setLong(3, dbCategory.rank)
                 val rs = executeQuery()
                 if (!rs.next()) return@with null
-                return@with DbCategory(rs.getLong("id"), rs.getLong("userId"), rs.getString("name"), rs.getLong("rank"))
+                return@with DbCategory(
+                    rs.getLong("id"),
+                    rs.getLong("userId"),
+                    rs.getString("name"),
+                    rs.getLong("rank")
+                )
             }
         }, errorMessage(SELECT_CAT_WITH_SMALLER_RANK, userId.toString(), userId.toString(), dbCategory.rank.toString()))
     }
 
     private fun switchCategory(dbCategory: DbCategory, downCat: DbCategory) {
-        modifyCategory(dbCategory.id, RestCategory(dbCategory.name, downCat.rank))
+        modifyCategory(dbCategory.id, Category(dbCategory.name, downCat.rank))
         try {
-            modifyCategory(downCat.id, RestCategory(downCat.name, dbCategory.rank))
+            modifyCategory(downCat.id, Category(downCat.name, dbCategory.rank))
         } catch (e: DbException) {
             //Try to reverse first switch
-            modifyCategory(dbCategory.id, RestCategory(dbCategory.name, dbCategory.rank))
+            modifyCategory(dbCategory.id, Category(dbCategory.name, dbCategory.rank))
             throw DbException("No change applied", e)
         }
     }

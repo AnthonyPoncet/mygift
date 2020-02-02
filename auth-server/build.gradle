@@ -13,7 +13,6 @@ buildscript {
     }
 }
 
-apply plugin: 'java'
 apply plugin: 'kotlin'
 
 sourceCompatibility = 1.8
@@ -27,16 +26,15 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
+    implementation "io.ktor:ktor-auth:$ktor_version"
+    implementation "io.ktor:ktor-auth-jwt:$ktor_version"
     compile "io.ktor:ktor-server-netty:$ktor_version"
     compile "io.ktor:ktor-gson:$ktor_version"
 
     compile "com.xenomachina:kotlin-argparser:2.0.7"
 
-    compile project(':front')
-    compile project(':db-manager')
-    //compile "org.aponcet.mygift:db-manager:0.1-SNAPSHOT"
-
-    testCompile 'io.kotlintest:kotlintest-runner-junit5:3.1.9'
+    testCompile "io.ktor:ktor-server-test-host:$ktor_version"
+    testCompile "io.kotlintest:kotlintest-runner-junit5:3.1.9"
 }
 
 test {
@@ -50,12 +48,11 @@ test {
     }
 }
 
-
-
 jar {
     manifest {
         attributes 'Main-Class': 'MainKt'
     }
+
 
     // This line of code recursively collects and copies all of a project's files
     // and adds them to the JAR itself. One can extend this task, to skip certain

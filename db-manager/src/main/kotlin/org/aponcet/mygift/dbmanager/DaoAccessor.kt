@@ -1,4 +1,4 @@
-package dao
+package org.aponcet.mygift.dbmanager
 
 abstract class DaoAccessor {
     abstract fun getTableName() : String

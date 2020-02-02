@@ -1,6 +1,7 @@
-package dao
+package org.aponcet.mygift.dbmanager
 
-import RestGift
+data class NewGift(val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?)
+data class Gift(val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?, val rank: Long)
 
 class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
 
@@ -41,8 +42,8 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
             "FOREIGN KEY(categoryId) REFERENCES categories(id))")
     }
 
-    fun addGift(userId: Long, gift: RestGift, secret: Boolean) {
-        val maxId = getCurrentMaxRankOfGivenCategory(userId, gift.categoryId!!)
+    fun addGift(userId: Long, gift: NewGift, secret: Boolean) {
+        val maxId = getCurrentMaxRankOfGivenCategory(userId, gift.categoryId)
         conn.safeExecute(INSERT, {
             with(it) {
                 setLong(1, userId)
@@ -124,16 +125,16 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         return getGifts(friendId, true)
     }
 
-    fun modifyGift(giftId: Long, gift: RestGift) {
+    fun modifyGift(giftId: Long, gift: Gift) {
         conn.safeExecute(UPDATE, {
             with(it) {
                 setString(1, gift.name)
                 setString(2, gift.description ?: "")
                 setString(3, gift.price ?: "")
                 setString(4, gift.whereToBuy ?: "")
-                setLong(5, gift.categoryId!!)
+                setLong(5, gift.categoryId)
                 setString(6, gift.picture ?: "")
-                setLong(7, gift.rank!!)
+                setLong(7, gift.rank)
                 setLong(8, giftId)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
@@ -195,7 +196,9 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     fun rankDownGift(userId: Long, giftId: Long) {
         val gift = getGift(giftId)!!
-        val otherGift = getOtherGift(userId, gift, SELECT_NO_SECRET_GIFT_WITH_SMALLER_RANK)
+        val otherGift = getOtherGift(userId, gift,
+            SELECT_NO_SECRET_GIFT_WITH_SMALLER_RANK
+        )
             ?: throw Exception("There is no gift with smaller rank, could not proceed.")
 
         switchGift(gift, otherGift)
@@ -203,7 +206,9 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     fun rankUpGift(userId: Long, giftId: Long) {
         val gift = getGift(giftId)!!
-        val otherGift = getOtherGift(userId, gift, SELECT_NO_SECRET_GIFT_WITH_HIGHER_RANK)
+        val otherGift = getOtherGift(userId, gift,
+            SELECT_NO_SECRET_GIFT_WITH_HIGHER_RANK
+        )
             ?: throw Exception("There is no gift with higher rank, could not proceed.")
 
         switchGift(gift, otherGift)
@@ -230,7 +235,8 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                     rs.getLong("categoryId"),
                     if (picture.isEmpty()) null else picture,
                     rs.getBoolean("secret"),
-                    rs.getLong("rank"))
+                    rs.getLong("rank")
+                )
             }
         }, errorMessage(query, userId.toString(), userId.toString(), gift.rank.toString()))
     }
@@ -246,7 +252,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         }
     }
 
-    private fun to(gift: DbGift, newRank: Long): RestGift {
-        return RestGift(gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture, newRank)
+    private fun to(gift: DbGift, newRank: Long): Gift {
+        return Gift(gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture, newRank)
     }
 }

@@ -1,4 +1,4 @@
-package dao
+package org.aponcet.mygift.dbmanager
 
 import java.lang.Exception
 import java.sql.ResultSet

@@ -1,4 +1,6 @@
 rootProject.name = 'mygift'
 
+include 'auth-server'
 include 'back'
+include 'db-manager'
 include 'front'

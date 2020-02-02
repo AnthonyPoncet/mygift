@@ -1,7 +1,5 @@
-package dao
+package org.aponcet.mygift.dbmanager
 
-import RestCategory
-import RestGift
 import java.time.LocalDate
 
 data class DbUser(val id: Long, val name: String, val password: String, val picture: String?)
@@ -19,17 +17,17 @@ data class NakedUser(val name: String, val picture: String?)
 class FriendRequestAlreadyExistException(val dbFriendRequest: DbFriendRequest) : Exception("Friend request already exists and is ${dbFriendRequest.status}.")
 
 
-
 class DatabaseManager(dbPath: String) {
     companion object {
         private const val DEFAULT_CATEGORY_NAME = "Default"
     }
 
-    private val conn = DbConnection(dbPath)
+    private val conn = DbConnection("sqlite", dbPath)
     private val usersAccessor = UsersAccessor(conn)
     private val categoryAccessor = CategoryAccessor(conn)
     private val giftAccessor = GiftAccessor(conn)
-    private val friendActionOnGiftAccessor = FriendActionOnGiftAccessor(conn)
+    private val friendActionOnGiftAccessor =
+        FriendActionOnGiftAccessor(conn)
     private val friendRequestAccessor = FriendRequestAccessor(conn)
     private val eventsAccessor = EventsAccessor(conn)
     private val participantsAccessor = ParticipantsAccessor(conn)
@@ -64,7 +62,7 @@ class DatabaseManager(dbPath: String) {
      */
     @Synchronized fun addUser(userName: String, password: String, picture: String?): DbUser {
         val newUser = usersAccessor.addUser(userName, password, picture ?: "")
-        addCategory(newUser.id, RestCategory(DEFAULT_CATEGORY_NAME, null))
+        addCategory(newUser.id, NewCategory(DEFAULT_CATEGORY_NAME))
         return newUser
     }
 
@@ -83,14 +81,7 @@ class DatabaseManager(dbPath: String) {
     /**
      * Gift
      */
-    @Synchronized fun addGift(userId: Long, gift: RestGift, secret: Boolean) {
-        if (gift.name == null) {
-            throw Exception("Name could not be null")
-        }
-        if (gift.categoryId == null) {
-            throw Exception("CategoryId could not be null, a default one exist")
-        }
-
+    @Synchronized fun addGift(userId: Long, gift: NewGift, secret: Boolean) {
         if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
         if (!categoryAccessor.categoryExists(gift.categoryId)) throw Exception("Unknown category " + gift.categoryId)
         if (!categoryAccessor.categoryBelongToUser(userId, gift.categoryId)) throw Exception("Category " + gift.categoryId + " does not belong to user $userId")
@@ -118,17 +109,7 @@ class DatabaseManager(dbPath: String) {
         return giftAccessor.getFriendGifts(friend.id)
     }
 
-    @Synchronized fun modifyGift(userId: Long, giftId: Long, gift: RestGift) {
-        if (gift.name == null) {
-            throw Exception("Name could not be null")
-        }
-        if (gift.categoryId == null) {
-            throw Exception("CategoryId could not be null, a default one exist")
-        }
-        if (gift.rank == null) {
-            throw Exception("Rank could not be null")
-        }
-
+    @Synchronized fun modifyGift(userId: Long, giftId: Long, gift: Gift) {
         checkUpdateGiftsInputs(userId, giftId)
         giftAccessor.modifyGift(giftId, gift)
     }
@@ -192,10 +173,7 @@ class DatabaseManager(dbPath: String) {
     /**
      * Category
      */
-    @Synchronized fun addCategory(userId: Long, category: RestCategory) {
-        if (category.name == null) {
-            throw Exception("Name could not be null")
-        }
+    @Synchronized fun addCategory(userId: Long, category: NewCategory) {
         if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
 
         categoryAccessor.addCategory(userId, category)
@@ -216,14 +194,7 @@ class DatabaseManager(dbPath: String) {
         return categoryAccessor.getFriendCategories(friend.id)
     }
 
-    @Synchronized fun modifyCategory(userId: Long, categoryId: Long, category: RestCategory) {
-        if (category.name == null) {
-            throw Exception("Name could not be null")
-        }
-        if (category.rank == null) {
-            throw Exception("Rank could not be null")
-        }
-
+    @Synchronized fun modifyCategory(userId: Long, categoryId: Long, category: Category) {
         checkCategoryInputs(userId, categoryId)
         categoryAccessor.modifyCategory(categoryId, category)
     }
@@ -258,13 +229,17 @@ class DatabaseManager(dbPath: String) {
         if (!usersAccessor.userExists(userTwo)) throw Exception("Unknown user $userTwo")
 
         val friendRequest = friendRequestAccessor.getFriendRequest(userOne, userTwo)
-        if (friendRequest != null) throw FriendRequestAlreadyExistException(friendRequest)
+        if (friendRequest != null) throw FriendRequestAlreadyExistException(
+            friendRequest
+        )
 
         val receivedRequest = friendRequestAccessor.getFriendRequest(userTwo, userOne)
         if (receivedRequest != null) {
             when {
                 receivedRequest.status == RequestStatus.REJECTED -> deleteFriendRequest(userTwo, receivedRequest.id)
-                else -> throw FriendRequestAlreadyExistException(receivedRequest)
+                else -> throw FriendRequestAlreadyExistException(
+                    receivedRequest
+                )
             }
         }
 
@@ -345,7 +320,9 @@ class DatabaseManager(dbPath: String) {
         if (!eventsAccessor.eventExists(eventId)) throw Exception("Unknown event $eventId")
         if (!participantsAccessor.userInvitedToEvent(eventId, userId)) throw Exception("User $userId not invited to event $eventId")
 
-        participantsAccessor.update(eventId, userId, RequestStatus.ACCEPTED)
+        participantsAccessor.update(eventId, userId,
+            RequestStatus.ACCEPTED
+        )
     }
 
     @Synchronized fun declineEventInvitation(userId: Long, eventId: Long, blockInvites: Boolean) {
@@ -354,7 +331,9 @@ class DatabaseManager(dbPath: String) {
         if (!participantsAccessor.userInvitedToEvent(eventId, userId)) throw Exception("User $userId not invited to event $eventId")
 
         if (blockInvites) {
-            participantsAccessor.update(eventId, userId, RequestStatus.REJECTED)
+            participantsAccessor.update(eventId, userId,
+                RequestStatus.REJECTED
+            )
         } else {
             participantsAccessor.delete(eventId, userId)
         }
