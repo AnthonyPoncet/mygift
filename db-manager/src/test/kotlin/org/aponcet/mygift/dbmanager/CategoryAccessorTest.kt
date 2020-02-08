@@ -4,7 +4,6 @@ import io.kotlintest.Description
 import io.kotlintest.TestCaseOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
-import java.sql.SQLException
 import kotlin.test.assertFailsWith
 
 class CategoryAccessorTest : StringSpec(){
@@ -44,6 +43,12 @@ class CategoryAccessorTest : StringSpec(){
             categoryAccessor.getUserCategories(2) shouldBe emptyList()
             categoryAccessor.getFriendCategories(1) shouldBe listOf(DbCategory(1L, 1L, "cat", 1L))
             categoryAccessor.getFriendCategories(2) shouldBe emptyList()
+        }
+
+        "Add one category unknown user throw." {
+            assertFailsWith(DbException::class) {
+                categoryAccessor.addCategory(3, NewCategory("cat"))
+            }
         }
 
         "Add two categories same user. Ranked 1 & 2" {

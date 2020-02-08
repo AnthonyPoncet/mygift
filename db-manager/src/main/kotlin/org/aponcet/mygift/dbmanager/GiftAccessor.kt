@@ -1,7 +1,7 @@
 package org.aponcet.mygift.dbmanager
 
-data class NewGift(val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?)
-data class Gift(val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?, val rank: Long)
+data class NewGift(val name: String, val description: String? = null, val price: String? = null, val whereToBuy: String? = null, val categoryId: Long, val picture: String? = null)
+data class Gift(val name: String, val description: String? = null, val price: String? = null, val whereToBuy: String? = null, val categoryId: Long, val picture: String? = null, val rank: Long)
 
 class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
 
@@ -28,7 +28,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     override fun createIfNotExists() {
         conn.execute("CREATE TABLE IF NOT EXISTS gifts (" +
-            "id             INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "id             INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
             "userId         INTEGER NOT NULL, " +
             "name           TEXT NOT NULL, " +
             "description    TEXT, " +
@@ -48,11 +48,11 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
             with(it) {
                 setLong(1, userId)
                 setString(2, gift.name)
-                setString(3, gift.description ?: "")
-                setString(4, gift.price ?: "")
-                setString(5, gift.whereToBuy ?: "")
+                setString(3, gift.description)
+                setString(4, gift.price)
+                setString(5, gift.whereToBuy)
                 setLong(6, gift.categoryId)
-                setString(7, gift.picture ?: "")
+                setString(7, gift.picture)
                 setBoolean(8, secret)
                 setLong(9, maxId + 1)
                 val rowCount = executeUpdate()
@@ -67,7 +67,6 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                 setLong(1, giftId)
                 val res = executeQuery()
                 return@with if (res.next()) {
-                    val picture = res.getString("picture")
                     DbGift(
                         res.getLong("id"),
                         res.getLong("userId"),
@@ -76,7 +75,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                         res.getString("price"),
                         res.getString("whereToBuy"),
                         res.getLong("categoryId"),
-                        if (picture.isEmpty()) null else picture,
+                        res.getString("picture"),
                         res.getBoolean("secret"),
                         res.getLong("rank")
                     )
@@ -94,7 +93,6 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                 setLong(1, userId)
                 val res = executeQuery()
                 while (res.next()) {
-                    val picture = res.getString("picture")
                     gifts.add(
                         DbGift(
                             res.getLong("id"),
@@ -104,7 +102,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                             res.getString("price"),
                             res.getString("whereToBuy"),
                             res.getLong("categoryId"),
-                            if (picture.isEmpty()) null else picture,
+                            res.getString("picture"),
                             res.getBoolean("secret"),
                             res.getLong("rank")
                         )
@@ -129,11 +127,11 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         conn.safeExecute(UPDATE, {
             with(it) {
                 setString(1, gift.name)
-                setString(2, gift.description ?: "")
-                setString(3, gift.price ?: "")
-                setString(4, gift.whereToBuy ?: "")
+                setString(2, gift.description)
+                setString(3, gift.price)
+                setString(4, gift.whereToBuy)
                 setLong(5, gift.categoryId)
-                setString(6, gift.picture ?: "")
+                setString(6, gift.picture)
                 setLong(7, gift.rank)
                 setLong(8, giftId)
                 val rowCount = executeUpdate()
@@ -224,7 +222,6 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                 setLong(5, gift.rank)
                 val rs = executeQuery()
                 if (!rs.next()) return@with null
-                val picture = rs.getString("picture")
                 return@with DbGift(
                     rs.getLong("id"),
                     rs.getLong("userId"),
@@ -233,7 +230,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                     rs.getString("price"),
                     rs.getString("whereToBuy"),
                     rs.getLong("categoryId"),
-                    if (picture.isEmpty()) null else picture,
+                    rs.getString("picture"),
                     rs.getBoolean("secret"),
                     rs.getLong("rank")
                 )
