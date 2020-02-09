@@ -50,7 +50,7 @@ test {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'MainKt'
+        attributes 'Main-Class': 'org.aponcet.authserver.MainKt'
     }
 
 
