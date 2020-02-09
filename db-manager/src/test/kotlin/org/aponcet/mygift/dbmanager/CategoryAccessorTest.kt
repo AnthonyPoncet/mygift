@@ -2,6 +2,7 @@ package org.aponcet.mygift.dbmanager
 
 import io.kotlintest.Description
 import io.kotlintest.TestCaseOrder
+import io.kotlintest.TestResult
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import kotlin.test.assertFailsWith
@@ -29,6 +30,11 @@ class CategoryAccessorTest : StringSpec(){
 
         usersAccessor.addUser("name1", "pwd", "")
         usersAccessor.addUser("name2", "pwd", "")
+    }
+
+    override fun afterTest(description: Description, result: TestResult) {
+        val usersAccessor = UsersAccessor(conn)
+        deleteTable(listOf(categoryAccessor.getTableName(), usersAccessor.getTableName())) //order matter due to foreign key
     }
 
     override fun testCaseOrder(): TestCaseOrder? {
