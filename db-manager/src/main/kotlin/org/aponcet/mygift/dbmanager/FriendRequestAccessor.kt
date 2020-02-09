@@ -21,7 +21,7 @@ class FriendRequestAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     override fun createIfNotExists() {
         conn.execute("CREATE TABLE IF NOT EXISTS friendRequest (" +
-            "id         INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "id         INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
             "userOne    INTEGER NOT NULL, " +
             "userTwo    INTEGER NOT NULL, " +
             "status     TEXT NOT NULL, " +

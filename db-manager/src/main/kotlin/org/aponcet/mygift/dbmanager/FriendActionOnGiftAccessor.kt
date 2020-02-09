@@ -21,7 +21,7 @@ class FriendActionOnGiftAccessor(private val conn: DbConnection) : DaoAccessor()
 
     override fun createIfNotExists() {
         conn.execute("CREATE TABLE IF NOT EXISTS friendActionOnGift (" +
-            "id             INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "id             INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
             "giftId         INTEGER NOT NULL, " +
             "userId         INTEGER NOT NULL, " +
             "interested     INTEGER NOT NULL, " +
