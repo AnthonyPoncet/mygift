@@ -8,7 +8,6 @@ import java.sql.*
 class DbConnection(driver: String, dbPath: String) {
     private val conn: Connection
     val autoIncrement: String
-    val lastInsertId: String
 
     init {
         val url = "jdbc:$driver:$dbPath"
@@ -16,11 +15,6 @@ class DbConnection(driver: String, dbPath: String) {
         autoIncrement = when(driver) {
             "sqlite" -> "AUTOINCREMENT"
             "h2" -> "AUTO_INCREMENT"
-            else -> throw IllegalArgumentException("Not supported driver: $driver")
-        }
-        lastInsertId = when(driver) {
-            "sqlite" -> "last_insert_rowid()"
-            "h2" -> "last_insert_id"
             else -> throw IllegalArgumentException("Not supported driver: $driver")
         }
     }

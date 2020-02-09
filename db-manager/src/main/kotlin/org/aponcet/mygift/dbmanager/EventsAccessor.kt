@@ -19,7 +19,7 @@ class EventsAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     override fun createIfNotExists() {
         conn.execute("CREATE TABLE IF NOT EXISTS events (" +
-            "id             INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "id             INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
             "name           TEXT NOT NULL, " +
             "creatorId      INTEGER NOT NULL, " +
             "description    TEXT, " +
