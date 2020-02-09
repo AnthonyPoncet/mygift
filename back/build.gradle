@@ -54,7 +54,7 @@ test {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'MainKt'
+        attributes 'Main-Class': 'org.aponcet.mygift.MainKt'
     }
 
     // This line of code recursively collects and copies all of a project's files
