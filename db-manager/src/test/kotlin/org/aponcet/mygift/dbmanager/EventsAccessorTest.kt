@@ -2,6 +2,7 @@ package org.aponcet.mygift.dbmanager
 
 import io.kotlintest.Description
 import io.kotlintest.TestCaseOrder
+import io.kotlintest.TestResult
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import java.time.LocalDate
@@ -25,6 +26,10 @@ class EventsAccessorTest: StringSpec() {
 
     override fun beforeTest(description: Description) {
         eventsAccessor.createIfNotExists()
+        deleteTable(listOf(eventsAccessor.getTableName()))
+    }
+
+    override fun afterTest(description: Description, result: TestResult) {
         deleteTable(listOf(eventsAccessor.getTableName()))
     }
 

@@ -2,6 +2,7 @@ package org.aponcet.mygift.dbmanager
 
 import io.kotlintest.Description
 import io.kotlintest.TestCaseOrder
+import io.kotlintest.TestResult
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 
@@ -23,6 +24,10 @@ class UsersAccessorTest: StringSpec() {
     override fun beforeTest(description: Description) {
         usersAccessor.createIfNotExists()
         deleteTable(listOf(usersAccessor.getTableName()))
+    }
+
+    override fun afterTest(description: Description, result: TestResult) {
+        deleteTable(listOf(usersAccessor.getTableName())) //order matter due to foreign key
     }
 
     override fun testCaseOrder(): TestCaseOrder? {
