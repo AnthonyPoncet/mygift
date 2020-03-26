@@ -1,12 +1,23 @@
 package org.aponcet.mygift
 
 //TODO: remove linked to db model?
+import com.google.gson.Gson
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.apache.Apache
+import io.ktor.client.features.ResponseException
+import io.ktor.client.request.post
+import io.ktor.client.request.url
+import io.ktor.client.response.HttpResponse
+import io.ktor.client.response.readText
+import io.ktor.http.HttpStatusCode
+import org.aponcet.authserver.ErrorResponse
+import org.aponcet.authserver.TokenResponse
+import org.aponcet.authserver.UserJson
 import org.aponcet.mygift.dbmanager.*
 import java.time.LocalDate
-import kotlin.Exception
 
 /** RETURN CLASSES **/
-data class User(val id: Long, val name: String, val picture: String?)
+data class User(val token: String, val name: String, val picture: String?)
 data class Friend(val name: String, val picture: String?)
 data class Gift(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?)
 data class Category(val id: Long, val name: String, val rank: Long)
@@ -20,7 +31,6 @@ data class Event(val id: Long, val type: EventType, val name: String, val creato
 data class BuyListByFriend(val friendName: String, val gifts: List<FriendGift>)
 
 /** INPUT CLASSES **/
-data class ConnectionInformation(val name: String?, val password: String?)
 data class UserInformation(val name: String?, val password: String?, val picture: String?)
 data class UserModification(val name: String?, val picture: String?)
 data class RestGift(val name: String?, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long?, val picture: String?, val rank: Long?)
@@ -80,29 +90,35 @@ class DummyEventCache(private val databaseManager: DatabaseManager) {
 
 class UserManager(private val databaseManager: DatabaseManager) {
 
-    fun connect(connectionInformation: ConnectionInformation): User {
-        if (connectionInformation.name == null) throw BadParamException("Username could not be null")
-        if (connectionInformation.password == null) throw BadParamException("Password could not be null")
+    suspend fun connect(userJson: UserJson): User {
+        if (userJson.name == null) throw BadParamException("Username could not be null")
+        if (userJson.password == null) throw BadParamException("Password could not be null")
 
-        val user = databaseManager.getUser(connectionInformation.name) ?: throw ConnectionException(
-            "Unknown user"
-        )
-        if (user.password != connectionInformation.password) throw ConnectionException(
-            "Wrong password"
-        )
+        val client = HttpClient(Apache)
+        try {
+            val response = client.post<HttpResponse> {
+                url("http://127.0.0.1:9876/login")
+                body = Gson().toJson(userJson)
+            }
 
-        return User(user.id, user.name, user.picture)
+            val tokenResponse = Gson().fromJson(response.readText(), TokenResponse::class.java)
+            val name = userJson.name!!
+            val user = databaseManager.getUser(name)!! //to get picture, if should come from here
+            return User(tokenResponse.token, user.name, user.picture)
+        } catch (e: ResponseException) {
+            if (e.response.status == HttpStatusCode.Unauthorized) throw ConnectionException(Gson().fromJson(e.response.readText(), ErrorResponse::class.java).error)
+            System.err.println("Error while authenticate: $e")
+            throw IllegalStateException(e)
+        }
     }
 
-    fun addUser(userInformation: UserInformation): User {
+    suspend fun addUser(userInformation: UserInformation): User {
         if (userInformation.name == null) throw BadParamException("Name could not be null")
         if (userInformation.password == null) throw BadParamException("Password could not be null")
-        if (databaseManager.getUser(userInformation.name) != null) throw CreateUserException(
-            "User already exists"
-        )
+        if (databaseManager.getUser(userInformation.name) != null) throw CreateUserException("User already exists")
 
-        val dbUser = databaseManager.addUser(userInformation.name, userInformation.password, userInformation.picture)
-        return User(dbUser.id, dbUser.name, dbUser.picture)
+        databaseManager.addUser(userInformation.name, userInformation.password, userInformation.picture)
+        return connect(UserJson(userInformation.name, userInformation.password))
     }
 
     fun modifyUser(userId: Long, userModification: UserModification): User {
@@ -110,7 +126,7 @@ class UserManager(private val databaseManager: DatabaseManager) {
         databaseManager.getUser(userId) ?: throw CreateUserException("User does not exists")
 
         databaseManager.modifyUser(userId, userModification.name, userModification.picture)
-        return User(userId, userModification.name, userModification.picture)
+        return User("", userModification.name, userModification.picture)
     }
 
     private fun toGift(g: DbGift): Gift {

@@ -1,19 +1,27 @@
 package org.aponcet.mygift
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.JWTVerifier
+import com.auth0.jwt.algorithms.Algorithm
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
 import io.ktor.application.call
 import io.ktor.application.install
-import io.ktor.features.CORS
-import io.ktor.features.Compression
-import io.ktor.features.ContentNegotiation
-import io.ktor.features.StatusPages
+import io.ktor.auth.Authentication
+import io.ktor.auth.authenticate
+import io.ktor.auth.jwt.JWTPrincipal
+import io.ktor.auth.jwt.jwt
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.apache.Apache
+import io.ktor.client.request.get
+import io.ktor.features.*
 import io.ktor.gson.gson
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
+import io.ktor.http.auth.HttpAuthHeader
 import io.ktor.http.content.*
 import io.ktor.request.receiveMultipart
 import io.ktor.request.receiveText
@@ -22,11 +30,16 @@ import io.ktor.response.respondFile
 import io.ktor.routing.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import org.aponcet.authserver.UserJson
 import org.aponcet.mygift.dbmanager.*
+import org.slf4j.event.Level
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.security.KeyFactory
+import java.security.interfaces.RSAPublicKey
+import java.security.spec.X509EncodedKeySpec
 import javax.imageio.ImageIO
 
 
@@ -34,6 +47,17 @@ data class FileAnswer(val name: String)
 data class Error(val error: String)
 data class FriendRequestConflict(val ownRequest: Boolean, val status: RequestStatus, val message: String)
 data class NotANumberException(val target: String) : Exception()
+
+fun makeVerifier(publicKeyManager: PublicKeyManager): JWTVerifier {
+    val publicKey = publicKeyManager.publicKey
+        ?: throw IllegalStateException("Authentication server may be down, please contact admin")
+
+    val keyFactory = KeyFactory.getInstance("RSA")
+    val key = keyFactory.generatePublic(X509EncodedKeySpec(publicKey)) as RSAPublicKey
+    return JWT
+        .require(Algorithm.RSA256(key, null))
+        .build()
+}
 
 fun main(args: Array<String>) {
     mainBody {
@@ -63,6 +87,9 @@ fun main(args: Array<String>) {
 
         println("Start server on port ${arguments.port}")
 
+        val publicKeyManager = PublicKeyManager(9876)
+        publicKeyManager.start()
+
         val server = embeddedServer(Netty, port = arguments.port) {
             install(CORS) {
                 method(HttpMethod.Get)
@@ -83,25 +110,32 @@ fun main(args: Array<String>) {
                 ) }
             }
 
+            install(Authentication) {
+                jwt {
+                    verifier { makeVerifier(publicKeyManager) }
+                    validate { JWTPrincipal(it.payload) }
+                }
+            }
+
+            install(CallLogging) {
+                level = Level.TRACE
+            }
+
             routing {
                 route("/user") {
                     post("/connect") {
-                        val connectionInformation = Gson().fromJson(decode(call.receiveText()), ConnectionInformation::class.java)
+                        val userJson = Gson().fromJson(decode(call.receiveText()), UserJson::class.java)
 
                         try {
-                            val user = userManager.connect(connectionInformation)
+                            val user = userManager.connect(userJson)
                             call.respond(HttpStatusCode.OK, user)
                         } catch (e: BadParamException) {
-                            call.respond(HttpStatusCode.BadRequest,
-                                Error(e.error)
-                            )
+                            call.respond(HttpStatusCode.BadRequest, Error(e.error))
                         } catch (e: ConnectionException) {
-                            call.respond(HttpStatusCode.Conflict, Error(e.error))
+                            call.respond(HttpStatusCode.Unauthorized, Error(e.error))
                         } catch (e: Exception) {
                             System.err.println(e)
-                            call.respond(HttpStatusCode.InternalServerError,
-                                Error(e.message ?: "Unknown error")
-                            )
+                            call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
                         }
                     }
                 }
@@ -152,16 +186,19 @@ fun main(args: Array<String>) {
                     }
 
                     /** GIFT **/
-                    get("/gifts") {
-                        val id = getUserId(call.parameters)
+                    authenticate {
+                        get("/gifts") {
+                            val id = getUserId(call.parameters)
 
-                        try {
-                            val userGifts = userManager.getUserGifts(id)
-                            call.respond(HttpStatusCode.OK, userGifts)
-                        } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest,
-                                Error(e.message!!)
-                            )
+                            try {
+                                val userGifts = userManager.getUserGifts(id)
+                                call.respond(HttpStatusCode.OK, userGifts)
+                            } catch (e: Exception) {
+                                call.respond(
+                                    HttpStatusCode.BadRequest,
+                                    Error(e.message!!)
+                                )
+                            }
                         }
                     }
                     get("/gifts/{friendName}") {
