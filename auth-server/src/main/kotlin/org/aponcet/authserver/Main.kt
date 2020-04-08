@@ -33,7 +33,10 @@ data class KeyResponse(val key: ByteArray)
 
 open class SimpleJWT(val publicKey: RSAPublicKey, secretKey: RSAPrivateKey) {
     private val algorithm = Algorithm.RSA256(publicKey, secretKey)
-    fun sign(name: String): String = JWT.create().withClaim("name", name).sign(algorithm)
+    fun sign(id: Long, name: String): String = JWT.create()
+        .withClaim("id", id)
+        .withClaim("name", name)
+        .sign(algorithm)
 }
 
 fun main(args: Array<String>) {
@@ -81,14 +84,12 @@ fun Application.authModule(userProvider: UserProvider) {
             if (jsonUser.name == null) throw IllegalArgumentException("/login json need name node")
             if (jsonUser.password == null) throw IllegalArgumentException("/login json need password node")
 
-            val user = userProvider.getUser(jsonUser.name) ?: throw InvalidCredentialsException(
-                "Unknown user ${jsonUser.name}"
-            )
+            val user = userProvider.getUser(jsonUser.name) ?: throw InvalidCredentialsException("Unknown user ${jsonUser.name}")
             if (user.password != jsonUser.password) {
                 throw InvalidCredentialsException("Wrong password")
             }
 
-            call.respond(TokenResponse(simpleJwt.sign(user.name)))
+            call.respond(TokenResponse(simpleJwt.sign(user.id, user.name)))
         }
 
         get("/public-key") {

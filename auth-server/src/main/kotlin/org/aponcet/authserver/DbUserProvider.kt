@@ -13,6 +13,6 @@ class DbUserProvider(dbPath: String) : UserProvider {
 
     override fun getUser(name: String): User? {
         val user = usersAccessor.getUser(name)
-        return if (user == null) null else User(user.name, user.password)
+        return if (user == null) null else User(user.id, user.name, user.password)
     }
 }

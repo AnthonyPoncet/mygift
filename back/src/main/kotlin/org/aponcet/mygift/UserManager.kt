@@ -19,7 +19,7 @@ import java.time.LocalDate
 /** RETURN CLASSES **/
 data class User(val token: String, val name: String, val picture: String?)
 data class Friend(val name: String, val picture: String?)
-data class Gift(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?)
+data class Gift(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?, val rank: Long)
 data class Category(val id: Long, val name: String, val rank: Long)
 data class CatAndGift(val category: Category, val gifts: List<Gift>)
 data class FriendGift(val gift: Gift, val interestedUser: List<String>, val buyActionUser: Map<String, BuyAction>, val secret: Boolean)
@@ -137,7 +137,8 @@ class UserManager(private val databaseManager: DatabaseManager) {
             g.price,
             g.whereToBuy,
             g.categoryId,
-            g.picture
+            g.picture,
+            g.rank
         )
     }
 
@@ -299,7 +300,7 @@ class UserManager(private val databaseManager: DatabaseManager) {
             throw BadParamException("Category JSON need to contain 'name' node")
         }
         if (withRank && category.rank == null) {
-            throw BadParamException("Gift JSON need to contain 'name' node")
+            throw BadParamException("Category JSON need to contain 'rank' node")
         }
     }
 
