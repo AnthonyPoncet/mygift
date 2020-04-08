@@ -17,7 +17,7 @@ interface DispatchProps {
   changeUserInfo: (user: UserNameAndPicture) => void
 };
 interface StateProps {
-    userId: number | null,
+    token: string | null,
     username: String | null,
     picture: string | null,
     manageAccount: ManageAccountMessage };
@@ -39,8 +39,8 @@ class ManageAccount extends React.Component<Props, State> {
           const json = await response.json();
           this.setState({ image: json.name });
         } else {
-          const json = await response.json();
-          console.log(json);
+            const json = await response.json();
+            console.error(json);
         }
       };
       request();
@@ -50,14 +50,16 @@ class ManageAccount extends React.Component<Props, State> {
         const {image} = this.state;
         let imageName = (image === null) ? "" : image;
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId, {
+            const response = await fetch(url + '/users', {
                 method: "PATCH",
-                headers: {'Content-Type':'application/json'},
+                headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${this.props.token}`},
                 body: JSON.stringify({
                     "name": this.props.username,
                     "picture": imageName})
             });
-            if (response.status !== 202) {
+            if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
+            } else if (response.status !== 202) {
                 const json = await response.json();
                 console.error(json);
             }
@@ -81,7 +83,7 @@ class ManageAccount extends React.Component<Props, State> {
                     <Label>Profile picture</Label>
                     <Input type="file" onChange={(e) => this._changeImage(e)}/>
                 </FormGroup>
-                <SquareImage className="profile-image" imageName={image} size={150} alt="Profile" alternateImage={blank_profile_picture}/>
+                <SquareImage token={this.props.token} className="profile-image" imageName={image} size={150} alt="Profile" alternateImage={blank_profile_picture}/>
                 <br/>
                 <Button className="btn btn-primary" onClick={() => this._save()}>Save</Button>
             </Form>
@@ -90,5 +92,5 @@ class ManageAccount extends React.Component<Props, State> {
 }
 
 
-function mapStateToProps(state: AppState): StateProps {return { userId: state.signin.userId, username: state.signin.username, picture: state.signin.picture, manageAccount: state.locale.messages.manageAccount };}
+function mapStateToProps(state: AppState): StateProps {return { token: state.signin.token, username: state.signin.username, picture: state.signin.picture, manageAccount: state.locale.messages.manageAccount };}
 export default connect(mapStateToProps, {changeUserInfo})(ManageAccount);

@@ -37,10 +37,9 @@ class ApplicationTest : StringSpec({
             var currentKey: RSAPublicKey
             with(handleRequest(HttpMethod.Get, "public-key")) {
                 assertEquals(HttpStatusCode.OK, response.status())
-                val fromJson = Gson().fromJson(response.content, Map::class.java) //verify could org.aponcet.authserver.decode
+                val keyResponse = Gson().fromJson(response.content, KeyResponse::class.java) //verify could org.aponcet.authserver.decode
                 val keyFactory = KeyFactory.getInstance("RSA")
-                val publicKeyString: ArrayList<Byte> = fromJson["key"] as ArrayList<Byte>
-                currentKey = keyFactory.generatePublic(X509EncodedKeySpec(publicKeyString.toByteArray())) as RSAPublicKey
+                currentKey = keyFactory.generatePublic(X509EncodedKeySpec(keyResponse.key)) as RSAPublicKey
             }
 
             //connect with valid credential and verify token
@@ -49,9 +48,8 @@ class ApplicationTest : StringSpec({
                 setBody(Gson().toJson(UserJson("test", "test")))
             }) {
                 assertEquals(HttpStatusCode.OK, response.status())
-                val fromJson = Gson().fromJson(response.content, Map::class.java)
-                assertTrue(fromJson["token"] != null)
-                val token = fromJson["token"] as String
+                val tokenResponse = Gson().fromJson(response.content, TokenResponse::class.java)
+                val token = tokenResponse.token
 
                 val algorithm = Algorithm.RSA256(currentKey, null)
                 val verifier = JWT.require(algorithm).build()
@@ -59,10 +57,13 @@ class ApplicationTest : StringSpec({
 
                 assertEquals("RS256", verify.algorithm)
                 val claims = verify.claims
-                assertEquals(1, claims.size)
+                assertEquals(2, claims.size)
                 val name = claims["name"]
                 assertNotNull(name)
                 assertEquals("test", name.asString())
+                val id = claims["id"]
+                assertNotNull(id)
+                assertEquals(1, id.asLong())
             }
         }
     }
@@ -74,7 +75,7 @@ class ApplicationTest : StringSpec({
                 setBody(Gson().toJson(UserJson("toto", "test")))
             }) {
                 assertEquals(HttpStatusCode.Unauthorized, response.status())
-                assertEquals(mapOf("OK" to false, "error" to "Unknown user toto"), Gson().fromJson(response.content, Map::class.java))
+                assertEquals(ErrorResponse("Unknown user toto"), Gson().fromJson(response.content, ErrorResponse::class.java))
             }
         }
     }
@@ -83,7 +84,7 @@ class ApplicationTest : StringSpec({
         withTestApplication({authModule(TestUserProvider())}) {
             with(handleRequest(HttpMethod.Post, "login")) {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
-                assertEquals(mapOf("OK" to false, "error" to "/login need a json as input"), Gson().fromJson(response.content, Map::class.java))
+                assertEquals(ErrorResponse("/login need a json as input"), Gson().fromJson(response.content, ErrorResponse::class.java))
             }
         }
     }
@@ -95,7 +96,7 @@ class ApplicationTest : StringSpec({
                 setBody(Gson().toJson(UserJson(null, "test")))
             }) {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
-                assertEquals(mapOf("OK" to false, "error" to "/login json need name node"), Gson().fromJson(response.content, Map::class.java))
+                assertEquals(ErrorResponse("/login json need name node"), Gson().fromJson(response.content, ErrorResponse::class.java))
             }
         }
     }
@@ -107,14 +108,14 @@ class ApplicationTest : StringSpec({
                 setBody(Gson().toJson(UserJson("toto", null)))
             }) {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
-                assertEquals(mapOf("OK" to false, "error" to "/login json need password node"), Gson().fromJson(response.content, Map::class.java))
+                assertEquals(ErrorResponse("/login json need password node"), Gson().fromJson(response.content, ErrorResponse::class.java))
             }
         }
     }
 })
 
 class TestUserProvider : UserProvider {
-    private val users = mapOf("test" to User("test", "test"))
+    private val users = mapOf("test" to User(1, "test", "test"))
 
     override fun getUser(name: String): User? {
         return users[name]

@@ -20,7 +20,7 @@ let url = getServerUrl();
 
 
 interface PathParam { eventId: string };
-interface ConnectProps { userId: number | null, username: String | null, eventM: EventMessage };
+interface ConnectProps { token: string | null, username: String | null, eventM: EventMessage };
 interface Props extends RouteComponentProps<PathParam>, ConnectProps {};
 interface State {
     event: any,
@@ -42,8 +42,8 @@ class Event extends React.Component<Props, State> {
     }
 
     componentDidMount() {
-        if (this.props.userId) {
-            this.getEvent(this.props.userId);
+        if (this.props.token) {
+            this.getEvent(this.props.token);
         }
     }
 
@@ -81,29 +81,34 @@ class Event extends React.Component<Props, State> {
         let participants: string[] = [];
         participants.push(name);
         const request = async () => {
-          const response = await fetch(url + '/users/' + this.props.userId + '/events/' + this.eventId + '/add-participants', {
+            const response = await fetch(url + '/events/' + this.eventId + '/add-participants', {
                 method: 'post',
-                headers: {'Content-Type':'application/json'},
+                headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${this.props.token}`},
                 body: JSON.stringify(participants)
             });
-          if (response.status === 202) {
-              if (this.props.userId !== null) this.getEvent(this.props.userId);
-              this.setState({show: false});
-          } else {
-              const json = await response.json();
-              console.log(json.error);
-          }
+            if (response.status === 202) {
+                if (this.props.token !== null) this.getEvent(this.props.token);
+                this.setState({show: false});
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
+            } else {
+                const json = await response.json();
+                console.error(json.error);
+            }
         };
         request();
     }
 
-    async getEvent(userId: number) {
-        const response = await fetch(url + '/users/' + userId + '/events/' + this.eventId);
-        const json = await response.json();
+    async getEvent(token: string) {
+        const response = await fetch(url + '/events/' + this.eventId, {headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${token}`}});
         if (response.status === 200) {
+            const json = await response.json();
             this.setState({ event: json, participants: json.participants });
+        } else if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
         } else {
-            console.log(json.error);
+            const json = await response.json();
+            console.error(json.error);
         }
     };
 
@@ -178,5 +183,5 @@ class Event extends React.Component<Props, State> {
 }
 
 function mapStateToProps(state: AppState): ConnectProps {
-  return { userId: state.signin.userId, username: state.signin.username, eventM: state.locale.messages.event };}
+  return { token: state.signin.token, username: state.signin.username, eventM: state.locale.messages.event };}
 export default withRouter(connect(mapStateToProps)(Event));

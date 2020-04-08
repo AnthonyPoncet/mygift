@@ -19,7 +19,7 @@ import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
 
-interface Props { userId: number | null, myfriends: MyFriendsMessage };
+interface Props { token: string | null, myfriends: MyFriendsMessage };
 interface State {
     pendingSent: any[],
     pendingReceived: any[],
@@ -48,17 +48,17 @@ class MyFriends extends React.Component<Props, State> {
     }
 
     componentDidMount() {
-        if (this.props.userId) {
-            this.getPending(this.props.userId);
-            this.getFriends(this.props.userId); //this one should be scheduled
+        if (this.props.token) {
+            this.getPending(this.props.token);
+            this.getFriends(this.props.token); //this one should be scheduled
         }
     }
 
     //Hanle loggin, seems weird
     componentWillReceiveProps(nextProps: Props, nextContext: any) {
-        if (nextProps.userId) {
-            this.getPending(nextProps.userId);
-            this.getFriends(nextProps.userId);
+        if (nextProps.token) {
+            this.getPending(nextProps.token);
+            this.getFriends(nextProps.token);
         }
     }
 
@@ -90,22 +90,28 @@ class MyFriends extends React.Component<Props, State> {
         this.setState({ show: false });
     }
 
-    async getPending(userId: number) {
-        const response = await fetch(url + '/users/' + userId + '/friend-requests/pending');
-        const json = await response.json();
+    async getPending(token: string) {
+        const response = await fetch(url + '/friend-requests/pending', {headers: {'Authorization': `Bearer ${token}`}});
         if (response.status === 200) {
+            const json = await response.json();
             this.setState({ pendingSent: json.sent, pendingReceived: json.received });
+        } else if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
         } else {
+            const json = await response.json();
             console.log(json.error);
         }
     };
 
-    async getFriends(userId: number) {
-        const response = await fetch(url + '/users/' + userId + '/friends');
-        const json = await response.json();
+    async getFriends(token: string) {
+        const response = await fetch(url + '/friends', {headers: {'Authorization': `Bearer ${token}`}});
         if (response.status === 200) {
+            const json = await response.json();
             this.setState({ friends: json });
+        } else if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
         } else {
+            const json = await response.json();
             console.log(json.error);
         }
     };
@@ -135,14 +141,16 @@ class MyFriends extends React.Component<Props, State> {
         }
 
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/friend-requests', {
+            const response = await fetch(url + '/friend-requests', {
                     method: 'put',
-                    headers: {'Content-Type':'application/json'},
+                    headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${this.props.token}`},
                     body: JSON.stringify({"name": name})
                 });
             if (response.status === 200) {
                 this.setState({ show: false });
-                this.props.userId !== null && this.getPending(this.props.userId);
+                this.props.token !== null && this.getPending(this.props.token);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
                 const errorMessage = (response.status === 409) ? this.generateMessage(json, name) : json.error;
@@ -154,15 +162,17 @@ class MyFriends extends React.Component<Props, State> {
 
     cancelRequest(id: number) {
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/friend-requests/' + id, {method: 'delete'});
+            const response = await fetch(url + '/friend-requests/' + id, {method: 'delete', headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
-                if (this.props.userId !== null) {
-                    this.getPending(this.props.userId);
-                    this.getFriends(this.props.userId);
+                if (this.props.token !== null) {
+                    this.getPending(this.props.token);
+                    this.getFriends(this.props.token);
                 }
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
-                console.log(json);
+                console.error(json);
             }
         };
         request();
@@ -170,15 +180,17 @@ class MyFriends extends React.Component<Props, State> {
 
     acceptRequest(id: number ) {
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/friend-requests/' + id + '/accept');
+            const response = await fetch(url + '/friend-requests/' + id + '/accept', {headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
-                if (this.props.userId !== null) {
-                    this.getPending(this.props.userId);
-                    this.getFriends(this.props.userId);
+                if (this.props.token !== null) {
+                    this.getPending(this.props.token);
+                    this.getFriends(this.props.token);
                 }
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
-                console.log(json);
+                console.error(json);
             }
         };
         request();
@@ -186,12 +198,14 @@ class MyFriends extends React.Component<Props, State> {
 
     declineRequest(id: number, blockUser: boolean) {
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/friend-requests/' + id + '/decline?blockUser=' + blockUser, {method:"post"});
+            const response = await fetch(url + '/friend-requests/' + id + '/decline?blockUser=' + blockUser, {method:"post", headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
-                this.props.userId && this.getPending(this.props.userId);
+                this.props.token && this.getPending(this.props.token);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
-                console.log(json);
+                console.error(json);
             }
         };
         request();
@@ -232,7 +246,7 @@ class MyFriends extends React.Component<Props, State> {
             <div className="mycard-row">
                 {friends.map((req, i) => {
                     const user = req.otherUser;
-                    let image = <SquareImage className="profile-image" imageName={user.picture} size={150} alt="Profile" alternateImage={blank_profile_picture}/>;
+                    let image = <SquareImage token={this.props.token} className="profile-image" imageName={user.picture} size={150} alt="Profile" alternateImage={blank_profile_picture}/>;
                     return (
                         <div key={i + 'friends-' + req.id} className="friend-card" onMouseEnter={() => this.handleEnter(i)} onMouseLeave={() => this.handleOut()}>
                             <Link to={'/friend/' + user.name}>{image}</Link>
@@ -271,7 +285,7 @@ class MyFriends extends React.Component<Props, State> {
         }
         return (<div>
             <div className="main-friend">
-              {this.props.userId && <>
+              {this.props.token && <>
                   <Button color="link" onClick={this.openAddFriend}>{this.props.myfriends.addFriendButton}</Button>
                   {this.renderRequests()}
               </>}
@@ -289,5 +303,5 @@ class MyFriends extends React.Component<Props, State> {
     }
 }
 
-function mapStateToProps(state: AppState): Props {return { userId: state.signin.userId, myfriends: state.locale.messages.myfriends };}
+function mapStateToProps(state: AppState): Props {return { token: state.signin.token, myfriends: state.locale.messages.myfriends };}
 export default connect(mapStateToProps)(MyFriends);

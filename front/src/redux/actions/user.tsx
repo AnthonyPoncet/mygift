@@ -9,7 +9,7 @@ import { history } from '../../component/history';
 import { getServerUrl } from "../../ServerInformation";
 
 interface UserSignIn {
-  userId: number,
+  token: string,
   username: string,
   picture: string | null
 }
@@ -46,12 +46,12 @@ export const signin = (username: String, password: String): ThunkAction<Promise<
 
                   const json = await response.json();
                   if (response.status === 200) {
-                      localStorage.setItem('userId', json.id);
+                      localStorage.setItem('token', json.token);
                       localStorage.setItem('username', json.name);
                       let picture = (json.picture !== undefined && json.picture.length !== 0) ? json.picture : null;
                       if (picture !== null) localStorage.setItem('picture', json.picture);
                       else localStorage.removeItem('picture');
-                      dispatch({ type: SIGNIN, payload: { userId: json.id, username: json.name, picture: picture } });
+                      dispatch({ type: SIGNIN, payload: { token: json.token, username: json.name, picture: picture } });
                       history.push('/');
                   } else {
                       dispatch(error(json.error));
@@ -63,7 +63,7 @@ export const signin = (username: String, password: String): ThunkAction<Promise<
 }
 
 export function logout(){
-  localStorage.removeItem('userId');
+  localStorage.removeItem('token');
   localStorage.removeItem('username');
   localStorage.removeItem('picture');
   return { type: LOGOUT };
@@ -98,12 +98,12 @@ export const signup = (user: UserSignUp): ThunkAction<Promise<void>, {}, {}, Any
 
           const json = await response.json();
           if (response.status === 201) {
-              localStorage.setItem('userId', json.id);
+              localStorage.setItem('token', json.token);
               localStorage.setItem('username', json.name);
               let picture = (json.picture !== undefined && json.picture.length !== 0) ? json.picture : null;
               if (picture !== null) localStorage.setItem('picture', json.picture);
               else localStorage.removeItem('picture');
-              dispatch({ type: SIGNIN, payload: { userId: json.id, username: json.name, picture: picture } });
+              dispatch({ type: SIGNIN, payload: { token: json.token, username: json.name, picture: picture } });
               history.push('/');
           } else {
               dispatch(error(json.error));

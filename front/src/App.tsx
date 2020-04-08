@@ -122,8 +122,8 @@ class App extends React.Component<AppProps, State> {
                     <FormGroup>
                       <Input type="select" name="select" id="exampleSelect" onChange={(e) => this.props.changeLocale(e.target.value)}>
                         {this.locales.map((value) => {
-                          if (value === locale) {return (<option selected>{value}</option>);}
-                          else {return (<option >{value}</option>);}; })}
+                          if (value === locale) {return (<option selected key={value}>{value}</option>);}
+                          else {return (<option key={value}>{value}</option>);}; })}
                       </Input>
                     </FormGroup>
                   </form>

@@ -41,7 +41,6 @@ dependencies {
 
     compile "io.ktor:ktor-auth-jwt:$ktor_version"
     compile "io.ktor:ktor-auth:$ktor_version"
-    compile "io.ktor:ktor-auth-jvm:$ktor_version"
 
     testCompile 'io.kotlintest:kotlintest-runner-junit5:3.1.9'
 }

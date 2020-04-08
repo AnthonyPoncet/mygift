@@ -18,7 +18,7 @@ import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
 
-interface Props { userId: number | null, mywishlist: MyWishListMessage };
+interface Props { token: string | null, mywishlist: MyWishListMessage };
 interface State {
   catAndGifts: any[],
   show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string,
@@ -53,22 +53,22 @@ class MyWishList extends React.Component<Props, State> {
     }
 
     componentDidMount() {
-        if (this.props.userId) {
-            this.getGifts(this.props.userId);
+        if (this.props.token) {
+            this.getGifts(this.props.token);
         }
     }
 
-    //Hanle loggin, seems weird
+    //Handle login, seems weird
     componentWillReceiveProps(nextProps: Props, nextContext: any) {
-        if (nextProps.userId) {
-            this.getGifts(nextProps.userId);
+        if (nextProps.token) {
+            this.getGifts(nextProps.token);
         }
     }
 
     openAddGift() {
         const { mywishlist } = this.props;
         this.setState( { show: true, title: mywishlist.addGiftModalTitle, bodyRender: this.giftBodyRender, button: { text: mywishlist.addModalButton, fun: this.addGift },
-            inputs: { name: '', nameValidity: true, description: null, price: null, whereToBuy: null, categoryId: this.state.catAndGifts[0].category.id, picture: null }, errorMessage: '' });
+            inputs: { name: '', nameValidity: true, description: '', price: null, whereToBuy: null, categoryId: this.state.catAndGifts[0].category.id, picture: null }, errorMessage: '' });
     }
 
     openEditGift(giftId: number, name: string, description: string, price: string, whereToBuy: string, categoryId: number, image: string | null, rank: number) {
@@ -97,7 +97,7 @@ class MyWishList extends React.Component<Props, State> {
         const formData = new FormData();
         formData.append("0", e.target.files[0]);
         const request = async () => {
-            const response = await fetch(url + '/files', {method: 'post', body: formData});
+            const response = await fetch(url + '/files', {method: 'post', body: formData });
             if (response.status === 202) {
                 const json = await response.json();
                 const { inputs } = this.state;
@@ -151,7 +151,7 @@ class MyWishList extends React.Component<Props, State> {
               <Label>{mywishlist.image}</Label>
               <Input type="file" onChange={(e) => this.changeImage(e)}/>
             </FormGroup>
-            <SquareImage className="card-image" imageName={this.state.inputs.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+            <SquareImage token={this.props.token} className="card-image" imageName={this.state.inputs.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
             </>);
     }
 
@@ -167,7 +167,7 @@ class MyWishList extends React.Component<Props, State> {
         const request = async () => {
             const response = await fetch(url, {
                 method: method,
-                headers: {'Content-Type':'application/json'},
+                headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${this.props.token}`},
                 body: JSON.stringify({
                     "name": inputs.name,
                     "description" : inputs.description,
@@ -179,7 +179,10 @@ class MyWishList extends React.Component<Props, State> {
             });
             if (response.status === 200) {
                 this.setState({ show: false });
-                this.props.userId !== null && this.getGifts(this.props.userId);
+                this.props.token !== null && this.getGifts(this.props.token);
+            }
+            else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
                 this.setState({ show: true, errorMessage: json.error });
@@ -188,18 +191,20 @@ class MyWishList extends React.Component<Props, State> {
         request();
     }
 
-    addGift() { this.giftRestCall(url + '/users/' + this.props.userId + '/gifts', 'PUT'); }
+    addGift() { this.giftRestCall(url + '/gifts', "PUT"); }
 
-    updateGift(id: number) { this.giftRestCall(url + '/users/' + this.props.userId + '/gifts/' + id, 'PATCH'); }
+    updateGift(id: number) { this.giftRestCall(url + '/gifts/' + id, 'PATCH'); }
 
     deleteGift(id: number) {
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/gifts/' + id, {method: 'delete'});
+            const response = await fetch(url + '/gifts/' + id, {method: 'delete', headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
-                this.props.userId && this.getGifts(this.props.userId);
+                this.props.token && this.getGifts(this.props.token);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
-                console.log(json);
+                console.error(json);
             }
         };
         request();
@@ -208,12 +213,14 @@ class MyWishList extends React.Component<Props, State> {
     rankGift(id: number, downUp: number) { //0 = down , other = up
         const val = (downUp === 0) ? "up" : "down";
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/gifts/' + id + "/rank-actions/" + val, {method: 'post'});
+            const response = await fetch(url + '/gifts/' + id + "/rank-actions/" + val, {method: 'post', headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
-                this.props.userId && this.getGifts(this.props.userId);
+                this.props.token && this.getGifts(this.props.token);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
-                console.log(json);
+                console.error(json);
             }
         };
         request();
@@ -233,7 +240,7 @@ class MyWishList extends React.Component<Props, State> {
     }
 
     handleChangeCat = async (event: any) => {
-        await this.setState({ inputs: { name: event.target.value, nameValidity: event.target.value.length > 0 } });
+        await this.setState({ inputs: { name: event.target.value, nameValidity: event.target.value.length > 0, rank: this.state.inputs.rank } });
     };
 
     catBodyRender() {
@@ -256,12 +263,14 @@ class MyWishList extends React.Component<Props, State> {
         const request = async () => {
             const response = await fetch(url, {
                 method: method,
-                headers: {'Content-Type':'application/json'},
+                headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${this.props.token}`},
                 body: JSON.stringify({"name": inputs.name, "rank": inputs.rank})
             });
             if (response.status === 200) {
                 this.setState({ show: false });
-                this.props.userId && this.getGifts(this.props.userId);
+                this.props.token && this.getGifts(this.props.token);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
                 this.setState({ show: true, errorMessage: json.error });
@@ -270,18 +279,20 @@ class MyWishList extends React.Component<Props, State> {
         request();
     }
 
-    addCat() { this.catRestCall(url + '/users/' + this.props.userId + '/categories', 'PUT'); }
+    addCat() { this.catRestCall(url + '/categories', 'PUT'); }
 
-    updateCat(id: number) { this.catRestCall(url + '/users/' + this.props.userId + '/categories/' + id, 'PATCH'); }
+    updateCat(id: number) { this.catRestCall(url + '/categories/' + id, 'PATCH'); }
 
     deleteCat(id: number) {
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/categories/' + id, {method: 'delete'});
+            const response = await fetch(url + '/categories/' + id, {method: 'delete', headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
-                this.props.userId && this.getGifts(this.props.userId);
+                this.props.token && this.getGifts(this.props.token);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
-                console.log(json);
+                console.error(json);
             }
         };
         request();
@@ -290,9 +301,11 @@ class MyWishList extends React.Component<Props, State> {
     rankCategory(id: number, downUp: number) { //0 = down , other = up
         const val = (downUp === 0) ? "down" : "up";
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/categories/' + id + "/rank-actions/" + val, {method: 'post'});
+            const response = await fetch(url + '/categories/' + id + "/rank-actions/" + val, {method: 'post', headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
-                this.props.userId && this.getGifts(this.props.userId);
+                this.props.token && this.getGifts(this.props.token);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
                 console.log(json);
@@ -303,13 +316,20 @@ class MyWishList extends React.Component<Props, State> {
 
     closeModal() { this.setState({ show: false }); }
 
-    async getGifts(userId: number) {
-        const response = await fetch(url + '/users/' + userId + '/gifts');
-        const json = await response.json();
-        if (response.status === 200) {
-            this.setState({ catAndGifts: json });
+    async getGifts(token: string) {
+        const response = await fetch(url + '/gifts', {
+            method: "GET",
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
         } else {
-            console.log(json.error);
+            const json = await response.json();
+            if (response.status === 200) {
+                this.setState({ catAndGifts: json });
+            } else {
+                console.error(json.error);
+            }
         }
     };
 
@@ -354,12 +374,12 @@ class MyWishList extends React.Component<Props, State> {
                 {cg.gifts.map((gift: any, gi:any) => {
                   const fun = () => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture, gift.rank);
                   return (
-                      <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
+                      <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()} key={gi}>
                           <div className="card-edit-close one-icon">
                             <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
                           </div>
                           <div style={{cursor: "pointer"}} onClick={fun}>
-                            <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                            <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                           </div>
                           {this._renderInsideGift(cgi, gi, gift)}
                       </div>);
@@ -371,44 +391,44 @@ class MyWishList extends React.Component<Props, State> {
     }
 
     renderGiftsEditMode() {
-    if (this.state.catAndGifts) {
-        return this.state.catAndGifts.map((cg, cgi) => {
-            let displayDown = cgi !== (this.state.catAndGifts.length - 1);
-            let displayUp = cgi !== 0;
-            return (
-            <div key={cgi}>
-                <h5 style={{margin: "10px"}}>{cg.category.name} - {cg.category.rank}
-                {' '}
-                {displayDown && <span style={{cursor: "pointer"}} onClick={() => this.rankCategory(cg.category.id, 1)}><Octicon icon={ArrowDown} verticalAlign='middle'/></span>}
-                {' '}
-                {displayUp && <span style={{cursor: "pointer"}} onClick={() => this.rankCategory(cg.category.id, 0)}><Octicon icon={ArrowUp} verticalAlign='middle'/></span>}
-                </h5>
+        if (this.state.catAndGifts) {
+            return this.state.catAndGifts.map((cg, cgi) => {
+                let displayDown = cgi !== (this.state.catAndGifts.length - 1);
+                let displayUp = cgi !== 0;
+                return (
+                <div key={cgi}>
+                    <h5 style={{margin: "10px"}}>{cg.category.name} - {cg.category.rank}
+                    {' '}
+                    {displayDown && <span style={{cursor: "pointer"}} onClick={() => this.rankCategory(cg.category.id, 1)}><Octicon icon={ArrowDown} verticalAlign='middle'/></span>}
+                    {' '}
+                    {displayUp && <span style={{cursor: "pointer"}} onClick={() => this.rankCategory(cg.category.id, 0)}><Octicon icon={ArrowUp} verticalAlign='middle'/></span>}
+                    </h5>
 
-                <div className="mycard-row">
-                    {cg.gifts.map((gift: any, gi:any) => {
-                        let displayLeft = gi !== 0;
-                        let displayRight = gi !== (cg.gifts.length - 1);
-                        return (
-                        <div className="mycard">
-                            <div className="card-edit-close">
-                                <div className="two-icon-first">
-                                    {displayLeft && <span style={{cursor: "pointer"}} onClick={() => this.rankGift(gift.id, 1)}><Octicon icon={ArrowLeft} verticalAlign='middle'/></span>}
+                    <div className="mycard-row">
+                        {cg.gifts.map((gift: any, gi:any) => {
+                            let displayLeft = gi !== 0;
+                            let displayRight = gi !== (cg.gifts.length - 1);
+                            return (
+                            <div className="mycard">
+                                <div className="card-edit-close">
+                                    <div className="two-icon-first">
+                                        {displayLeft && <span style={{cursor: "pointer"}} onClick={() => this.rankGift(gift.id, 1)}><Octicon icon={ArrowLeft} verticalAlign='middle'/></span>}
+                                    </div>
+                                    <div className="two-icon-second">
+                                        {displayRight && <span style={{cursor: "pointer"}} onClick={() => this.rankGift(gift.id, 0)}><Octicon icon={ArrowRight} verticalAlign='middle'/></span>}
+                                    </div>
                                 </div>
-                                <div className="two-icon-second">
-                                    {displayRight && <span style={{cursor: "pointer"}} onClick={() => this.rankGift(gift.id, 0)}><Octicon icon={ArrowRight} verticalAlign='middle'/></span>}
+                                <div>
+                                    <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                                 </div>
-                            </div>
-                            <div>
-                                <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
-                            </div>
-                            {this._renderInsideGift(cgi, gi, gift)}
-                        </div>);
-                    })}
-                </div>
-            </div>)
+                                {this._renderInsideGift(cgi, gi, gift)}
+                            </div>);
+                        })}
+                    </div>
+                </div>)
             });
-          }
         }
+    }
 
     render() {
         const { button, editMode } = this.state;
@@ -420,7 +440,7 @@ class MyWishList extends React.Component<Props, State> {
 
         return (
             <div>
-                {this.props.userId && <>
+                {this.props.token && <>
                     <Button color="link" disabled={editMode} onClick={this.openAddGift}>{mywishlist.addGiftButton}</Button>
                     <Button color="link" disabled={editMode} onClick={this.openAddCat}>{mywishlist.addCategoryButton}</Button>
                     <Button color="link" onClick={() => {this.setState({editMode: !editMode});}}>{mywishlist.reorderButtonTitle}</Button>
@@ -438,5 +458,5 @@ class MyWishList extends React.Component<Props, State> {
     }
 }
 
-function mapStateToProps(state: AppState) : Props { return { userId: state.signin.userId, mywishlist: state.locale.messages.mywishlist }; }
+function mapStateToProps(state: AppState) : Props { return { token: state.signin.token, mywishlist: state.locale.messages.mywishlist }; }
 export default connect(mapStateToProps)(MyWishList);

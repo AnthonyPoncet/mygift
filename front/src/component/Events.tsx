@@ -18,7 +18,7 @@ import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
 
-interface Props { userId: number | null, username: String | null, myevents: MyEventsMessage };
+interface Props { token: string | null, username: String | null, myevents: MyEventsMessage };
 interface State {
   eventsCreated: any[],
   eventsAsParticipant: any[],
@@ -43,17 +43,17 @@ class Events extends React.Component<Props, State> {
     }
 
     componentDidMount() {
-        if (this.props.userId) {
-            this.getEventCreated(this.props.userId);
-            this.getEventAsParticipant(this.props.userId); //this one should be scheduled
+        if (this.props.token) {
+            this.getEventCreated(this.props.token);
+            this.getEventAsParticipant(this.props.token); //this one should be scheduled
         }
     }
 
     //Hanle loggin, seems weird
     componentWillReceiveProps(nextProps: Props, nextContext: any) {
-        if (nextProps.userId) {
-            this.getEventCreated(nextProps.userId);
-            this.getEventAsParticipant(nextProps.userId);
+        if (nextProps.token) {
+            this.getEventCreated(nextProps.token);
+            this.getEventAsParticipant(nextProps.token);
         }
     }
 
@@ -142,23 +142,29 @@ class Events extends React.Component<Props, State> {
         this.setState({ show: false });
     }
 
-    async getEventCreated(userId: number) {
-        const response = await fetch(url + '/users/' + userId + '/events');
-        const json = await response.json();
+    async getEventCreated(token: string) {
+        const response = await fetch(url + '/events', {headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${token}`}});
         if (response.status === 200) {
+            const json = await response.json();
             this.setState({ eventsCreated: json });
+        } else if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
         } else {
-            console.log(json.error);
+            const json = await response.json();
+            console.error(json.error);
         }
     };
 
-    async getEventAsParticipant(userId: number) {
-        const response = await fetch(url + '/users/' + userId + '/events-as-participant');
-        const json = await response.json();
+    async getEventAsParticipant(token: string) {
+        const response = await fetch(url + '/events-as-participant', {headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${token}`}});
         if (response.status === 200) {
+            const json = await response.json();
             this.setState({ eventsAsParticipant: json });
+        } else if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
         } else {
-            console.log(json.error);
+            const json = await response.json();
+            console.error(json.error);
         }
     };
 
@@ -179,8 +185,6 @@ class Events extends React.Component<Props, State> {
 
         let body: any = null;
         let endDateJson = JSON.stringify({"day":splittedDate[0], "month":splittedDate[1],"year": splittedDate[2]});
-        console.log(endDateJson);
-        //let endDateJson = JSON.stringify({"year": endDate.split('/')});
         if (type === "ALL_FOR_ALL") {
             body = JSON.stringify({
               "type": type,
@@ -198,18 +202,18 @@ class Events extends React.Component<Props, State> {
             });
         }
 
-        console.log(body);
-
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/events', {
+            const response = await fetch(url + '/events', {
                     method: 'put',
-                    headers: {'Content-Type':'application/json'},
+                    headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${this.props.token}`},
                     body: body
                 });
             if (response.status === 202) {
                 this.setState({ show: false });
-                this.props.userId !== null && this.getEventCreated(this.props.userId);
-                this.props.userId !== null && this.getEventAsParticipant(this.props.userId);
+                this.props.token !== null && this.getEventCreated(this.props.token);
+                this.props.token !== null && this.getEventAsParticipant(this.props.token);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
                 this.setState({ show: true, errorMessage: json.error});
@@ -220,13 +224,15 @@ class Events extends React.Component<Props, State> {
 
     deleteEvent(id: number) {
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/events/' + id, {method: 'delete'});
+            const response = await fetch(url + '/events/' + id, {method: 'delete', headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
-                this.props.userId !== null && this.getEventCreated(this.props.userId);
-                this.props.userId !== null && this.getEventAsParticipant(this.props.userId);
+                this.props.token !== null && this.getEventCreated(this.props.token);
+                this.props.token !== null && this.getEventAsParticipant(this.props.token);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
-                console.log(json);
+                console.error(json);
             }
         };
         request();
@@ -234,13 +240,15 @@ class Events extends React.Component<Props, State> {
 
     acceptRequest(id: number) {
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/events/' + id + '/accept');
+            const response = await fetch(url + '/events/' + id + '/accept', {headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
-                this.props.userId !== null && this.getEventCreated(this.props.userId);
-                this.props.userId !== null && this.getEventAsParticipant(this.props.userId);
+                this.props.token !== null && this.getEventCreated(this.props.token);
+                this.props.token !== null && this.getEventAsParticipant(this.props.token);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
-                console.log(json);
+                console.error(json);
             }
         };
         request();
@@ -248,13 +256,15 @@ class Events extends React.Component<Props, State> {
 
     declineRequest(id: number, blockEvent: boolean) {
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/events/' + id + '/decline?blockEvent=' + blockEvent, {method:"post"});
+            const response = await fetch(url + '/events/' + id + '/decline?blockEvent=' + blockEvent, {method:"post", headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
-                this.props.userId !== null && this.getEventCreated(this.props.userId);
-                this.props.userId !== null && this.getEventAsParticipant(this.props.userId);
+                this.props.token !== null && this.getEventCreated(this.props.token);
+                this.props.token !== null && this.getEventAsParticipant(this.props.token);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
             } else {
                 const json = await response.json();
-                console.log(json);
+                console.error(json);
             }
         };
         request();
@@ -272,7 +282,6 @@ class Events extends React.Component<Props, State> {
         let coming = [];
         let pending = [];
         if (this.state.eventsAsParticipant.length > 0) {
-            console.log(this.state.eventsAsParticipant);
             const f = this.state.eventsAsParticipant.filter(i => i.participants.filter((p: any) => p.name === this.props.username)[0].status === "ACCEPTED");
             if (f.length > 0) coming = f;
             const g = this.state.eventsAsParticipant.filter(i => i.participants.filter((p: any) => p.name === this.props.username)[0].status === "PENDING");
@@ -367,7 +376,7 @@ class Events extends React.Component<Props, State> {
             modalBody.push(this.state.bodyRender());
         }
         return (<div>
-            {this.props.userId && <>
+            {this.props.token && <>
                 <Button color="link" onClick={() => this.openAddEvent()}>{this.props.myevents.createEventButton}</Button>
                 {this.renderEvents()}
             </>}
@@ -386,5 +395,5 @@ class Events extends React.Component<Props, State> {
 }
 
 function mapStateToProps(state: AppState): Props {
-  return { userId: state.signin.userId, username: state.signin.username, myevents: state.locale.messages.myevents };}
+  return { token: state.signin.token, username: state.signin.username, myevents: state.locale.messages.myevents };}
 export default connect(mapStateToProps)(Events);
