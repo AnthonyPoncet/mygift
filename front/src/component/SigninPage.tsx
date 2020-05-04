@@ -27,11 +27,11 @@ class SigninPage extends React.Component<Props, State> {
     super(props);
     this.state = { username: '', password: '' };
 
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
+    this._handleChange = this._handleChange.bind(this);
+    this._handleSubmit = this._handleSubmit.bind(this);
   }
 
-  handleChange(e: any) {
+  _handleChange(e: any) {
     const { name, value } = e.target;
     if (name === "username") {
       this.setState({username: value, password: this.state.password});
@@ -40,7 +40,7 @@ class SigninPage extends React.Component<Props, State> {
     }
   }
 
-  handleSubmit() {
+  _handleSubmit() {
     const { username, password } = this.state;
     if (username && password) {
       this.props.signin(username, password);
@@ -59,13 +59,13 @@ class SigninPage extends React.Component<Props, State> {
           <div className="auth-form-body">
               <div className="form-group">
                 <label>{connection.username}</label>
-                <input type="text" name="username" placeholder={connection.username} className="form-control" value={username} onChange={this.handleChange} />
+                <input type="text" name="username" placeholder={connection.username} className="form-control" value={username} onChange={this._handleChange} />
               </div>
               <div className="form-group">
                 <label>{connection.password}</label>
-                <input type="password" name="password" placeholder={connection.password} className="form-control" value={password} onChange={this.handleChange} />
+                <input type="password" name="password" placeholder={connection.password} className="form-control" value={password} onChange={this._handleChange} />
               </div>
-              <button className="btn btn-primary btn-large" onClick={this.handleSubmit}>{connection.signInButton}</button>
+              <button className="btn btn-primary btn-large" onClick={this._handleSubmit}>{connection.signInButton}</button>
           </div>
           <div className="auth-bottom">
               {connection.newToMygift}<Link to="/signup" className="btn btn-link">{connection.createAnAccount}</Link>

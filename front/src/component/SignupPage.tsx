@@ -17,6 +17,8 @@ import events from './image/events.png';
 
 import { isMobile } from "react-device-detect";
 
+import { history } from './history';
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
@@ -25,7 +27,7 @@ interface DispatchProps {
   signup: (user: UserSignUp) => void,
   error: (message: String) => void
 };
-interface StateProps { errorMessage: String | null, connection: Connection };
+interface StateProps { token: string | null, errorMessage: String | null, connection: Connection };
 type Props = DispatchProps & StateProps;
 
 interface State { username: string, password: string, image: string | null };
@@ -50,7 +52,6 @@ class SignupPage extends React.Component<Props, State> {
 
   handleSubmit() {
       const { username, password, image } = this.state;
-      console.log(this.state);
       if (username && password) {
           this.props.signup({username: username, password: password, image: image});
       } else {
@@ -59,19 +60,22 @@ class SignupPage extends React.Component<Props, State> {
   }
 
   changeImage(e: any) {
-      const formData = new FormData();
-      formData.append("0", e.target.files[0]);
-      const request = async () => {
-          const response = await fetch(url + '/files', {method: 'post', body: formData});
-          if (response.status === 202) {
-              const json = await response.json();
-              this.setState({ image: json.name });
-          } else {
-              const json = await response.json();
-              console.error(json);
-          }
-      };
-      request();
+    const formData = new FormData();
+    formData.append("0", e.target.files[0]);
+    const request = async () => {
+        const response = await fetch(url + '/files', {method: 'post', headers: {'Authorization': `Bearer ${this.props.token}`}, body: formData });
+        if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
+            history.push("/signin");
+        } else if (response.status === 202) {
+          const json = await response.json();
+          this.setState({ image: json.name });
+        } else {
+            const json = await response.json();
+            console.error(json);
+        }
+    };
+    request();
   }
 
   renderSignUp() {
@@ -94,7 +98,7 @@ class SignupPage extends React.Component<Props, State> {
                 <label>{connection.image}</label>
                 <input type="file" onChange={(e) => this.changeImage(e)}/>
               </div>
-              <SquareImage className="profile-image" imageName={image} size={150} alt="Profile" alternateImage={blank_profile_picture}/>
+              <SquareImage token="" /*TODO*/ className="profile-image" imageName={image} size={150} alt="Profile" alternateImage={blank_profile_picture}/>
               <button className="btn btn-primary btn-large" onClick={this.handleSubmit}>{connection.signUpButton}</button>
           </div>
         </div>
@@ -127,7 +131,7 @@ class SignupPage extends React.Component<Props, State> {
   }
 }
 
-function mapStateToProps(state: AppState): StateProps { return { errorMessage: state.error.message, connection: state.locale.messages.connection }; }
+function mapStateToProps(state: AppState): StateProps { return { token: state.signin.token, errorMessage: state.error.message, connection: state.locale.messages.connection }; }
 const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>, ownProps: Props): DispatchProps => {
   return {
     signup: async (user) => await dispatch(signup(user)),

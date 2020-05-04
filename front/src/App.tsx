@@ -11,8 +11,6 @@ import { changeLocale } from './redux/actions/locale';
 import { logout } from './redux/actions/user';
 
 import MyBuyList from './component/MyBuyList';
-import Event from './component/Event';
-import Events from './component/Events';
 import FriendWishListRoute from './component/FriendWishListRoute'
 import HomePage from './component/HomePage';
 import ManageAccount from './component/ManageAccount';
@@ -34,6 +32,7 @@ interface AppProps {
     changeLocale: typeof changeLocale,
     logout: typeof logout,
 
+    token: string | null
     username: String | null,
     image: string | null,
     app: AppMessage
@@ -50,21 +49,35 @@ class App extends React.Component<AppProps, State> {
         history.listen((location, action) => {this.props.clearError()});
         this.state = { loaded: false };
 
-        if (this.props.image !== null) {
-            this._loadImage(this.props.image);
+        if (this.props.image !== null && this.props.token) {
+            this._loadImage(this.props.image, this.props.token);
         }
     }
 
     //Hanle loggin, seems weird
     componentWillReceiveProps(nextProps: AppProps, nextContext: any) {
-        if (nextProps.image) {
-            this._loadImage(nextProps.image);
+        if (nextProps.image && nextProps.token) {
+            this._loadImage(nextProps.image, nextProps.token);
         }
     }
 
-    _loadImage(name: string) {
+    _loadImage(name: string, token: string) {
       const request = async() => {
-        const response = await fetch(url + '/files/' + name);
+        const response = await fetch(url + '/files/' + name, {headers: {'Authorization': `Bearer ${token}`}});
+        if (response.status === 404) {
+            console.error("file '" + name + "' could not be found on server");
+            return;
+        }
+        if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
+            history.push("/signin");
+            this.props.logout();
+            return;
+        }
+        if (response.status === 500) {
+            console.error("Internal server error: " + response)
+            return;
+        }
 
         response.blob().then(blob => {
           let url = window.URL.createObjectURL(blob);
@@ -101,7 +114,6 @@ class App extends React.Component<AppProps, State> {
                     { username && <>
                       <li className="nav-item"><Link to={'/mywishlist'} className="nav-link">{app.myList}</Link></li>
                       <li className="nav-item"><Link to={'/myfriends'} className="nav-link">{app.myFriends}</Link></li>
-                      <li className="nav-item"><Link to={'/events'} className="nav-link">{app.myEvents}</Link></li>
                       <li className="nav-item"><Link to={'/buy-list'} className="nav-link">{app.myBuyList}</Link></li>
                       </>}
                   </ul>
@@ -122,8 +134,8 @@ class App extends React.Component<AppProps, State> {
                     <FormGroup>
                       <Input type="select" name="select" id="exampleSelect" onChange={(e) => this.props.changeLocale(e.target.value)}>
                         {this.locales.map((value) => {
-                          if (value === locale) {return (<option selected>{value}</option>);}
-                          else {return (<option >{value}</option>);}; })}
+                          if (value === locale) {return (<option selected key={value}>{value}</option>);}
+                          else {return (<option key={value}>{value}</option>);}; })}
                       </Input>
                     </FormGroup>
                   </form>
@@ -135,8 +147,6 @@ class App extends React.Component<AppProps, State> {
                   <Route path="/mywishlist" component={MyWishList} />
                   <Route path="/myfriends" component={MyFriends} />
                   <Route path="/friend/:friendName?" component={FriendWishListRoute} />
-                  <Route path="/events" component={Events} />
-                  <Route path="/event/:eventId?" component={Event} />
                   <Route path="/buy-list" component={MyBuyList} />
                   <Route path="/manage-account" component={ManageAccount} />
               </div>
@@ -145,5 +155,5 @@ class App extends React.Component<AppProps, State> {
     }
 }
 
-function mapStateToProps(state: AppState) { return { username: state.signin.username, image: state.signin.picture, app: state.locale.messages.app }; }
+function mapStateToProps(state: AppState) { return { token: state.signin.token, username: state.signin.username, image: state.signin.picture, app: state.locale.messages.app }; }
 export default connect(mapStateToProps, {clearError, changeLocale, logout})(App);

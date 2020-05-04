@@ -5,7 +5,9 @@ import Octicon, {Heart, Checklist, Gift, Pencil, X} from '@primer/octicons-re
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
 
 import { connect } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk'
 import { AppState } from '../redux/store';
+import { logout } from '../redux/actions/user';
 
 import { FriendWishListMessage, MyWishListMessage } from '../translation/itrans';
 import './style/card-gift.css';
@@ -14,12 +16,16 @@ import blank_gift from './image/blank_gift.png';
 
 import { isMobile } from "react-device-detect";
 
+import { history } from './history';
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
 
-interface ConnectProps { userId: number | null, username: String | null, friendwishlist: FriendWishListMessage, mywishlist: MyWishListMessage };
-interface Props extends ConnectProps { friendName: string };
+interface ConnectProps { token: string | null, username: String | null, friendwishlist: FriendWishListMessage, mywishlist: MyWishListMessage };
+interface StateProps extends ConnectProps { friendName: string };
+interface DispatchProps { logout: () => void };
+type Props = DispatchProps & StateProps;
 interface State {
     catAndGifts: any[],
     hoverId: string,
@@ -36,8 +42,8 @@ class FriendWishList extends React.Component<Props, State> {
     }
 
     componentDidMount() {
-        if (this.props.userId) {
-            this.getGifts(this.props.userId, this.props.friendName);
+        if (this.props.token) {
+            this.getGifts(this.props.token, this.props.friendName);
         }
     }
 
@@ -73,15 +79,18 @@ class FriendWishList extends React.Component<Props, State> {
         const formData = new FormData();
         formData.append("0", e.target.files[0]);
         const request = async () => {
-            const response = await fetch(url + '/files', {method: 'post', body: formData});
-            if (response.status === 202) {
+            const response = await fetch(url + '/files', {method: 'post', headers: {'Authorization': `Bearer ${this.props.token}`}, body: formData });
+            if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
+                history.push("/signin");
+            } else if (response.status === 202) {
                 const json = await response.json();
                 const { inputs } = this.state;
                 inputs["picture"] = json.name;
                 this.setState({ inputs: inputs });
             } else {
                 const json = await response.json();
-                console.log(json);
+                console.error(json);
             }
         };
         request();
@@ -127,7 +136,7 @@ class FriendWishList extends React.Component<Props, State> {
               <Label>{mywishlist.image}</Label>
               <Input type="file" onChange={(e) => this.changeImage(e)}/>
             </FormGroup>
-            <SquareImage className="card-image" imageName={this.state.inputs.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+            <SquareImage token={this.props.token} className="card-image" imageName={this.state.inputs.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
             </>);
     }
 
@@ -143,7 +152,7 @@ class FriendWishList extends React.Component<Props, State> {
         const request = async () => {
             const response = await fetch(url, {
                 method: method,
-                headers: {'Content-Type':'application/json'},
+                headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${this.props.token}`},
                 body: JSON.stringify({
                     "name": inputs.name,
                     "description" : inputs.description,
@@ -154,7 +163,10 @@ class FriendWishList extends React.Component<Props, State> {
             });
             if (response.status === 200) {
                 this.setState({ show: false });
-                this.props.userId !== null && this.getGifts(this.props.userId, this.props.friendName);
+                this.props.token !== null && this.getGifts(this.props.token, this.props.friendName);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
+                history.push("/signin");
             } else {
                 const json = await response.json();
                 this.setState({ show: true, errorMessage: json.error });
@@ -163,18 +175,21 @@ class FriendWishList extends React.Component<Props, State> {
         request();
     }
 
-    addGift() { this.giftRestCall(url + '/users/' + this.props.userId + '/gifts?forUser='+this.props.friendName, 'PUT'); }
+    addGift() { this.giftRestCall(url + '/gifts?forUser='+this.props.friendName, 'PUT'); }
 
-    updateGift(id: number) { this.giftRestCall(url + '/users/' + this.props.userId + '/gifts/' + id, 'PATCH'); }
+    updateGift(id: number) { this.giftRestCall(url + '/gifts/' + id, 'PATCH'); }
 
     deleteGift(id: number) {
         const request = async () => {
-            const response = await fetch(url + '/users/' + this.props.userId + '/gifts/' + id, {method: 'delete'});
+            const response = await fetch(url + '/gifts/' + id, {method: 'delete', headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
-                this.props.userId && this.getGifts(this.props.userId, this.props.friendName);
+                this.props.token && this.getGifts(this.props.token, this.props.friendName);
+            } else if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
+                history.push("/signin");
             } else {
                 const json = await response.json();
-                console.log(json);
+                console.error(json);
             }
         };
         request();
@@ -182,10 +197,10 @@ class FriendWishList extends React.Component<Props, State> {
 
     closeModal() { this.setState({ show: false }); }
 
-    async getGifts(userId: number, friendName: string) {
-        const response = await fetch(url + '/users/' + userId + '/gifts/' + friendName);
-        const json = await response.json();
+    async getGifts(token: string, friendName: string) {
+        const response = await fetch(url + '/gifts/' + friendName, {headers: {'Authorization': `Bearer ${this.props.token}`}});
         if (response.status === 200) {
+            const json = await response.json();
             this.setState({ catAndGifts: json });
             if (this.state.showGift) {
                 const { id } = this.state.giftToShow.gift
@@ -199,58 +214,71 @@ class FriendWishList extends React.Component<Props, State> {
                 });
                 this.setState({giftToShow: newGiftToShow});
             }
+        } else if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
+            history.push("/signin");
         } else {
-            console.log(json.error);
+            const json = await response.json();
+            console.error(json.error);
         }
     };
 
-    async interested(userId: number | null, giftId: number, imInterested: boolean) {
-        if (userId === null) return; //Impossible
+    async interested(token: string | null, giftId: number, imInterested: boolean) {
+        if (token === null) return; //Impossible
 
-        const response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/interested?userId=' + userId, {method: imInterested ? "DELETE" : "POST"});
+        const response = await fetch(url + '/gifts/' + giftId + '/interested', {method: imInterested ? "DELETE" : "POST", headers: {'Authorization': `Bearer ${this.props.token}`}});
         if (response.status === 202) {
-            this.getGifts(userId, this.props.friendName);
+            this.getGifts(token, this.props.friendName);
+        } else if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
+            history.push("/signin");
         } else {
             const json = await response.json();
-            console.log(json.error);
+            console.error(json.error);
         }
     }
 
-    async wantToBuy(userId: number | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
-        if (userId === null) return; //Impossible
+    async wantToBuy(token: string | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
+        if (token === null) return; //Impossible
 
-        if (iBought) await this.bought(userId, giftId, false, true); //Remove ibought
+        if (iBought) await this.bought(token, giftId, false, true); //Remove ibought
 
         let response = null;
         if (iWantToBuy === true) {
-            response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId, {method: "DELETE"});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${this.props.token}`}});
         } else {
-            response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId + '&action=WANT_TO_BUY', {method: "POST"});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=WANT_TO_BUY', {method: "POST", headers: {'Authorization': `Bearer ${this.props.token}`}});
         }
         if (response.status === 202) {
-            this.getGifts(userId, this.props.friendName);
+            this.getGifts(token, this.props.friendName);
+        } else if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
+            history.push("/signin");
         } else {
             const json = await response.json();
-            console.log(json.error);
+            console.error(json.error);
         }
     }
 
-    async bought(userId: number | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
-        if (userId === null) return; //Impossible
+    async bought(token: string | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
+        if (token === null) return; //Impossible
 
-        if (iWantToBuy) await this.wantToBuy(userId, giftId, true, false); //Remove ibought
+        if (iWantToBuy) await this.wantToBuy(token, giftId, true, false); //Remove ibought
 
         let response = null;
         if (iBought === true) {
-            response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId, {method: "DELETE"});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${this.props.token}`}});
         } else {
-            response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId + '&action=BOUGHT', {method: "POST"});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=BOUGHT', {method: "POST", headers: {'Authorization': `Bearer ${this.props.token}`}});
         }
         if (response.status === 202) {
-            this.getGifts(userId, this.props.friendName);
+            this.getGifts(token, this.props.friendName);
+        } else if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
+            history.push("/signin");
         } else {
             const json = await response.json();
-            console.log(json.error);
+            console.error(json.error);
         }
     }
 
@@ -326,11 +354,11 @@ class FriendWishList extends React.Component<Props, State> {
                           { (bought.length === 0 || imInterested || iWantToBuy || iWantToBuy) &&
                           <div className="card-edit-close">
                               <div className={imInterested ? "icon-selected three-icon-first" : "three-icon-first"}>
-                                <span style={{cursor: "pointer"}} onClick={() => this.interested(this.props.userId, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
+                                <span style={{cursor: "pointer"}} onClick={() => this.interested(this.props.token, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
                                 {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
                               </div>
                               <div className={iWantToBuy ? "icon-selected three-icon-second" : "three-icon-second"}>
-                                  <span style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
+                                  <span style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.token, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
                                   {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
                               </div>
                               <div className={iBought ? "icon-selected three-icon-third" : "three-icon-third"}>
@@ -339,7 +367,7 @@ class FriendWishList extends React.Component<Props, State> {
                                   :
                                   <span
                                       style={{cursor: "pointer"}}
-                                      onClick={() => this.bought(this.props.userId, gift.id, iWantToBuy, iBought)}>
+                                      onClick={() => this.bought(this.props.token, gift.id, iWantToBuy, iBought)}>
                                           <Octicon icon={Gift}/>
                                   </span>
                                   }{' '}
@@ -347,7 +375,7 @@ class FriendWishList extends React.Component<Props, State> {
                               </div>
                           </div> }
                           <div style={{cursor: "pointer"}} onClick={() => this.showGift(fGift)}>
-                              <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                              <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                           </div>
                           {this._renderInsideGift(cgi, gi, fGift)}
                       </div>);
@@ -369,19 +397,20 @@ class FriendWishList extends React.Component<Props, State> {
         return (
         <div>
           <h1 className="friend-wishlist-title">{this.props.friendwishlist.title} {this.props.friendName}</h1>
-          {this.props.userId && <Button color="link" onClick={() => this.openAddGift()}>{mywishlist.addGiftButton}</Button> }
+          {this.props.token && <Button color="link" onClick={() => this.openAddGift()}>{mywishlist.addGiftButton}</Button> }
           <div>{this.renderGifts()}</div>
 
           <DisplayGift
+            token={this.props.token}
             username={this.props.username}
             show={this.state.showGift}
             fGift={this.state.giftToShow}
             close={() => this.setState({showGift: false, giftToShow: null})}
             friendwishlist={this.props.friendwishlist}
             mywishlist={this.props.mywishlist}
-            interested={(giftId: number, imInterested: boolean) => this.interested(this.props.userId, giftId, imInterested)}
-            wantToBuy={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.wantToBuy(this.props.userId, giftId, iWantToBuy, iBought)}
-            bought={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.bought(this.props.userId, giftId, iWantToBuy, iBought)}/>
+            interested={(giftId: number, imInterested: boolean) => this.interested(this.props.token, giftId, imInterested)}
+            wantToBuy={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.wantToBuy(this.props.token, giftId, iWantToBuy, iBought)}
+            bought={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.bought(this.props.token, giftId, iWantToBuy, iBought)}/>
 
           <Modal isOpen={this.state.show} toggle={() => this.closeModal()}>
               <ModalHeader toggle={() => this.closeModal()}>{this.state.title}</ModalHeader>
@@ -396,6 +425,7 @@ class FriendWishList extends React.Component<Props, State> {
 }
 
 interface DisplayGiftProps {
+    token: string | null,
     username: String | null,
     show: boolean
     fGift: any | null,
@@ -442,7 +472,7 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
             <ModalHeader toggle={() => close() }>{gift.name}</ModalHeader>
             <ModalBody>
                 <div className={isContainer}>
-                    <SquareImage className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
+                    <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
                     <div style={{padding: padding}}>
                         {(gift.description !== "") && <>
                             <div>{mywishlist.description}: {gift.description}</div>
@@ -476,5 +506,5 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
 }
 
 function mapStateToProps(state: AppState): ConnectProps {return {
-  userId: state.signin.userId, username: state.signin.username, friendwishlist: state.locale.messages.friendwishlist, mywishlist: state.locale.messages.mywishlist };}
+  token: state.signin.token, username: state.signin.username, friendwishlist: state.locale.messages.friendwishlist, mywishlist: state.locale.messages.mywishlist };}
 export default connect(mapStateToProps)(FriendWishList);

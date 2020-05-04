@@ -2,10 +2,12 @@ import React from 'react';
 
 import './style/style.css';
 
+import { history } from './history';
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
-interface Props { className: string, imageName: string | null, size: number, alt: string, alternateImage: any };
+interface Props { token: string | null, className: string, imageName: string | null, size: number, alt: string, alternateImage: any };
 interface State { loadedUrl: any | null };
 
 class SquareImage extends React.Component<Props, State> {
@@ -27,9 +29,14 @@ class SquareImage extends React.Component<Props, State> {
 
     _loadImage() {
         const request = async() => {
-            const response = await fetch(url + '/files/' + this.props.imageName);
+            const response = await fetch(url + '/files/' + this.props.imageName, {headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 404) {
-                console.error("file " + this.props.imageName + " could not be found on server");
+                console.error("file '" + this.props.imageName + "' could not be found on server");
+                return;
+            }
+            if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
+                history.push("/signin");
                 return;
             }
             if (response.status === 500) {

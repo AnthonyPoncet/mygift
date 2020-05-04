@@ -5,7 +5,9 @@ import Octicon, {Checklist, Gift} from '@primer/octicons-react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from "reactstrap";
 
 import { connect } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk'
 import { AppState } from '../redux/store';
+import { logout } from '../redux/actions/user';
 
 import { FriendWishListMessage, MyWishListMessage, MyBuyListMessage } from '../translation/itrans';
 import './style/card-gift.css';
@@ -14,12 +16,15 @@ import blank_gift from './image/blank_gift.png';
 
 import { isMobile } from "react-device-detect";
 
+import { history } from './history';
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
 
-interface ConnectProps { userId: number | null, username: String | null, friendwishlist: FriendWishListMessage, mywishlist: MyWishListMessage, myBuyList: MyBuyListMessage };
-interface Props extends ConnectProps { };
+interface StateProps { token: string | null, username: String | null, friendwishlist: FriendWishListMessage, mywishlist: MyWishListMessage, myBuyList: MyBuyListMessage };
+interface DispatchProps { logout: () => void };
+type Props = DispatchProps & StateProps;
 interface State {
     friendAndGifts: any[],
     hoverId: string,
@@ -34,15 +39,21 @@ class MyBuyList extends React.Component<Props, State> {
     }
 
     componentDidMount() {
-        if (this.props.userId) {
-            this.getBuyList(this.props.userId);
+        if (this.props.token) {
+            this.getBuyList(this.props.token);
         }
     }
 
-    async getBuyList(userId: number) {
-        const response = await fetch(url + '/users/' + userId + '/buy-list');
-        const json = await response.json();
+    _redirect() {
+        console.error("Unauthorized. Disconnect and redirect to connect");
+        history.push("/signin");
+        this.props.logout();
+    }
+
+    async getBuyList(token: string) {
+        const response = await fetch(url + '/buy-list', {headers: {'Authorization': `Bearer ${this.props.token}`}});
         if (response.status === 200) {
+            const json = await response.json();
             this.setState({ friendAndGifts: json });
             if (this.state.showGift) {
                 const { id } = this.state.giftToShow.gift
@@ -56,43 +67,50 @@ class MyBuyList extends React.Component<Props, State> {
                 });
                 this.setState({giftToShow: newGiftToShow});
             }
+        } else if (response.status === 401) {
+            this._redirect()
         } else {
+            const json = await response.json();
             console.error(json.error);
         }
     };
 
-    async wantToBuy(userId: number | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
-        if (userId === null) return; //Impossible
+    async wantToBuy(token: string | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
+        if (token === null) return; //Impossible
 
-        if (iBought) await this.bought(userId, giftId, false, true); //Remove ibought
+        if (iBought) await this.bought(token, giftId, false, true); //Remove ibought
 
         let response = null;
         if (iWantToBuy === true) {
-            response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId, {method: "DELETE"});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${this.props.token}`}});
         } else {
-            response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId + '&action=WANT_TO_BUY', {method: "POST"});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=WANT_TO_BUY', {method: "POST", headers: {'Authorization': `Bearer ${this.props.token}`}});
         }
         if (response.status === 202) {
-            this.getBuyList(userId);
+            this.getBuyList(token);
+        } else if (response.status === 401) {
+            this._redirect()
         } else {
             const json = await response.json();
             console.error(json.error);
         }
     }
 
-    async bought(userId: number | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
-        if (userId === null) return; //Impossible
+    async bought(token: string | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
+        if (token === null) return; //Impossible
 
-        if (iWantToBuy) await this.wantToBuy(userId, giftId, true, false); //Remove ibought
+        if (iWantToBuy) await this.wantToBuy(token, giftId, true, false); //Remove ibought
 
         let response = null;
         if (iBought === true) {
-            response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId, {method: "DELETE"});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${this.props.token}`}});
         } else {
-            response = await fetch(url + '/users/' + userId + '/gifts/' + giftId + '/buy-action?userId=' + userId + '&action=BOUGHT', {method: "POST"});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=BOUGHT', {method: "POST", headers: {'Authorization': `Bearer ${this.props.token}`}});
         }
         if (response.status === 202) {
-            this.getBuyList(userId);
+            this.getBuyList(token);
+        } else if (response.status === 401) {
+            this._redirect()
         } else {
             const json = await response.json();
             console.error(json.error);
@@ -153,15 +171,15 @@ class MyBuyList extends React.Component<Props, State> {
                     <div className="mycard" onMouseEnter={() => this.handleEnter(fgi, gi)} onMouseLeave={() => this.handleOut()} style={{cursor: "pointer"}} onClick={() => this.showGift(fGift)}>
                         <div className="card-edit-close">
                           <div className={iWantToBuy ? "icon-selected two-icon-first" : "two-icon-first"}>
-                            <span style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
+                            <span style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.token, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
                             {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
                           </div>
                           <div className={iBought ? "icon-selected two-icon-second" : "two-icon-second"}>
-                              <span style={{cursor: "pointer"}} onClick={() => this.bought(this.props.userId, gift.id, iWantToBuy, iBought)}><Octicon icon={Gift}/></span>{' '}
+                              <span style={{cursor: "pointer"}} onClick={() => this.bought(this.props.token, gift.id, iWantToBuy, iBought)}><Octicon icon={Gift}/></span>{' '}
                               {bought.length !== 0 && <><span>{bought.length}</span>{' '}</>}
                           </div>
                         </div>
-                        <SquareImage className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                        <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                         {this._renderInsideGift(fgi, gi, gift)}
                     </div>);
                 })}
@@ -178,20 +196,22 @@ class MyBuyList extends React.Component<Props, State> {
           <div>{this.renderGifts()}</div>
 
           <DisplayGift
+            token={this.props.token}
             username={this.props.username}
             show={this.state.showGift}
             fGift={this.state.giftToShow}
             close={() => this.setState({showGift: false, giftToShow: null})}
             friendwishlist={this.props.friendwishlist}
             mywishlist={this.props.mywishlist}
-            wantToBuy={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.wantToBuy(this.props.userId, giftId, iWantToBuy, iBought)}
-            bought={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.bought(this.props.userId, giftId, iWantToBuy, iBought)}
+            wantToBuy={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.wantToBuy(this.props.token, giftId, iWantToBuy, iBought)}
+            bought={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.bought(this.props.token, giftId, iWantToBuy, iBought)}
             />
         </div>);
     }
 }
 
 interface DisplayGiftProps {
+    token: string | null,
     username: String | null,
     show: boolean
     fGift: any | null,
@@ -237,7 +257,7 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
             <ModalHeader toggle={() => close() }>{gift.name}</ModalHeader>
             <ModalBody>
                 <div className={isContainer}>
-                    <SquareImage className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
+                    <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
                     <div style={{padding: padding}}>
                         {(gift.description !== "") && <>
                             <div>{mywishlist.description}: {gift.description}</div>
@@ -269,6 +289,14 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
     }
 }
 
-function mapStateToProps(state: AppState): ConnectProps {return {
-  userId: state.signin.userId, username: state.signin.username, friendwishlist: state.locale.messages.friendwishlist, mywishlist: state.locale.messages.mywishlist, myBuyList: state.locale.messages.myBuyList };}
-export default connect(mapStateToProps)(MyBuyList);
+function mapStateToProps(state: AppState): StateProps {
+    return { token: state.signin.token,
+              username: state.signin.username,
+              friendwishlist: state.locale.messages.friendwishlist,
+              mywishlist: state.locale.messages.mywishlist,
+              myBuyList: state.locale.messages.myBuyList };
+}
+const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>, ownProps: Props): DispatchProps => {
+   return { logout: async () => await dispatch(logout()) }
+}
+export default connect(mapStateToProps, mapDispatchToProps)(MyBuyList);
