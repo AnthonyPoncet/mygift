@@ -52,7 +52,6 @@ class SignupPage extends React.Component<Props, State> {
 
   handleSubmit() {
       const { username, password, image } = this.state;
-      console.log(this.state);
       if (username && password) {
           this.props.signup({username: username, password: password, image: image});
       } else {

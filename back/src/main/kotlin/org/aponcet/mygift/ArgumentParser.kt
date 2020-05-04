@@ -11,7 +11,7 @@ class ArgumentParser(parser: ArgParser) {
     }.default(8080)
 
     val authServerPort : Int by parser.storing(
-        "-a", "--authServerPort",
+        "-s", "--authServerPort",
         help = "port used by the Authentication server") {
         toInt()
     }.default(9876)
