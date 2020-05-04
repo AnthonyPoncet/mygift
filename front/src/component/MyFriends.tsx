@@ -3,7 +3,9 @@ import { Modal, ModalHeader, ModalBody, Button, Input, Label, Form, FormGroup, F
 import { Link } from 'react-router-dom';
 
 import { connect } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk'
 import { AppState } from '../redux/store';
+import { logout } from '../redux/actions/user';
 
 import Octicon, {Check, X, CircleSlash} from '@primer/octicons-react';
 
@@ -15,11 +17,15 @@ import blank_profile_picture from './image/blank_profile_picture.png';
 
 import { isMobile } from "react-device-detect";
 
+import { history } from './history';
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
 
-interface Props { token: string | null, myfriends: MyFriendsMessage };
+interface StateProps { token: string | null, myfriends: MyFriendsMessage };
+interface DispatchProps { logout: () => void };
+type Props = DispatchProps & StateProps;
 interface State {
     pendingSent: any[],
     pendingReceived: any[],
@@ -62,6 +68,12 @@ class MyFriends extends React.Component<Props, State> {
         }
     }
 
+    _redirect() {
+        console.error("Unauthorized. Disconnect and redirect to connect");
+        history.push("/signin");
+        this.props.logout();
+    }
+
     openAddFriend() {
         const { myfriends } = this.props;
         this.setState( { show: true, title: myfriends.addFriendModalTitle, bodyRender: this.friendBodyRender, button: { text: myfriends.addModalButton, fun: this.addFriend },
@@ -96,7 +108,7 @@ class MyFriends extends React.Component<Props, State> {
             const json = await response.json();
             this.setState({ pendingSent: json.sent, pendingReceived: json.received });
         } else if (response.status === 401) {
-            console.error("Unauthorized. Disconnect and redirect to connect");
+            this._redirect()
         } else {
             const json = await response.json();
             console.log(json.error);
@@ -109,7 +121,7 @@ class MyFriends extends React.Component<Props, State> {
             const json = await response.json();
             this.setState({ friends: json });
         } else if (response.status === 401) {
-            console.error("Unauthorized. Disconnect and redirect to connect");
+            this._redirect()
         } else {
             const json = await response.json();
             console.log(json.error);
@@ -150,7 +162,7 @@ class MyFriends extends React.Component<Props, State> {
                 this.setState({ show: false });
                 this.props.token !== null && this.getPending(this.props.token);
             } else if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
+                this._redirect()
             } else {
                 const json = await response.json();
                 const errorMessage = (response.status === 409) ? this.generateMessage(json, name) : json.error;
@@ -169,7 +181,7 @@ class MyFriends extends React.Component<Props, State> {
                     this.getFriends(this.props.token);
                 }
             } else if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
+                this._redirect()
             } else {
                 const json = await response.json();
                 console.error(json);
@@ -187,7 +199,7 @@ class MyFriends extends React.Component<Props, State> {
                     this.getFriends(this.props.token);
                 }
             } else if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
+                this._redirect()
             } else {
                 const json = await response.json();
                 console.error(json);
@@ -202,7 +214,7 @@ class MyFriends extends React.Component<Props, State> {
             if (response.status === 202) {
                 this.props.token && this.getPending(this.props.token);
             } else if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
+                this._redirect()
             } else {
                 const json = await response.json();
                 console.error(json);
@@ -303,5 +315,8 @@ class MyFriends extends React.Component<Props, State> {
     }
 }
 
-function mapStateToProps(state: AppState): Props {return { token: state.signin.token, myfriends: state.locale.messages.myfriends };}
-export default connect(mapStateToProps)(MyFriends);
+function mapStateToProps(state: AppState): StateProps {return { token: state.signin.token, myfriends: state.locale.messages.myfriends };}
+const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>, ownProps: Props): DispatchProps => {
+  return { logout: async () => await dispatch(logout()) }
+}
+export default connect(mapStateToProps, mapDispatchToProps)(MyFriends);

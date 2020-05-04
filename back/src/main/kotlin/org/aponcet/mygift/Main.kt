@@ -88,7 +88,7 @@ fun main(args: Array<String>) {
 
         println("Start server on port ${arguments.port}")
 
-        val publicKeyManager = PublicKeyManager(9876)
+        val publicKeyManager = PublicKeyManager(arguments.authServerPort)
         publicKeyManager.start()
 
         val server = embeddedServer(Netty, port = arguments.port) {

@@ -3,8 +3,15 @@ import { RouteComponentProps } from "react-router";
 
 import FriendWishList from './FriendWishList';
 
+import { connect } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk'
+import { AppState } from '../redux/store';
+import { logout } from '../redux/actions/user';
+
 interface PathParam { friendName: string };
-interface Props extends RouteComponentProps<PathParam> {};
+interface StateProps extends RouteComponentProps<PathParam> {};
+interface DispatchProps { logout: () => void };
+type Props = DispatchProps & StateProps;
 
 class FriendWishListRoute extends React.Component<Props> {
     private friendName: string;
@@ -15,8 +22,11 @@ class FriendWishListRoute extends React.Component<Props> {
     }
 
     render() {
-        return (<FriendWishList friendName={this.friendName}/>);
+        return (<FriendWishList friendName={this.friendName} logout={this.props.logout}/>);
     }
 }
 
-export default FriendWishListRoute;
+const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>, ownProps: Props): DispatchProps => {
+    return { logout: async () => await dispatch(logout()) }
+}
+export default connect(null, mapDispatchToProps)(FriendWishListRoute);

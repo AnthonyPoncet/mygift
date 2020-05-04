@@ -5,7 +5,9 @@ import Octicon, {Checklist, Gift} from '@primer/octicons-react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from "reactstrap";
 
 import { connect } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk'
 import { AppState } from '../redux/store';
+import { logout } from '../redux/actions/user';
 
 import { FriendWishListMessage, MyWishListMessage, MyBuyListMessage } from '../translation/itrans';
 import './style/card-gift.css';
@@ -14,12 +16,15 @@ import blank_gift from './image/blank_gift.png';
 
 import { isMobile } from "react-device-detect";
 
+import { history } from './history';
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
 
-interface ConnectProps { token: string | null, username: String | null, friendwishlist: FriendWishListMessage, mywishlist: MyWishListMessage, myBuyList: MyBuyListMessage };
-interface Props extends ConnectProps { };
+interface StateProps { token: string | null, username: String | null, friendwishlist: FriendWishListMessage, mywishlist: MyWishListMessage, myBuyList: MyBuyListMessage };
+interface DispatchProps { logout: () => void };
+type Props = DispatchProps & StateProps;
 interface State {
     friendAndGifts: any[],
     hoverId: string,
@@ -37,6 +42,12 @@ class MyBuyList extends React.Component<Props, State> {
         if (this.props.token) {
             this.getBuyList(this.props.token);
         }
+    }
+
+    _redirect() {
+        console.error("Unauthorized. Disconnect and redirect to connect");
+        history.push("/signin");
+        this.props.logout();
     }
 
     async getBuyList(token: string) {
@@ -57,7 +68,7 @@ class MyBuyList extends React.Component<Props, State> {
                 this.setState({giftToShow: newGiftToShow});
             }
         } else if (response.status === 401) {
-            console.error("Unauthorized. Disconnect and redirect to connect");
+            this._redirect()
         } else {
             const json = await response.json();
             console.error(json.error);
@@ -78,7 +89,7 @@ class MyBuyList extends React.Component<Props, State> {
         if (response.status === 202) {
             this.getBuyList(token);
         } else if (response.status === 401) {
-            console.error("Unauthorized. Disconnect and redirect to connect");
+            this._redirect()
         } else {
             const json = await response.json();
             console.error(json.error);
@@ -99,7 +110,7 @@ class MyBuyList extends React.Component<Props, State> {
         if (response.status === 202) {
             this.getBuyList(token);
         } else if (response.status === 401) {
-            console.error("Unauthorized. Disconnect and redirect to connect");
+            this._redirect()
         } else {
             const json = await response.json();
             console.error(json.error);
@@ -278,6 +289,14 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
     }
 }
 
-function mapStateToProps(state: AppState): ConnectProps {return {
-  token: state.signin.token, username: state.signin.username, friendwishlist: state.locale.messages.friendwishlist, mywishlist: state.locale.messages.mywishlist, myBuyList: state.locale.messages.myBuyList };}
-export default connect(mapStateToProps)(MyBuyList);
+function mapStateToProps(state: AppState): StateProps {
+    return { token: state.signin.token,
+              username: state.signin.username,
+              friendwishlist: state.locale.messages.friendwishlist,
+              mywishlist: state.locale.messages.mywishlist,
+              myBuyList: state.locale.messages.myBuyList };
+}
+const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>, ownProps: Props): DispatchProps => {
+   return { logout: async () => await dispatch(logout()) }
+}
+export default connect(mapStateToProps, mapDispatchToProps)(MyBuyList);

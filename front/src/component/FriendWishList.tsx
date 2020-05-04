@@ -5,7 +5,9 @@ import Octicon, {Heart, Checklist, Gift, Pencil, X} from '@primer/octicons-re
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
 
 import { connect } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk'
 import { AppState } from '../redux/store';
+import { logout } from '../redux/actions/user';
 
 import { FriendWishListMessage, MyWishListMessage } from '../translation/itrans';
 import './style/card-gift.css';
@@ -14,12 +16,16 @@ import blank_gift from './image/blank_gift.png';
 
 import { isMobile } from "react-device-detect";
 
+import { history } from './history';
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
 
 interface ConnectProps { token: string | null, username: String | null, friendwishlist: FriendWishListMessage, mywishlist: MyWishListMessage };
-interface Props extends ConnectProps { friendName: string };
+interface StateProps extends ConnectProps { friendName: string };
+interface DispatchProps { logout: () => void };
+type Props = DispatchProps & StateProps;
 interface State {
     catAndGifts: any[],
     hoverId: string,
@@ -76,6 +82,7 @@ class FriendWishList extends React.Component<Props, State> {
             const response = await fetch(url + '/files', {method: 'post', headers: {'Authorization': `Bearer ${this.props.token}`}, body: formData });
             if (response.status === 401) {
                 console.error("Unauthorized. Disconnect and redirect to connect");
+                history.push("/signin");
             } else if (response.status === 202) {
                 const json = await response.json();
                 const { inputs } = this.state;
@@ -159,6 +166,7 @@ class FriendWishList extends React.Component<Props, State> {
                 this.props.token !== null && this.getGifts(this.props.token, this.props.friendName);
             } else if (response.status === 401) {
                 console.error("Unauthorized. Disconnect and redirect to connect");
+                history.push("/signin");
             } else {
                 const json = await response.json();
                 this.setState({ show: true, errorMessage: json.error });
@@ -178,6 +186,7 @@ class FriendWishList extends React.Component<Props, State> {
                 this.props.token && this.getGifts(this.props.token, this.props.friendName);
             } else if (response.status === 401) {
                 console.error("Unauthorized. Disconnect and redirect to connect");
+                history.push("/signin");
             } else {
                 const json = await response.json();
                 console.error(json);
@@ -207,6 +216,7 @@ class FriendWishList extends React.Component<Props, State> {
             }
         } else if (response.status === 401) {
             console.error("Unauthorized. Disconnect and redirect to connect");
+            history.push("/signin");
         } else {
             const json = await response.json();
             console.error(json.error);
@@ -221,6 +231,7 @@ class FriendWishList extends React.Component<Props, State> {
             this.getGifts(token, this.props.friendName);
         } else if (response.status === 401) {
             console.error("Unauthorized. Disconnect and redirect to connect");
+            history.push("/signin");
         } else {
             const json = await response.json();
             console.error(json.error);
@@ -242,6 +253,7 @@ class FriendWishList extends React.Component<Props, State> {
             this.getGifts(token, this.props.friendName);
         } else if (response.status === 401) {
             console.error("Unauthorized. Disconnect and redirect to connect");
+            history.push("/signin");
         } else {
             const json = await response.json();
             console.error(json.error);
@@ -263,6 +275,7 @@ class FriendWishList extends React.Component<Props, State> {
             this.getGifts(token, this.props.friendName);
         } else if (response.status === 401) {
             console.error("Unauthorized. Disconnect and redirect to connect");
+            history.push("/signin");
         } else {
             const json = await response.json();
             console.error(json.error);
