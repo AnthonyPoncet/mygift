@@ -73,8 +73,10 @@ class FriendWishList extends React.Component<Props, State> {
         const formData = new FormData();
         formData.append("0", e.target.files[0]);
         const request = async () => {
-            const response = await fetch(url + '/files', {method: 'post', body: formData});
-            if (response.status === 202) {
+            const response = await fetch(url + '/files', {method: 'post', headers: {'Authorization': `Bearer ${this.props.token}`}, body: formData });
+            if (response.status === 401) {
+                console.error("Unauthorized. Disconnect and redirect to connect");
+            } else if (response.status === 202) {
                 const json = await response.json();
                 const { inputs } = this.state;
                 inputs["picture"] = json.name;

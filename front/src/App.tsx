@@ -34,6 +34,7 @@ interface AppProps {
     changeLocale: typeof changeLocale,
     logout: typeof logout,
 
+    token: string | null
     username: String | null,
     image: string | null,
     app: AppMessage
@@ -50,21 +51,33 @@ class App extends React.Component<AppProps, State> {
         history.listen((location, action) => {this.props.clearError()});
         this.state = { loaded: false };
 
-        if (this.props.image !== null) {
-            this._loadImage(this.props.image);
+        if (this.props.image !== null && this.props.token) {
+            this._loadImage(this.props.image, this.props.token);
         }
     }
 
     //Hanle loggin, seems weird
     componentWillReceiveProps(nextProps: AppProps, nextContext: any) {
-        if (nextProps.image) {
-            this._loadImage(nextProps.image);
+        if (nextProps.image && nextProps.token) {
+            this._loadImage(nextProps.image, nextProps.token);
         }
     }
 
-    _loadImage(name: string) {
+    _loadImage(name: string, token: string) {
       const request = async() => {
-        const response = await fetch(url + '/files/' + name);
+        const response = await fetch(url + '/files/' + name, {headers: {'Authorization': `Bearer ${token}`}});
+        if (response.status === 404) {
+            console.error("file '" + name + "' could not be found on server");
+            return;
+        }
+        if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
+            return;
+        }
+        if (response.status === 500) {
+            console.error("Internal server error: " + response)
+            return;
+        }
 
         response.blob().then(blob => {
           let url = window.URL.createObjectURL(blob);
@@ -145,5 +158,5 @@ class App extends React.Component<AppProps, State> {
     }
 }
 
-function mapStateToProps(state: AppState) { return { username: state.signin.username, image: state.signin.picture, app: state.locale.messages.app }; }
+function mapStateToProps(state: AppState) { return { token: state.signin.token, username: state.signin.username, image: state.signin.picture, app: state.locale.messages.app }; }
 export default connect(mapStateToProps, {clearError, changeLocale, logout})(App);

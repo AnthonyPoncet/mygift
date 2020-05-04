@@ -29,7 +29,7 @@ class SquareImage extends React.Component<Props, State> {
         const request = async() => {
             const response = await fetch(url + '/files/' + this.props.imageName, {headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 404) {
-                console.error("file " + this.props.imageName + " could not be found on server");
+                console.error("file '" + this.props.imageName + "' could not be found on server");
                 return;
             }
             if (response.status === 401) {
