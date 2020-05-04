@@ -1,4 +1,6 @@
 # MyGift
+[![Build Status](https://travis-ci.org/AnthonyPoncet/mygift.svg?branch=master)](https://travis-ci.org/AnthonyPoncet/mygift)
+
 
 ## Disclaimer
 Other websites already exist and do exactly what I plan to do. The idea here
