@@ -88,7 +88,7 @@ class DummyEventCache(private val databaseManager: DatabaseManager) {
 }
 
 
-class UserManager(private val databaseManager: DatabaseManager) {
+class UserManager(private val databaseManager: DatabaseManager, private val authServerPort: Int) {
 
     suspend fun connect(userJson: UserJson): User {
         if (userJson.name == null) throw BadParamException("Username could not be null")
@@ -97,7 +97,7 @@ class UserManager(private val databaseManager: DatabaseManager) {
         val client = HttpClient(Apache)
         try {
             val response = client.post<HttpResponse> {
-                url("http://127.0.0.1:9876/login")
+                url("http://127.0.0.1:$authServerPort/login")
                 body = Gson().toJson(userJson)
             }
 

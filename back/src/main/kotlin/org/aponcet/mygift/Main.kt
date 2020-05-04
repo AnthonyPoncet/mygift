@@ -70,7 +70,8 @@ fun main(args: Array<String>) {
         }
 
         val databaseManager = DatabaseManager(arguments.db)
-        val userManager = UserManager(databaseManager)
+        val userManager = UserManager(databaseManager, arguments.authServerPort)
+        val publicKeyManager = PublicKeyManager(arguments.authServerPort)
 
         if (arguments.resetDB) {
             println("Reset DB with default values")
@@ -88,7 +89,6 @@ fun main(args: Array<String>) {
 
         println("Start server on port ${arguments.port}")
 
-        val publicKeyManager = PublicKeyManager(arguments.authServerPort)
         publicKeyManager.start()
 
         val server = embeddedServer(Netty, port = arguments.port) {
@@ -137,23 +137,28 @@ fun main(args: Array<String>) {
                         }
                     }
                 }
+                /** Create user **/
+                route("/users") {
+                    put {
+                        val basicUserInformation =
+                            Gson().fromJson(decode(call.receiveText()), UserInformation::class.java)
+                            try {
+                                val user = userManager.addUser(basicUserInformation)
+                                call.respond(HttpStatusCode.Created, user)
+                            } catch (e: BadParamException) {
+                                call.respond(HttpStatusCode.BadRequest, Error(e.error))
+                            } catch (e: CreateUserException) {
+                                call.respond(HttpStatusCode.Conflict, Error(e.error))
+                            } catch (e: Exception) {
+                                System.err.println(e)
+                                call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
+                            }
+                    }
+                }
 
                 /** USERS **/
                 authenticate {
                     route("/users") {
-                        put {
-                            val basicUserInformation = Gson().fromJson(decode(call.receiveText()), UserInformation::class.java)
-                            handle(call) {
-                                try {
-                                    val user = userManager.addUser(basicUserInformation)
-                                    call.respond(HttpStatusCode.Created, user)
-                                } catch (e: BadParamException) {
-                                    call.respond(HttpStatusCode.BadRequest, Error(e.error))
-                                } catch (e: CreateUserException) {
-                                    call.respond(HttpStatusCode.Conflict, Error(e.error))
-                                }
-                            }
-                        }
                         patch {
                             handle(call) {id ->
                                 val info = Gson().fromJson(decode(call.receiveText()), UserModification::class.java)

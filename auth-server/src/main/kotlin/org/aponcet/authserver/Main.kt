@@ -78,7 +78,7 @@ fun Application.authModule(userProvider: UserProvider) {
 
     routing {
         post("/login") {
-            val jsonUser = Gson().fromJson(decode(call.receiveText()), UserJson::class.java)
+            val jsonUser = Gson().fromJson(call.receiveText(), UserJson::class.java)
                 ?: throw IllegalArgumentException("/login need a json as input")
 
             if (jsonUser.name == null) throw IllegalArgumentException("/login json need name node")
@@ -98,7 +98,3 @@ fun Application.authModule(userProvider: UserProvider) {
     }
 }
 
-
-fun decode(input: String) : String {
-    return input.toByteArray(StandardCharsets.ISO_8859_1).toString(StandardCharsets.UTF_8)
-}

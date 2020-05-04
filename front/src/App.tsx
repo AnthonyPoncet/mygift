@@ -11,8 +11,6 @@ import { changeLocale } from './redux/actions/locale';
 import { logout } from './redux/actions/user';
 
 import MyBuyList from './component/MyBuyList';
-import Event from './component/Event';
-import Events from './component/Events';
 import FriendWishListRoute from './component/FriendWishListRoute'
 import HomePage from './component/HomePage';
 import ManageAccount from './component/ManageAccount';
@@ -149,8 +147,6 @@ class App extends React.Component<AppProps, State> {
                   <Route path="/mywishlist" component={MyWishList} />
                   <Route path="/myfriends" component={MyFriends} />
                   <Route path="/friend/:friendName?" component={FriendWishListRoute} />
-                  <Route path="/events" component={Events} />
-                  <Route path="/event/:eventId?" component={Event} />
                   <Route path="/buy-list" component={MyBuyList} />
                   <Route path="/manage-account" component={ManageAccount} />
               </div>
