@@ -25,7 +25,7 @@ interface DispatchProps {
   signup: (user: UserSignUp) => void,
   error: (message: String) => void
 };
-interface StateProps { errorMessage: String | null, connection: Connection };
+interface StateProps { token: string | null, errorMessage: String | null, connection: Connection };
 type Props = DispatchProps & StateProps;
 
 interface State { username: string, password: string, image: string | null };
@@ -59,19 +59,21 @@ class SignupPage extends React.Component<Props, State> {
   }
 
   changeImage(e: any) {
-      const formData = new FormData();
-      formData.append("0", e.target.files[0]);
-      const request = async () => {
-          const response = await fetch(url + '/files', {method: 'post', body: formData});
-          if (response.status === 202) {
-              const json = await response.json();
-              this.setState({ image: json.name });
-          } else {
-              const json = await response.json();
-              console.error(json);
-          }
-      };
-      request();
+    const formData = new FormData();
+    formData.append("0", e.target.files[0]);
+    const request = async () => {
+        const response = await fetch(url + '/files', {method: 'post', headers: {'Authorization': `Bearer ${this.props.token}`}, body: formData });
+        if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
+        } else if (response.status === 202) {
+          const json = await response.json();
+          this.setState({ image: json.name });
+        } else {
+            const json = await response.json();
+            console.error(json);
+        }
+    };
+    request();
   }
 
   renderSignUp() {
@@ -127,7 +129,7 @@ class SignupPage extends React.Component<Props, State> {
   }
 }
 
-function mapStateToProps(state: AppState): StateProps { return { errorMessage: state.error.message, connection: state.locale.messages.connection }; }
+function mapStateToProps(state: AppState): StateProps { return { token: state.signin.token, errorMessage: state.error.message, connection: state.locale.messages.connection }; }
 const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>, ownProps: Props): DispatchProps => {
   return {
     signup: async (user) => await dispatch(signup(user)),
