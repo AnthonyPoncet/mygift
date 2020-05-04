@@ -2,6 +2,8 @@ import React from 'react';
 
 import './style/style.css';
 
+import { history } from './history';
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
@@ -34,6 +36,7 @@ class SquareImage extends React.Component<Props, State> {
             }
             if (response.status === 401) {
                 console.error("Unauthorized. Disconnect and redirect to connect");
+                history.push("/signin");
                 return;
             }
             if (response.status === 500) {

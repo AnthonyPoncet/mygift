@@ -72,6 +72,8 @@ class App extends React.Component<AppProps, State> {
         }
         if (response.status === 401) {
             console.error("Unauthorized. Disconnect and redirect to connect");
+            history.push("/signin");
+            this.props.logout();
             return;
         }
         if (response.status === 500) {
@@ -114,7 +116,6 @@ class App extends React.Component<AppProps, State> {
                     { username && <>
                       <li className="nav-item"><Link to={'/mywishlist'} className="nav-link">{app.myList}</Link></li>
                       <li className="nav-item"><Link to={'/myfriends'} className="nav-link">{app.myFriends}</Link></li>
-                      <li className="nav-item"><Link to={'/events'} className="nav-link">{app.myEvents}</Link></li>
                       <li className="nav-item"><Link to={'/buy-list'} className="nav-link">{app.myBuyList}</Link></li>
                       </>}
                   </ul>

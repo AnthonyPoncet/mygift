@@ -4,7 +4,9 @@ import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup, FormFee
 import Octicon, {Pencil, X, ArrowDown, ArrowUp, ArrowLeft, ArrowRight} from '@primer/octicons-react';
 
 import { connect } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk'
 import { AppState } from '../redux/store';
+import { logout } from '../redux/actions/user';
 
 import { MyWishListMessage } from '../translation/itrans';
 
@@ -14,11 +16,15 @@ import blank_gift from './image/blank_gift.png';
 
 import { isMobile } from "react-device-detect";
 
+import { history } from './history';
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
 
-interface Props { token: string | null, mywishlist: MyWishListMessage };
+interface StateProps { token: string | null, mywishlist: MyWishListMessage };
+interface DispatchProps { logout: () => void };
+type Props = DispatchProps & StateProps;
 interface State {
   catAndGifts: any[],
   show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string,
@@ -93,13 +99,19 @@ class MyWishList extends React.Component<Props, State> {
         this.setState({ inputs: { ...inputs, categoryId: id } });
     }
 
+    _redirect() {
+        console.error("Unauthorized. Disconnect and redirect to connect");
+        history.push("/signin");
+        this.props.logout();
+    }
+
     changeImage(e: any) {
         const formData = new FormData();
         formData.append("0", e.target.files[0]);
         const request = async () => {
             const response = await fetch(url + '/files', {method: 'post', headers: {'Authorization': `Bearer ${this.props.token}`}, body: formData });
             if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
+                this._redirect()
             } else if (response.status === 202) {
                 const json = await response.json();
                 const { inputs } = this.state;
@@ -182,9 +194,8 @@ class MyWishList extends React.Component<Props, State> {
             if (response.status === 200) {
                 this.setState({ show: false });
                 this.props.token !== null && this.getGifts(this.props.token);
-            }
-            else if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
+            } else if (response.status === 401) {
+                this._redirect()
             } else {
                 const json = await response.json();
                 this.setState({ show: true, errorMessage: json.error });
@@ -203,7 +214,7 @@ class MyWishList extends React.Component<Props, State> {
             if (response.status === 202) {
                 this.props.token && this.getGifts(this.props.token);
             } else if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
+                this._redirect()
             } else {
                 const json = await response.json();
                 console.error(json);
@@ -219,7 +230,7 @@ class MyWishList extends React.Component<Props, State> {
             if (response.status === 202) {
                 this.props.token && this.getGifts(this.props.token);
             } else if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
+                this._redirect()
             } else {
                 const json = await response.json();
                 console.error(json);
@@ -272,7 +283,7 @@ class MyWishList extends React.Component<Props, State> {
                 this.setState({ show: false });
                 this.props.token && this.getGifts(this.props.token);
             } else if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
+                this._redirect()
             } else {
                 const json = await response.json();
                 this.setState({ show: true, errorMessage: json.error });
@@ -291,7 +302,7 @@ class MyWishList extends React.Component<Props, State> {
             if (response.status === 202) {
                 this.props.token && this.getGifts(this.props.token);
             } else if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
+                this._redirect()
             } else {
                 const json = await response.json();
                 console.error(json);
@@ -307,7 +318,7 @@ class MyWishList extends React.Component<Props, State> {
             if (response.status === 202) {
                 this.props.token && this.getGifts(this.props.token);
             } else if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
+                this._redirect()
             } else {
                 const json = await response.json();
                 console.log(json);
@@ -323,8 +334,9 @@ class MyWishList extends React.Component<Props, State> {
             method: "GET",
             headers: {'Authorization': `Bearer ${token}`}
         });
+        console.log(response);
         if (response.status === 401) {
-            console.error("Unauthorized. Disconnect and redirect to connect");
+            this._redirect()
         } else {
             const json = await response.json();
             if (response.status === 200) {
@@ -460,5 +472,8 @@ class MyWishList extends React.Component<Props, State> {
     }
 }
 
-function mapStateToProps(state: AppState) : Props { return { token: state.signin.token, mywishlist: state.locale.messages.mywishlist }; }
-export default connect(mapStateToProps)(MyWishList);
+function mapStateToProps(state: AppState) : StateProps { return { token: state.signin.token, mywishlist: state.locale.messages.mywishlist }; }
+const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>, ownProps: Props): DispatchProps => {
+  return { logout: async () => await dispatch(logout()) }
+}
+export default connect(mapStateToProps, mapDispatchToProps)(MyWishList);

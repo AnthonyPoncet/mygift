@@ -17,6 +17,8 @@ import events from './image/events.png';
 
 import { isMobile } from "react-device-detect";
 
+import { history } from './history';
+
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
@@ -65,6 +67,7 @@ class SignupPage extends React.Component<Props, State> {
         const response = await fetch(url + '/files', {method: 'post', headers: {'Authorization': `Bearer ${this.props.token}`}, body: formData });
         if (response.status === 401) {
             console.error("Unauthorized. Disconnect and redirect to connect");
+            history.push("/signin");
         } else if (response.status === 202) {
           const json = await response.json();
           this.setState({ image: json.name });

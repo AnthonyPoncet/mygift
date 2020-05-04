@@ -10,6 +10,12 @@ class ArgumentParser(parser: ArgParser) {
         toInt()
     }.default(8080)
 
+    val authServerPort : Int by parser.storing(
+        "-a", "--authServerPort",
+        help = "port used by the Authentication server") {
+        toInt()
+    }.default(9876)
+
     val db : String by parser.storing(
         "-d", "--database",
         help = "path to database")
