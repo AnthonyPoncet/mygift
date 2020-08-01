@@ -29,7 +29,7 @@ class DbConnectionTest : StringSpec(){
             assertFailsWith(DbException::class) {
                 conn.safeExecute("SELECT * FROM notATable", {
                     with(it) {
-                        return@with listOf(1, 2)
+                        return@with
                     }
                 }, "error")
             }
