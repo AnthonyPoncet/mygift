@@ -53,10 +53,10 @@ class FriendWishList extends React.Component<Props, State> {
             inputs: { name: '', nameValidity: true, description: null, price: null, whereToBuy: null, categoryId: this.state.catAndGifts[0].category.id }, errorMessage: '' });
     }
 
-    openEditGift(giftId: number, name: string, description: string, price: string, whereToBuy: string, categoryId: number, image: string | null) {
+    openEditGift(giftId: number, name: string, description: string, price: string, whereToBuy: string, categoryId: number, image: string | null, rank: number) {
         const { mywishlist } = this.props;
         this.setState( { show: true, title: mywishlist.updateGiftModalTitle, bodyRender: () => this.giftBodyRender(), button: { text: mywishlist.updateModalButton, fun: () => this.updateGift(giftId) },
-            inputs: { name: name, nameValidity: true, description: description, price: price, whereToBuy: whereToBuy, categoryId: categoryId, picture: image }, errorMessage: '' });
+            inputs: { name: name, nameValidity: true, description: description, price: price, whereToBuy: whereToBuy, categoryId: categoryId, picture: image, rank: rank }, errorMessage: '' });
     }
 
     handleChangeGift = async (event: any) => {
@@ -159,7 +159,8 @@ class FriendWishList extends React.Component<Props, State> {
                     "price": inputs.price,
                     "whereToBuy": inputs.whereToBuy,
                     "categoryId": inputs.categoryId,
-                    "picture": imageName})
+                    "picture": imageName,
+                    "rank": inputs.rank})
             });
             if (response.status === 200) {
                 this.setState({ show: false });
@@ -345,7 +346,7 @@ class FriendWishList extends React.Component<Props, State> {
                       <div className={"mycard" + boughtClassName + secretClassName} onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
                           {secret &&
                             <div className="card-edit-close">
-                              <span className="three-icon-first" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture)}><Octicon icon={Pencil}/></span>
+                              <span className="three-icon-first" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture, gift.rank)}><Octicon icon={Pencil}/></span>
                               {' '}
                               <div className="three-icon-second secret-text">Secret</div>
                               <span className="three-icon-third" style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
