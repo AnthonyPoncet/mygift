@@ -36,6 +36,7 @@ class PublicKeyManager(private val port: Int) {
                 val body = client.get<String>("http://127.0.0.1:$port/public-key")
                 executor.schedule(r, DELAY_TOKEN, TimeUnit.SECONDS)
                 publicKey = Gson().fromJson(body, KeyResponse::class.java).key
+                System.err.println("Pubic key retrieved!")
             } catch (e: ResponseException) {
                 System.err.println("Unable to retrieve pubic key: $e")
                 executor.schedule(r, DELAY_NO_TOKEN, TimeUnit.SECONDS)

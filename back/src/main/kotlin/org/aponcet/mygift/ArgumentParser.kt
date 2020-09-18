@@ -5,10 +5,15 @@ import com.xenomachina.argparser.default
 
 class ArgumentParser(parser: ArgParser) {
     val port : Int by parser.storing(
-        "-p", "--port",
-        help = "port used by the server") {
+        "-p", "--httpPort",
+        help = "http port used by the server") {
         toInt()
     }.default(8080)
+    val httpsPort : Int by parser.storing(
+        "-w", "--httpsPort",
+        help = "https port used by the server") {
+        toInt()
+    }.default(8081)
 
     val authServerPort : Int by parser.storing(
         "-s", "--authServerPort",
@@ -30,4 +35,25 @@ class ArgumentParser(parser: ArgParser) {
     val adaptTable : String by parser.storing(
         "-a", "--adaptTable",
         help = "Adapt table step X").default("")
+
+    val debug : Boolean by parser.storing(
+        "--debug", help = "Run in debug meaning http instead of https"){
+        toBoolean()
+    }.default(false)
+
+    /**
+     * JKS parameters
+     */
+    val jks : String by parser.storing(
+        "-j", "--jks",
+        help = "path to jks file").default("")
+    val keyAlias : String by parser.storing(
+        "-l", "--keyAlias",
+        help = "keyAlias").default("")
+    val jksPassword : String by parser.storing(
+        "-q", "--jksPassword",
+        help = "JKS private password").default("")
+    val aliasKey : String by parser.storing(
+        "-k", "--aliasPassword",
+        help = "Alias password").default("")
 }
