@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.gson.Gson
 import com.xenomachina.argparser.ArgParser
+import com.xenomachina.argparser.mainBody
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -40,19 +41,21 @@ open class SimpleJWT(val publicKey: RSAPublicKey, secretKey: RSAPrivateKey) {
 }
 
 fun main(args: Array<String>) {
-    val arguments = ArgParser(args).parseInto(::ArgumentParser)
+    mainBody {
+        val arguments = ArgParser(args).parseInto(::ArgumentParser)
 
-    val env = applicationEngineEnvironment {
-        module {
-            authModule(DbUserProvider(arguments.db))
+        val env = applicationEngineEnvironment {
+            module {
+                authModule(DbUserProvider(arguments.db))
+            }
+            connector {
+                host = "127.0.0.1"
+                port = arguments.port
+            }
         }
-        connector {
-            host = "127.0.0.1"
-            port = arguments.port
-        }
+
+        embeddedServer(Netty, env).start(true)
     }
-
-    embeddedServer(Netty, env).start(true)
 }
 
 fun Application.authModule(userProvider: UserProvider) {

@@ -35,6 +35,9 @@ class ArgumentParser(parser: ArgParser) {
     val adaptTable : String by parser.storing(
         "-a", "--adaptTable",
         help = "Adapt table step X").default("")
+    val cleanData : String by parser.storing(
+        "-c", "--cleanData",
+        help = "Clean data X").default("")
 
     val debug : Boolean by parser.storing(
         "--debug", help = "Run in debug meaning http instead of https"){
