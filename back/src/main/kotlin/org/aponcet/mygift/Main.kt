@@ -67,6 +67,11 @@ fun main(args: Array<String>) {
             adaptTable.execute(AdaptTable.STEP.valueOf(arguments.adaptTable))
             return@mainBody
         }
+        if (arguments.cleanData.isNotEmpty()) {
+            val cleanDataNotUsed = CleanDataNotUsed(arguments.db, "uploads")
+            cleanDataNotUsed.execute(CleanDataNotUsed.DATA.valueOf(arguments.cleanData))
+            return@mainBody
+        }
 
         val databaseManager = DatabaseManager(arguments.db)
         val userManager = UserManager(databaseManager, arguments.authServerPort)
