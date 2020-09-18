@@ -15,12 +15,11 @@ you can say "I or we want to buy this" and avoid two people buying it. Of course
 what you will receive will be hide to you. As a buyer, you will also have the possibility
 to have a "buy list".
 
-As now, the website is quite limited but allows you to:
+As of now, the website is quite limited but allows you to:
 - Create and manage your own wishlist
 - Add friend and manage your friend list
 - Access to your friend wishlist
 - As a friend, be able to say I am interested, I want to bought or I have bought a given gift
-- Possibility to create and manage events
 - A bought list that summarize all you have to buy
 - As a friend, add/propose secretly a gift
 
@@ -36,7 +35,6 @@ In the future, I plan to add (in that order):
 
 ## Things that need upgrade
 Everything right now but my next work will be:
-- In event, participants should come from friends name.
 - Friend list UI (be able to unblock and better UI in general)
 - Manage profile (such as modify password)
 - At some stage, think if page should refresh on new gift/friend request/...
@@ -44,4 +42,19 @@ Everything right now but my next work will be:
 - Refactor typescript
 
 ## Known bug
-- Nothing is encoded so no special char are supported
+
+# How to build and other
+
+## Build
+Run gradlew jar. It will generate two jars. One for the back accessible by the external internet and another one
+for the auth-server that should be accessible by the back only. Front is package inside the back jar.
+
+## Generate JKS for Https & SSL support
+ - Download private key and ssl cert
+ - Rename them with extension .pem
+ - https://ktor.io/quickstart/guides/ssl.html
+   - openssl pkcs12 -export -out ./keystore.p12 -inkey ./key.pem -in cert.pem -name mygift
+   - choose password, it will correspond to alias password
+   - keytool -importkeystore -alias mygift -destkeystore ./mygift.jks -srcstoretype PKCS12 -srckeystore ./keystore.p12
+   - choose password, it will correspond to jks password
+ 
