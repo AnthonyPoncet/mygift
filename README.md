@@ -57,4 +57,7 @@ for the auth-server that should be accessible by the back only. Front is package
    - choose password, it will correspond to alias password
    - keytool -importkeystore -alias mygift -destkeystore ./mygift.jks -srcstoretype PKCS12 -srckeystore ./keystore.p12
    - choose password, it will correspond to jks password
- 
+   
+## Activate foreign-keys on sqlite3
+To check if activated: "PRAGMA foreign_keys;"
+To activate in case not activated: "PRAGMA foreign_keys = ON;"
