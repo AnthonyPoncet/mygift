@@ -231,7 +231,10 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
         const isContainer = isMobile ? "" : "container";
         const padding: string = isMobile ? "0px" : "10px";
 
-        const wtb = gift.whereToBuy.split(" ");
+        let wtb : string[] = [];
+        if (gift.whereToBuy !== undefined) {
+            wtb = gift.whereToBuy.split(" ");
+        }
 
         //Duplicated
         const { buyActionUser } = fGift;
