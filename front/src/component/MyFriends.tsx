@@ -7,7 +7,7 @@ import { ThunkDispatch } from 'redux-thunk'
 import { AppState } from '../redux/store';
 import { logout } from '../redux/actions/user';
 
-import Octicon, {Check, X, CircleSlash} from '@primer/octicons-react';
+import Octicon, {Check, X, CircleSlash} from '@primer/octicons-react';
 
 import { MyFriendsMessage } from '../translation/itrans';
 import './style/friends.css';
@@ -235,7 +235,7 @@ class MyFriends extends React.Component<Props, State> {
         if ((i.toString() === this.state.hoverId) || isMobile) {
             return (<>
                 <div className="friend-card-delete one-icon" >
-                    <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
+                    <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
                 </div>
                 <div className="friend-footer">
                     <Link to={'/friend/' + user.name} className="friend-name">{user.name}</Link>
@@ -272,9 +272,9 @@ class MyFriends extends React.Component<Props, State> {
                 pendingReceived.map((req, i) => { return (
                     <li key={i + 'received' + req.otherUser.name  } style={{margin: "10px"}}>
                         {req.otherUser.name}
-                        <span style={{cursor: "pointer", padding: '5px'}} onClick={() => this.acceptRequest(req.id)}><Octicon icon={Check}/></span>
-                        <span style={{cursor: "pointer", padding: '5px'}} onClick={() => this.declineRequest(req.id, false)}><Octicon icon={X}/></span>
-                        <span style={{cursor: "pointer", padding: '5px'}} onClick={() => this.declineRequest(req.id, true)}><Octicon icon={CircleSlash}/></span>
+                        <span style={{cursor: "pointer", padding: '5px'}} onClick={() => this.acceptRequest(req.id)}><Octicon icon={Check}/></span>
+                        <span style={{cursor: "pointer", padding: '5px'}} onClick={() => this.declineRequest(req.id, false)}><Octicon icon={X}/></span>
+                        <span style={{cursor: "pointer", padding: '5px'}} onClick={() => this.declineRequest(req.id, true)}><Octicon icon={CircleSlash}/></span>
                     </li>);}) :
                 <p style={{margin: "10px"}}>{myfriends.noPendingRequest}</p>}
 
@@ -284,7 +284,7 @@ class MyFriends extends React.Component<Props, State> {
                     <li key={i + 'initiated' + req.otherUser.name } style={{margin: "10px"}}>
                         {req.otherUser.name}
                         {' '}
-                        <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
+                        <span style={{cursor: "pointer"}} onClick={() => this.cancelRequest(req.id)}><Octicon icon={X}/></span>
                     </li>);}) :
                 <p style={{margin: "10px"}}>{myfriends.allRequestsAccepted}</p>}
         </>);

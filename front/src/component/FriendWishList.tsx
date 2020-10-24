@@ -1,6 +1,6 @@
 import React from 'react';
 
-import Octicon, {Heart, Checklist, Gift, Pencil, X} from '@primer/octicons-react';
+import Octicon, {Heart, Checklist, Gift, Pencil, X} from '@primer/octicons-react';
 
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
 
@@ -346,30 +346,30 @@ class FriendWishList extends React.Component<Props, State> {
                       <div className={"mycard" + boughtClassName + secretClassName} onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
                           {secret &&
                             <div className="card-edit-close">
-                              <span className="three-icon-first" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture, gift.rank)}><Octicon icon={Pencil}/></span>
+                              <span className="three-icon-first" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture, gift.rank)}><Octicon icon={Pencil}/></span>
                               {' '}
                               <div className="three-icon-second secret-text">Secret</div>
-                              <span className="three-icon-third" style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
+                              <span className="three-icon-third" style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
                             </div>
                             }
                           { (bought.length === 0 || imInterested || iWantToBuy || iWantToBuy) &&
                           <div className="card-edit-close">
                               <div className={imInterested ? "icon-selected three-icon-first" : "three-icon-first"}>
-                                <span style={{cursor: "pointer"}} onClick={() => this.interested(this.props.token, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
+                                <span style={{cursor: "pointer"}} onClick={() => this.interested(this.props.token, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
                                 {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
                               </div>
                               <div className={iWantToBuy ? "icon-selected three-icon-second" : "three-icon-second"}>
-                                  <span style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.token, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
+                                  <span style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.token, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
                                   {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
                               </div>
                               <div className={iBought ? "icon-selected three-icon-third" : "three-icon-third"}>
                                   { (bought.length !== 0 && !iBought) ?
-                                  <Octicon icon={Gift}/>
+                                  <Octicon icon={Gift}/>
                                   :
                                   <span
                                       style={{cursor: "pointer"}}
                                       onClick={() => this.bought(this.props.token, gift.id, iWantToBuy, iBought)}>
-                                          <Octicon icon={Gift}/>
+                                          <Octicon icon={Gift}/>
                                   </span>
                                   }{' '}
                                   {bought.length !== 0 && <><span>{bought.length}</span>{' '}</>}
@@ -498,9 +498,9 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
                 </div>
             </ModalBody>
             { (bought.length === 0 || imInterested || iWantToBuy || iBought) && <ModalFooter>
-              <Button color={imInterested ? "primary" : "secondary"} onClick={() => this.props.interested(gift.id, imInterested)}><Octicon icon={Heart}/> {friendwishlist.imInterested}</Button>{' '}
-              <Button color={iWantToBuy ? "primary" : "secondary"} onClick={() => this.props.wantToBuy(gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/> {friendwishlist.iWantToBuy}</Button>
-              <Button color={iBought ? "primary" : "secondary"} onClick={() => this.props.bought(gift.id, iWantToBuy, iBought)}><Octicon icon={Gift}/> {friendwishlist.iBought}</Button>
+              <Button color={imInterested ? "primary" : "secondary"} onClick={() => this.props.interested(gift.id, imInterested)}><Octicon icon={Heart}/> {friendwishlist.imInterested}</Button>{' '}
+              <Button color={iWantToBuy ? "primary" : "secondary"} onClick={() => this.props.wantToBuy(gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/> {friendwishlist.iWantToBuy}</Button>
+              <Button color={iBought ? "primary" : "secondary"} onClick={() => this.props.bought(gift.id, iWantToBuy, iBought)}><Octicon icon={Gift}/> {friendwishlist.iBought}</Button>
             </ModalFooter> }
           </Modal>);
     }

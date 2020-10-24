@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
 
-import Octicon, {Pencil, X, ArrowDown, ArrowUp, ArrowLeft, ArrowRight} from '@primer/octicons-react';
+import Octicon, {Pencil, X, ArrowDown, ArrowUp, ArrowLeft, ArrowRight} from '@primer/octicons-react';
 
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk'
@@ -379,9 +379,9 @@ class MyWishList extends React.Component<Props, State> {
             <div key={cgi}>
                 <h5 style={{margin: "10px"}}>{cg.category.name}
                 {' '}
-                <span style={{cursor: "pointer"}} onClick={() => this.openEditCat(cg.category.name, cg.category.id, cg.category.rank)}><Octicon icon={Pencil} verticalAlign='middle'/></span>
+                <span style={{cursor: "pointer"}} onClick={() => this.openEditCat(cg.category.name, cg.category.id, cg.category.rank)}><Octicon icon={Pencil} verticalAlign='middle'/></span>
                 {' '}
-                <span style={{cursor: "pointer"}} onClick={() => this.deleteCat(cg.category.id)}><Octicon icon={X} verticalAlign='middle'/></span>
+                <span style={{cursor: "pointer"}} onClick={() => this.deleteCat(cg.category.id)}><Octicon icon={X} verticalAlign='middle'/></span>
                 </h5>
 
                 <div className="mycard-row">
@@ -390,7 +390,7 @@ class MyWishList extends React.Component<Props, State> {
                   return (
                       <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()} key={gi}>
                           <div className="card-edit-close one-icon">
-                            <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
+                            <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
                           </div>
                           <div style={{cursor: "pointer"}} onClick={fun}>
                             <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
@@ -413,9 +413,9 @@ class MyWishList extends React.Component<Props, State> {
                 <div key={cgi}>
                     <h5 style={{margin: "10px"}}>{cg.category.name} - {cg.category.rank}
                     {' '}
-                    {displayDown && <span style={{cursor: "pointer"}} onClick={() => this.rankCategory(cg.category.id, 1)}><Octicon icon={ArrowDown} verticalAlign='middle'/></span>}
+                    {displayDown && <span style={{cursor: "pointer"}} onClick={() => this.rankCategory(cg.category.id, 1)}><Octicon icon={ArrowDown} verticalAlign='middle'/></span>}
                     {' '}
-                    {displayUp && <span style={{cursor: "pointer"}} onClick={() => this.rankCategory(cg.category.id, 0)}><Octicon icon={ArrowUp} verticalAlign='middle'/></span>}
+                    {displayUp && <span style={{cursor: "pointer"}} onClick={() => this.rankCategory(cg.category.id, 0)}><Octicon icon={ArrowUp} verticalAlign='middle'/></span>}
                     </h5>
 
                     <div className="mycard-row">
@@ -426,10 +426,10 @@ class MyWishList extends React.Component<Props, State> {
                             <div className="mycard">
                                 <div className="card-edit-close">
                                     <div className="two-icon-first">
-                                        {displayLeft && <span style={{cursor: "pointer"}} onClick={() => this.rankGift(gift.id, 1)}><Octicon icon={ArrowLeft} verticalAlign='middle'/></span>}
+                                        {displayLeft && <span style={{cursor: "pointer"}} onClick={() => this.rankGift(gift.id, 1)}><Octicon icon={ArrowLeft} verticalAlign='middle'/></span>}
                                     </div>
                                     <div className="two-icon-second">
-                                        {displayRight && <span style={{cursor: "pointer"}} onClick={() => this.rankGift(gift.id, 0)}><Octicon icon={ArrowRight} verticalAlign='middle'/></span>}
+                                        {displayRight && <span style={{cursor: "pointer"}} onClick={() => this.rankGift(gift.id, 0)}><Octicon icon={ArrowRight} verticalAlign='middle'/></span>}
                                     </div>
                                 </div>
                                 <div>
