@@ -2,7 +2,32 @@ package org.aponcet.mygift.dbmanager
 
 import java.time.LocalDate
 
-data class DbUser(val id: Long, val name: String, val password: String, val picture: String?)
+data class DbUser(val id: Long, val name: String, val password: ByteArray, val salt: ByteArray, val picture: String?) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as DbUser
+
+        if (id != other.id) return false
+        if (name != other.name) return false
+        if (!password.contentEquals(other.password)) return false
+        if (!salt.contentEquals(other.salt)) return false
+        if (picture != other.picture) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + password.contentHashCode()
+        result = 31 * result + salt.contentHashCode()
+        result = 31 * result + (picture?.hashCode() ?: 0)
+        return result
+    }
+}
+
 data class DbCategory(val id: Long, val userId: Long, val name: String, val rank: Long)
 data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?, val secret: Boolean, val rank: Long)
 enum class BuyAction { NONE, WANT_TO_BUY, BOUGHT }
@@ -60,8 +85,8 @@ class DatabaseManager(dbPath: String) {
     /**
      * Users
      */
-    @Synchronized fun addUser(userName: String, password: String, picture: String?): DbUser {
-        val newUser = usersAccessor.addUser(userName, password, picture ?: "")
+    @Synchronized fun addUser(userName: String, password: ByteArray, salt: ByteArray, picture: String?): DbUser {
+        val newUser = usersAccessor.addUser(userName, password, salt, picture ?: "")
         addCategory(newUser.id, NewCategory(DEFAULT_CATEGORY_NAME))
         return newUser
     }

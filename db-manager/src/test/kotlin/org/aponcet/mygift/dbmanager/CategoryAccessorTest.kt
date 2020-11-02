@@ -28,8 +28,8 @@ class CategoryAccessorTest : StringSpec(){
         categoryAccessor.createIfNotExists()
         deleteTable(listOf(categoryAccessor.getTableName(), usersAccessor.getTableName())) //order matter due to foreign key
 
-        usersAccessor.addUser("name1", "pwd", "")
-        usersAccessor.addUser("name2", "pwd", "")
+        usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "")
+        usersAccessor.addUser("name2", "pwd".toByteArray(), "otherSalt".toByteArray(), "")
     }
 
     override fun afterTest(description: Description, result: TestResult) {

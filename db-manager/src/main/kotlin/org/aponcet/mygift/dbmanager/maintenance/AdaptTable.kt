@@ -1,15 +1,26 @@
-package org.aponcet.mygift.dbmanager
+package org.aponcet.mygift.dbmanager.maintenance
+
+import org.aponcet.mygift.dbmanager.*
+import java.io.ByteArrayInputStream
+import java.security.SecureRandom
+import java.util.*
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
+import kotlin.collections.HashSet
+
+data class UserBeforeMigration(val id: Long, val name: String, val password: String, val picture: String)
 
 /** Adapt table used only ad-hoc when needed **/
 class AdaptTable(dbPath: String) {
     private val conn = DbConnection("sqlite", dbPath)
 
-    enum class STEP { ADD_RANK_TO_CATEGORY, ADD_RANK_TO_GIFT }
+    enum class STEP { ADD_RANK_TO_CATEGORY, ADD_RANK_TO_GIFT, ADD_SALT_TO_USER }
 
     fun execute(step: STEP) {
         when (step) {
             STEP.ADD_RANK_TO_CATEGORY -> addRankToCategory()
             STEP.ADD_RANK_TO_GIFT -> addRankToGift()
+            STEP.ADD_SALT_TO_USER -> addSaltToUser()
         }
     }
 
@@ -96,12 +107,80 @@ class AdaptTable(dbPath: String) {
 
                 for (gift in newGifts) {
                     giftAccessor.modifyGift(gift.id, Gift(gift.name, gift.description, gift.price,
-                        gift.whereToBuy, gift.categoryId, gift.picture, gift.rank))
+                        gift.whereToBuy, gift.categoryId, gift.picture, gift.rank)
+                    )
                 }
                 println("\tCategory $category done\n")
             }
         }
 
         println("Done!")
+    }
+
+    /**
+     * 1. Will add salt column if needed
+     * 2. Get all current users using old table definition
+     * 3. Drop table
+     * 4. Create users with encoded password and salt
+     * 5. reset user ids
+     */
+    private fun addSaltToUser() {
+        try {
+            conn.executeQuery("SELECT salt FROM users")
+            println("Column salt exists, stop")
+            return
+        } catch (e: Exception) {
+            println("Column salt does not exist, run maintenance")
+        }
+
+        //Get users
+        val users = HashSet<UserBeforeMigration>()
+        val rs = conn.executeQuery("SELECT id, name, password, picture FROM users")
+        while (rs.next()) {
+            users.add(UserBeforeMigration(rs.getLong("id"), rs.getString("name"), rs.getString("password"), rs.getString("picture")))
+        }
+
+        //Disable foreign keys
+        conn.execute("PRAGMA foreign_keys=off")
+        //Backup table
+        conn.execute("ALTER TABLE users RENAME TO users_bck")
+
+        //create new table
+        val usersAccessor = UsersAccessor(conn)
+        usersAccessor.createIfNotExists()
+
+        //TODO: copy of PasswordManager but adding dependency will add cyclic --> needed dedicated migration jar?
+        val secureRandom = SecureRandom()
+        val insert = "INSERT INTO users (id,name,password,salt,picture) VALUES (?,?, ?, ?, ?)"
+        for (user in users) {
+            val salt = ByteArray(16)
+            secureRandom.nextBytes(salt)
+            val encodedPassword = hash(user.password, salt)
+
+            conn.safeExecute(
+                insert, {
+                    with(it) {
+                        setLong(1, user.id)
+                        setString(2, user.name)
+                        setBinaryStream(3, ByteArrayInputStream(encodedPassword), encodedPassword.size)
+                        setBinaryStream(4, ByteArrayInputStream(salt), salt.size)
+                        setString(5, user.picture)
+                        val rowCount = executeUpdate()
+                        if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
+                    }
+                }, "Insert user ${user.name} generated an error")
+        }
+
+        //Clean DB
+        conn.execute("DROP TABLE users_bck")
+        conn.execute("PRAGMA foreign_keys=on")
+    }
+
+    private fun hash(password : String, salt: ByteArray): ByteArray {
+        val passwordChar = password.toCharArray()
+        val spec = PBEKeySpec(passwordChar, salt, 10000, 256)
+        Arrays.fill(passwordChar, Char.MIN_VALUE)
+        val skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
+        return skf.generateSecret(spec).encoded
     }
 }

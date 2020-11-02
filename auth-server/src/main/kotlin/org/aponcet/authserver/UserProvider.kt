@@ -1,11 +1,19 @@
 package org.aponcet.authserver
 
-data class User(val id: Long, val name: String, val password: String)
+data class User(val id: Long, val name: String, val encodedPasswordAndSalt: EncodedPasswordAndSalt)
 
 /**
  * Provide a user (name and password) from a given name
  */
 interface UserProvider {
+
+    /**
+     * Add a new user
+     *
+     * @return success
+     */
+    fun addUser(name: String, password: ByteArray, salt: ByteArray, picture: String)
+
     /**
      * Return an User from a given name
      *

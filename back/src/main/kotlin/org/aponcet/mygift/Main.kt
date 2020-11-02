@@ -26,10 +26,11 @@ import io.ktor.response.respondFile
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.Netty
-import org.aponcet.authserver.DbUserProvider
+import org.aponcet.authserver.UserAndPictureJson
 import org.aponcet.authserver.UserJson
-import org.aponcet.authserver.authModule
 import org.aponcet.mygift.dbmanager.*
+import org.aponcet.mygift.dbmanager.maintenance.AdaptTable
+import org.aponcet.mygift.dbmanager.maintenance.CleanDataNotUsed
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.File
@@ -181,19 +182,18 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         /** Create user **/
         route("/users") {
             put {
-                val basicUserInformation =
-                    Gson().fromJson(decode(call.receiveText()), UserInformation::class.java)
-                    try {
-                        val user = userManager.addUser(basicUserInformation)
-                        call.respond(HttpStatusCode.Created, user)
-                    } catch (e: BadParamException) {
-                        call.respond(HttpStatusCode.BadRequest, Error(e.error))
-                    } catch (e: CreateUserException) {
-                        call.respond(HttpStatusCode.Conflict, Error(e.error))
-                    } catch (e: Exception) {
-                        System.err.println(e)
-                        call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
-                    }
+                val basicUserInformation = Gson().fromJson(decode(call.receiveText()), UserAndPictureJson::class.java)
+                try {
+                    val user = userManager.addUser(basicUserInformation)
+                    call.respond(HttpStatusCode.Created, user)
+                } catch (e: BadParamException) {
+                    call.respond(HttpStatusCode.BadRequest, Error(e.error))
+                } catch (e: CreateUserException) {
+                    call.respond(HttpStatusCode.Conflict, Error(e.error))
+                } catch (e: Exception) {
+                    System.err.println(e)
+                    call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
+                }
             }
         }
 
@@ -375,7 +375,6 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         authenticate {
             get("/friends") {
                 handle(call) {id ->
-                    val friends = userManager.getFriends(id)
                     call.respond(HttpStatusCode.OK, userManager.getFriends(id))
                 }
             }
@@ -458,14 +457,14 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
 
                 delete("/{eid}") {
                     val eid = getEventId(call.parameters)
-                    handle(call) {id ->
+                    handle(call) {_ ->
                         userManager.deleteEvent(eid)
                         call.respond(HttpStatusCode.Accepted)
                     }
                 }
                 get("/{eid}") {
                     val eid = getEventId(call.parameters)
-                    handle(call) {id ->
+                    handle(call) {_ ->
                         val event = userManager.getEvent(eid)
                         call.respond(HttpStatusCode.OK, event)
                     }

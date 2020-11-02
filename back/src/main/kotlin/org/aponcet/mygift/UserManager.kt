@@ -5,13 +5,14 @@ import com.google.gson.Gson
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.ResponseException
+import io.ktor.client.request.*
 import io.ktor.client.request.post
-import io.ktor.client.request.url
 import io.ktor.client.response.HttpResponse
 import io.ktor.client.response.readText
 import io.ktor.http.HttpStatusCode
 import org.aponcet.authserver.ErrorResponse
 import org.aponcet.authserver.TokenResponse
+import org.aponcet.authserver.UserAndPictureJson
 import org.aponcet.authserver.UserJson
 import org.aponcet.mygift.dbmanager.*
 import java.time.LocalDate
@@ -31,7 +32,6 @@ data class Event(val id: Long, val type: EventType, val name: String, val creato
 data class BuyListByFriend(val friendName: String, val gifts: List<FriendGift>)
 
 /** INPUT CLASSES **/
-data class UserInformation(val name: String?, val password: String?, val picture: String?)
 data class UserModification(val name: String?, val picture: String?)
 data class RestGift(val name: String?, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long?, val picture: String?, val rank: Long?)
 data class RestCategory(val name: String?, val rank: Long?)
@@ -112,13 +112,20 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         }
     }
 
-    suspend fun addUser(userInformation: UserInformation): User {
-        if (userInformation.name == null) throw BadParamException("Name could not be null")
-        if (userInformation.password == null) throw BadParamException("Password could not be null")
-        if (databaseManager.getUser(userInformation.name) != null) throw CreateUserException("User already exists")
+    suspend fun addUser(userAndPictureJson: UserAndPictureJson): User {
+        val client = HttpClient(Apache)
+        try {
+            client.put<HttpResponse> {
+                url("http://127.0.0.1:$authServerPort/create")
+                body = Gson().toJson(userAndPictureJson)
+            }
 
-        databaseManager.addUser(userInformation.name, userInformation.password, userInformation.picture)
-        return connect(UserJson(userInformation.name, userInformation.password))
+            return connect(UserJson(userAndPictureJson.name, userAndPictureJson.password))
+        } catch (e: ResponseException) {
+            if (e.response.status == HttpStatusCode.Unauthorized) throw ConnectionException(Gson().fromJson(e.response.readText(), ErrorResponse::class.java).error)
+            System.err.println("Error while creating user: $e")
+            throw IllegalStateException(e)
+        }
     }
 
     fun modifyUser(userId: Long, userModification: UserModification): User {

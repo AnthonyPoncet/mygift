@@ -1,11 +1,7 @@
-package org.aponcet.mygift.dbmanager
+package org.aponcet.mygift.dbmanager.maintenance
 
+import org.aponcet.mygift.dbmanager.DbConnection
 import java.io.File
-
-
-fun main() {
-    CleanDataNotUsed("D:\\Documents\\GitHub\\mygift\\forTest\\20_09_13.db", "D:\\Documents\\GitHub\\mygift\\forTest\\uploads").execute(CleanDataNotUsed.DATA.PICTURES)
-}
 
 class CleanDataNotUsed(dbPath: String, uploadPath: String) {
     private val conn = DbConnection("sqlite", dbPath)
@@ -62,7 +58,7 @@ class CleanDataNotUsed(dbPath: String, uploadPath: String) {
         println("Pictures in folder to keep/remove ${filesToKeep.size}/${filesToRemove.size}")
         println("Pictures in folder not in DB: $filesToRemove")
 
-        var notDeleted = ArrayList<File>()
+        val notDeleted = ArrayList<File>()
         var deleted = 0
         filesToRemove.forEach{
             if (it.delete()) deleted++ else notDeleted.add(it)
