@@ -1,9 +1,11 @@
 package org.aponcet.mygift.dbmanager
 
+import java.io.ByteArrayInputStream
+
 class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     companion object {
-        const val INSERT = "INSERT INTO users (name,password,picture) VALUES (?, ?, ?)"
+        const val INSERT = "INSERT INTO users (name,password,salt,picture) VALUES (?, ?, ?, ?)"
         const val SELECT_BY_NAME = "SELECT * FROM users WHERE name= ?"
         const val SELECT_BY_ID = "SELECT * FROM users WHERE id= ?"
         const val UPDATE = "UPDATE users SET name = ?, picture = ? WHERE id = ?"
@@ -17,17 +19,19 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
         conn.execute("CREATE TABLE IF NOT EXISTS users (" +
             "id         INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
             "name       TEXT NOT NULL, " +
-            "password   TEXT NOT NULL, " +
+            "password   BLOB NOT NULL, " +
+            "salt       BLOB NOT NULL, " +
             "picture    TEXT)")
     }
 
-    fun addUser(userName: String, password: String, picture: String): DbUser {
+    fun addUser(userName: String, password: ByteArray, salt: ByteArray, picture: String): DbUser {
         val nextUserId = conn.safeExecute(
             INSERT, {
             with(it) {
                 setString(1, userName)
-                setString(2, password)
-                setString(3, picture)
+                setBinaryStream(2, ByteArrayInputStream(password), password.size)
+                setBinaryStream(3, ByteArrayInputStream(salt), salt.size)
+                setString(4, picture)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
                 if (generatedKeys.next()) {
@@ -37,9 +41,9 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
                 }
             }
         },
-        errorMessage(INSERT, userName, password, picture))
+        errorMessage(INSERT, userName, password.toString(), salt.toString(), picture))
 
-        return DbUser(nextUserId, userName, password, picture)
+        return DbUser(nextUserId, userName, password, salt, picture)
     }
 
     fun getUser(userName: String): DbUser? {
@@ -49,10 +53,13 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
                 val res = executeQuery()
                 return@with if (res.next()) {
                     val picture = res.getString("picture")
+                    val password = res.getBinaryStream("password")
+                    val salt = res.getBinaryStream("salt")
                     DbUser(
                         res.getLong("id"),
                         res.getString("name"),
-                        res.getString("password"),
+                        password.readBytes(),
+                        salt.readBytes(),
                         if (picture.isEmpty()) null else picture
                     )
                 } else {

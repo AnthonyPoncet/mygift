@@ -31,8 +31,8 @@ class GiftAccessorTest : StringSpec() {
         giftAccessor.createIfNotExists()
         deleteTable(listOf(giftAccessor.getTableName(), categoryAccessor.getTableName(), usersAccessor.getTableName())) //order matter due to foreign key
 
-        usersAccessor.addUser("name1", "pwd", "")
-        usersAccessor.addUser("name2", "pwd", "")
+        usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "")
+        usersAccessor.addUser("name2", "pwd".toByteArray(), "otherSalt".toByteArray(), "")
         categoryAccessor.addCategory(1L, NewCategory("Default"))
         categoryAccessor.addCategory(1L, NewCategory("cat1"))
         categoryAccessor.addCategory(2L, NewCategory("Default"))

@@ -36,9 +36,9 @@ class UsersAccessorTest: StringSpec() {
 
     init {
         "Add user" {
-            val expected = DbUser(1L, "name", "pwd", "pic.jpg")
+            val expected = DbUser(1L, "name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg")
 
-            usersAccessor.addUser("name", "pwd", "pic.jpg") shouldBe expected
+            usersAccessor.addUser("name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg") shouldBe expected
 
             usersAccessor.getUser("name") shouldBe expected
             usersAccessor.getUser(1L) shouldBe NakedUser("name", "pic.jpg")
@@ -53,18 +53,18 @@ class UsersAccessorTest: StringSpec() {
         }
 
         "Modify user" {
-            val expected = DbUser(1L, "name", "pwd", "pic.jpg")
-            usersAccessor.addUser("name", "pwd", "pic.jpg") shouldBe expected
+            val expected = DbUser(1L, "name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg")
+            usersAccessor.addUser("name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg") shouldBe expected
 
             usersAccessor.modifyUser(1L, "other", "best_pic.jpg")
             usersAccessor.getUser("name") shouldBe null
-            usersAccessor.getUser("other") shouldBe DbUser(1L, "other", "pwd", "best_pic.jpg")
+            usersAccessor.getUser("other") shouldBe DbUser(1L, "other", "pwd".toByteArray(), "azerty".toByteArray(), "best_pic.jpg")
             usersAccessor.getUser(1L) shouldBe NakedUser("other", "best_pic.jpg")
         }
 
         "User exists" {
-            val expected = DbUser(1L, "name", "pwd", "pic.jpg")
-            usersAccessor.addUser("name", "pwd", "pic.jpg") shouldBe expected
+            val expected = DbUser(1L, "name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg")
+            usersAccessor.addUser("name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg") shouldBe expected
 
             usersAccessor.userExists(1L) shouldBe true
             usersAccessor.userExists(2L) shouldBe false

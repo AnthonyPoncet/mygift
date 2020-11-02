@@ -14,20 +14,21 @@ import io.ktor.gson.gson
 import io.ktor.http.HttpStatusCode
 import io.ktor.request.receiveText
 import io.ktor.response.respond
-import io.ktor.routing.get
+import io.ktor.routing.*
 import io.ktor.routing.post
-import io.ktor.routing.routing
 import io.ktor.server.engine.applicationEngineEnvironment
 import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import java.nio.charset.StandardCharsets
+import org.aponcet.mygift.dbmanager.DbException
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
 
 class InvalidCredentialsException(message: String) : RuntimeException(message)
+
 data class UserJson(val name: String?, val password: String?)
+data class UserAndPictureJson(val name: String?, val password: String?, val picture: String?)
 data class ErrorResponse(val error: String)
 data class TokenResponse(val token: String)
 data class KeyResponse(val key: ByteArray)
@@ -80,6 +81,29 @@ fun Application.authModule(userProvider: UserProvider) {
     }
 
     routing {
+        put("/create") {
+            val userAndPictureJson = Gson().fromJson(call.receiveText(), UserAndPictureJson::class.java)
+                ?: throw IllegalArgumentException("/create need a json as input")
+
+            if (userAndPictureJson.name == null) throw IllegalArgumentException("/create json need name node")
+            if (userAndPictureJson.password == null) throw IllegalArgumentException("/create json need password node")
+            if (userProvider.getUser(userAndPictureJson.name) != null) {
+                call.respond(HttpStatusCode.Conflict, Error("User already exists"))
+                return@put
+            }
+
+            try {
+                val encodedPasswordAndSalt = PasswordManager.generateEncodedPassword(userAndPictureJson.password)
+                userProvider.addUser(userAndPictureJson.name, encodedPasswordAndSalt.encodedPassword, encodedPasswordAndSalt.salt, userAndPictureJson.picture?:"")
+                call.respond(HttpStatusCode.Created)
+            } catch (e: DbException) {
+                call.respond(HttpStatusCode.BadRequest, Error(e.message))
+            } catch (e: Exception) {
+                System.err.println(e)
+                call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
+            }
+        }
+
         post("/login") {
             val jsonUser = Gson().fromJson(call.receiveText(), UserJson::class.java)
                 ?: throw IllegalArgumentException("/login need a json as input")
@@ -87,8 +111,8 @@ fun Application.authModule(userProvider: UserProvider) {
             if (jsonUser.name == null) throw IllegalArgumentException("/login json need name node")
             if (jsonUser.password == null) throw IllegalArgumentException("/login json need password node")
 
-            val user = userProvider.getUser(jsonUser.name) ?: throw InvalidCredentialsException("Unknown user ${jsonUser.name}")
-            if (user.password != jsonUser.password) {
+            val user = userProvider.getUser(jsonUser.name) ?: throw InvalidCredentialsException("Unknown user '${jsonUser.name}' or password mismatch")
+            if (!PasswordManager.isPasswordOk(jsonUser.password, user.encodedPasswordAndSalt.salt, user.encodedPasswordAndSalt.encodedPassword)) {
                 throw InvalidCredentialsException("Wrong password")
             }
 

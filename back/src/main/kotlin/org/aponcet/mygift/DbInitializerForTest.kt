@@ -1,9 +1,16 @@
 package org.aponcet.mygift
 
+import org.aponcet.authserver.PasswordManager
+import org.aponcet.authserver.PasswordManagerException
 import org.aponcet.mygift.dbmanager.DatabaseManager
 import org.aponcet.mygift.dbmanager.NewCategory
 import org.aponcet.mygift.dbmanager.NewGift
+import java.security.NoSuchAlgorithmException
+import java.security.spec.InvalidKeySpecException
 import java.time.LocalDate
+import java.util.*
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 
 class DbInitializerForTest(databaseManager: DatabaseManager) {
 
@@ -12,16 +19,16 @@ class DbInitializerForTest(databaseManager: DatabaseManager) {
         databaseManager.cleanTables()
 
         //Create User
-        val aze = databaseManager.addUser("aze", "aze", "black_cat.png").id
+        val aze = databaseManager.addUser("aze", hash("aze", "salt1".toByteArray()), "salt1".toByteArray(),"black_cat.png").id
         val azeDCat = databaseManager.getUserCategories(aze)[0].id
         println("username: aze, pwd: aze ==> id: $aze - Default category id: $azeDCat")
-        val eza = databaseManager.addUser("eza", "eza", "red_cat.png").id
+        val eza = databaseManager.addUser("eza", hash("eza", "salt2".toByteArray()), "salt2".toByteArray(), "red_cat.png").id
         databaseManager.addCategory(eza, NewCategory("Second catégorie"))
         val ezaCats = databaseManager.getUserCategories(eza)
         val ezaDCat = ezaCats[0].id
         val ezaSCat = ezaCats[1].id
         println("username: eza, pwd: eza ==> id: $eza - Default category id: $eza, \"Second catégorie\" id: $ezaSCat")
-        val other = databaseManager.addUser("other", "other", null).id
+        val other = databaseManager.addUser("other", hash("other", "salt3".toByteArray()), "salt3".toByteArray(), null).id
         println("usernamme: other, pwd; other ==> id: $other")
 
         //Fill gift
@@ -88,5 +95,21 @@ class DbInitializerForTest(databaseManager: DatabaseManager) {
         databaseManager.createEventAllForOne("Birthday aze", aze, null, LocalDate.now(), aze, setOf(eza))
         databaseManager.createEventAllForOne("Birthday eza", aze, null, LocalDate.now(), eza, setOf(aze))
         println("On ALL_FOR_ALL event, and two ALL_FOR_ONE events created")
+    }
+
+    private fun hash(password : String, salt: ByteArray): ByteArray {
+        val passwordChar = password.toCharArray()
+        val spec = PBEKeySpec(passwordChar, salt, 10000, 256)
+        Arrays.fill(passwordChar, Char.MIN_VALUE)
+        try {
+            val skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
+            return skf.generateSecret(spec).encoded
+        } catch (e: NoSuchAlgorithmException) {
+            throw PasswordManagerException("No such algorithm", e)
+        } catch (e: InvalidKeySpecException) {
+            throw PasswordManagerException("Invalid Key spec algorithm", e)
+        } finally {
+            spec.clearPassword()
+        }
     }
 }

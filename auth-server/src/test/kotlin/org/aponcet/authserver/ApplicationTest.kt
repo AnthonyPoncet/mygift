@@ -75,7 +75,7 @@ class ApplicationTest : StringSpec({
                 setBody(Gson().toJson(UserJson("toto", "test")))
             }) {
                 assertEquals(HttpStatusCode.Unauthorized, response.status())
-                assertEquals(ErrorResponse("Unknown user toto"), Gson().fromJson(response.content, ErrorResponse::class.java))
+                assertEquals(ErrorResponse("Unknown user 'toto' or password mismatch"), Gson().fromJson(response.content, ErrorResponse::class.java))
             }
         }
     }
@@ -112,10 +112,57 @@ class ApplicationTest : StringSpec({
             }
         }
     }
+
+    "test end point /create valid" {
+        withTestApplication({authModule(TestUserProvider())}) {
+            with(handleRequest(HttpMethod.Put, "create") {
+                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                setBody(Gson().toJson(UserAndPictureJson("toto", "pwd", "picture")))
+            }) {
+                assertEquals(HttpStatusCode.Created, response.status())
+            }
+        }
+    }
+
+    "test end point /create call two times same user" {
+        withTestApplication({authModule(TestUserProvider())}) {
+            with(handleRequest(HttpMethod.Put, "create") {
+                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                setBody(Gson().toJson(UserAndPictureJson("test", "pwd", "picture")))
+            }) {
+                assertEquals(HttpStatusCode.Conflict, response.status())
+            }
+        }
+    }
+
+    "test end point /create call missing name" {
+        withTestApplication({authModule(TestUserProvider())}) {
+            with(handleRequest(HttpMethod.Put, "create") {
+                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                setBody(Gson().toJson(UserAndPictureJson(null, "pwd", "picture")))
+            }) {
+                assertEquals(HttpStatusCode.BadRequest, response.status())
+            }
+        }
+    }
+
+    "test end point /create call missing password" {
+        withTestApplication({authModule(TestUserProvider())}) {
+            with(handleRequest(HttpMethod.Put, "create") {
+                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                setBody(Gson().toJson(UserAndPictureJson("toto", null, "picture")))
+            }) {
+                assertEquals(HttpStatusCode.BadRequest, response.status())
+            }
+        }
+    }
 })
 
 class TestUserProvider : UserProvider {
-    private val users = mapOf("test" to User(1, "test", "test"))
+    private val users = mapOf("test" to User(1, "test", EncodedPasswordAndSalt(PasswordManager.hash("test", "salt".toByteArray()), "salt".toByteArray())))
+
+    override fun addUser(name: String, password: ByteArray, salt: ByteArray, picture: String) {
+    }
 
     override fun getUser(name: String): User? {
         return users[name]
