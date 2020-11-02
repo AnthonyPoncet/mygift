@@ -531,7 +531,6 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                 }
                 get("/{name}") {
                     //All the conversion part should be moved somewhere else
-                    //It also write all file in jpg. Could be an issue.
                     val filename = call.parameters["name"]!!
                     val tmpFile = File("tmp/$filename")
                     if (tmpFile.exists()) {
@@ -543,7 +542,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     if (file.exists()) {
                         val resized = resize(file, 300.toDouble())
                         val output = File("tmp/$filename")
-                        ImageIO.write(resized, "jpg", output)
+                        ImageIO.write(resized, tmpFile.extension, output)
                         call.respondFile(output)
                     } else call.respond(HttpStatusCode.NotFound)
                 }
@@ -623,9 +622,9 @@ private fun resize(file: File, size: Double): BufferedImage {
     val height = (oHeight / scale).toInt()
 
     val tmp = img.getScaledInstance(width, height, Image.SCALE_SMOOTH)
-    val resized = BufferedImage(width, height, if (img.colorModel.hasAlpha()) BufferedImage.TYPE_INT_RGB else BufferedImage.TYPE_INT_RGB)
+    val resized = BufferedImage(width, height, if (img.colorModel.hasAlpha()) BufferedImage.TYPE_INT_ARGB else BufferedImage.TYPE_INT_RGB)
     val g2d = resized.createGraphics()
-    g2d.drawImage(tmp, 0, 0, null)
+    g2d.drawImage(img, 0, 0, width, height, null)
     g2d.dispose()
     return resized
 }
