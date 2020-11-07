@@ -9,6 +9,7 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
         const val SELECT_BY_NAME = "SELECT * FROM users WHERE name= ?"
         const val SELECT_BY_ID = "SELECT * FROM users WHERE id= ?"
         const val UPDATE = "UPDATE users SET name = ?, picture = ? WHERE id = ?"
+        const val UPDATE_PWD = "UPDATE users SET password = ?, salt = ? WHERE name = ?"
     }
 
     override fun getTableName(): String {
@@ -107,5 +108,17 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
                 return@with res.next()
             }
         }, errorMessage(SELECT_BY_ID, userId.toString()))
+    }
+
+    fun modifyPassword(name: String, password: ByteArray, salt: ByteArray) {
+        return conn.safeExecute(UPDATE_PWD, {
+            with(it) {
+                setBinaryStream(1, ByteArrayInputStream(password), password.size)
+                setBinaryStream(2, ByteArrayInputStream(salt), salt.size)
+                setString(3, name)
+                val rowCount = executeUpdate()
+                if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
+            }
+        }, errorMessage(UPDATE_PWD, password.toString(), salt.toString(), name))
     }
 }

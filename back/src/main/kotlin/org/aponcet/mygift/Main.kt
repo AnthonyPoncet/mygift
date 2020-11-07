@@ -27,6 +27,7 @@ import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.Netty
 import org.aponcet.authserver.UserAndPictureJson
+import org.aponcet.authserver.UserAndResetPassword
 import org.aponcet.authserver.UserJson
 import org.aponcet.mygift.dbmanager.*
 import org.aponcet.mygift.dbmanager.maintenance.AdaptTable
@@ -549,6 +550,31 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
             }
         }
 
+        route("passwords/reset/{uuid}") {
+            get {
+                val uuid = call.parameters["uuid"]!!
+                try {
+                    userManager.getEntry(uuid)
+                    call.respond(HttpStatusCode.Found)
+                } catch (e: Exception) {
+                    System.err.println(e)
+                    call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
+                }
+            }
+            post {
+                try {
+                    val uuid = call.parameters["uuid"]!!
+                    val userAndResetPassword =
+                        Gson().fromJson(decode(call.receiveText()), UserAndResetPassword::class.java)
+                    userManager.modifyPassword(userAndResetPassword, uuid)
+                    call.respond(HttpStatusCode.Accepted)
+                } catch (e: Exception) {
+                    System.err.println(e)
+                    call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
+                }
+            }
+        }
+
         static("/") {
            resources("static")
            defaultResource("static/index.html")
@@ -590,6 +616,10 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
             resources("static")
             defaultResource("static/index.html")
         }
+        static("/reset-password/*") {
+            resources("static")
+            defaultResource("static/index.html")
+        }
 
         static("static") {
            resources("static/static")
@@ -621,7 +651,6 @@ private fun resize(file: File, size: Double): BufferedImage {
     val width = (oWidth / scale).toInt()
     val height = (oHeight / scale).toInt()
 
-    val tmp = img.getScaledInstance(width, height, Image.SCALE_SMOOTH)
     val resized = BufferedImage(width, height, if (img.colorModel.hasAlpha()) BufferedImage.TYPE_INT_ARGB else BufferedImage.TYPE_INT_RGB)
     val g2d = resized.createGraphics()
     g2d.drawImage(img, 0, 0, width, height, null)

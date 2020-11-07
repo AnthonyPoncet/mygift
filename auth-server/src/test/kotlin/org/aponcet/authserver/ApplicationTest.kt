@@ -164,6 +164,9 @@ class TestUserProvider : UserProvider {
     override fun addUser(name: String, password: ByteArray, salt: ByteArray, picture: String) {
     }
 
+    override fun modifyUser(name: String, password: ByteArray, salt: ByteArray) {
+    }
+
     override fun getUser(name: String): User? {
         return users[name]
     }

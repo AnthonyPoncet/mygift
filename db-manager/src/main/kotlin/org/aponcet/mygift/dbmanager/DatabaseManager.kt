@@ -54,6 +54,7 @@ class DatabaseManager(dbPath: String) {
     private val friendRequestAccessor = FriendRequestAccessor(conn)
     private val eventsAccessor = EventsAccessor(conn)
     private val participantsAccessor = ParticipantsAccessor(conn)
+    private val resetPasswordAccessor = ResetPasswordAccessor(conn)
 
     init {
         createDataModelIfNeeded()
@@ -68,6 +69,7 @@ class DatabaseManager(dbPath: String) {
         conn.execute("delete from ${friendRequestAccessor.getTableName()}")
         conn.execute("delete from ${eventsAccessor.getTableName()}")
         conn.execute("delete from ${participantsAccessor.getTableName()}")
+        conn.execute("delete from ${resetPasswordAccessor.getTableName()}")
     }
 
     private fun createDataModelIfNeeded() {
@@ -78,6 +80,7 @@ class DatabaseManager(dbPath: String) {
         friendRequestAccessor.createIfNotExists()
         eventsAccessor.createIfNotExists()
         participantsAccessor.createIfNotExists()
+        resetPasswordAccessor.createIfNotExists()
     }
 
     /**
@@ -386,5 +389,16 @@ class DatabaseManager(dbPath: String) {
         if (!eventsAccessor.eventExists(eventId)) throw Exception("Unknown event $eventId")
 
         return participantsAccessor.getParticipants(eventId)
+    }
+
+    /**
+     * Reset password
+     */
+    @Synchronized fun getEntry(uuid: String): DbResetPassword {
+        return resetPasswordAccessor.getEntry(uuid) ?: throw Exception("Unknown uuid $uuid")
+    }
+
+    @Synchronized fun deleteEntry(userId: Long, uuid: String) {
+        resetPasswordAccessor.delete(userId, uuid)
     }
 }

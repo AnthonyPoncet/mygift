@@ -1,0 +1,27 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.4.10"
+}
+
+repositories {
+    jcenter()
+    maven {url "https://kotlin.bintray.com/kotlinx"}
+}
+
+dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3")
+
+    implementation(project(":db-manager"))
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': "org.aponcet.mygift.resetpassword.MainKt"
+    }
+
+
+    // This line of code recursively collects and copies all of a project's files
+    // and adds them to the JAR itself. One can extend this task, to skip certain
+    // files or particular types at will
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+}
