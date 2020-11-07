@@ -5,9 +5,7 @@ import java.time.LocalDate
 data class DbUser(val id: Long, val name: String, val password: ByteArray, val salt: ByteArray, val picture: String?) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as DbUser
+        if (other !is DbUser) return false
 
         if (id != other.id) return false
         if (name != other.name) return false
@@ -260,8 +258,8 @@ class DatabaseManager(dbPath: String) {
 
         val receivedRequest = friendRequestAccessor.getFriendRequest(userTwo, userOne)
         if (receivedRequest != null) {
-            when {
-                receivedRequest.status == RequestStatus.REJECTED -> deleteFriendRequest(userTwo, receivedRequest.id)
+            when (receivedRequest.status) {
+                RequestStatus.REJECTED -> deleteFriendRequest(userTwo, receivedRequest.id)
                 else -> throw FriendRequestAlreadyExistException(
                     receivedRequest
                 )

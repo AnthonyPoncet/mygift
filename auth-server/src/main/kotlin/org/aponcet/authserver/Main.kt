@@ -31,7 +31,20 @@ data class UserJson(val name: String?, val password: String?)
 data class UserAndPictureJson(val name: String?, val password: String?, val picture: String?)
 data class ErrorResponse(val error: String)
 data class TokenResponse(val token: String)
-data class KeyResponse(val key: ByteArray)
+data class KeyResponse(val key: ByteArray) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is KeyResponse) return false
+
+        if (!key.contentEquals(other.key)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return key.contentHashCode()
+    }
+}
 
 open class SimpleJWT(val publicKey: RSAPublicKey, secretKey: RSAPrivateKey) {
     private val algorithm = Algorithm.RSA256(publicKey, secretKey)

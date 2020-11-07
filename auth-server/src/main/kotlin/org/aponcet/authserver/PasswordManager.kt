@@ -11,9 +11,7 @@ import javax.crypto.spec.PBEKeySpec
 data class EncodedPasswordAndSalt(val encodedPassword: ByteArray, val salt: ByteArray) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as EncodedPasswordAndSalt
+        if (other !is EncodedPasswordAndSalt) return false
 
         if (!encodedPassword.contentEquals(other.encodedPassword)) return false
         if (!salt.contentEquals(other.salt)) return false
