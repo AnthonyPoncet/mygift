@@ -29,6 +29,7 @@ class InvalidCredentialsException(message: String) : RuntimeException(message)
 
 data class UserJson(val name: String?, val password: String?)
 data class UserAndPictureJson(val name: String?, val password: String?, val picture: String?)
+data class UserAndResetPassword(val name: String?, val password: String?)
 data class ErrorResponse(val error: String)
 data class TokenResponse(val token: String)
 data class KeyResponse(val key: ByteArray) {
@@ -109,6 +110,25 @@ fun Application.authModule(userProvider: UserProvider) {
                 val encodedPasswordAndSalt = PasswordManager.generateEncodedPassword(userAndPictureJson.password)
                 userProvider.addUser(userAndPictureJson.name, encodedPasswordAndSalt.encodedPassword, encodedPasswordAndSalt.salt, userAndPictureJson.picture?:"")
                 call.respond(HttpStatusCode.Created)
+            } catch (e: DbException) {
+                call.respond(HttpStatusCode.BadRequest, Error(e.message))
+            } catch (e: Exception) {
+                System.err.println(e)
+                call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
+            }
+        }
+
+        post("/update") {
+            val userAndResetPassword = Gson().fromJson(call.receiveText(), UserAndResetPassword::class.java)
+                ?: throw IllegalArgumentException("/update need a json as input")
+
+            if (userAndResetPassword.name == null) throw IllegalArgumentException("/update json need name node")
+            if (userAndResetPassword.password == null) throw IllegalArgumentException("/update json need password node")
+
+            try {
+                val encodedPasswordAndSalt = PasswordManager.generateEncodedPassword(userAndResetPassword.password)
+                userProvider.modifyUser(userAndResetPassword.name, encodedPasswordAndSalt.encodedPassword, encodedPasswordAndSalt.salt)
+                call.respond(HttpStatusCode.OK)
             } catch (e: DbException) {
                 call.respond(HttpStatusCode.BadRequest, Error(e.message))
             } catch (e: Exception) {

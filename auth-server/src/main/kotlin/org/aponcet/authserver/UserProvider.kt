@@ -9,8 +9,6 @@ interface UserProvider {
 
     /**
      * Add a new user
-     *
-     * @return success
      */
     fun addUser(name: String, password: ByteArray, salt: ByteArray, picture: String)
 
@@ -21,4 +19,9 @@ interface UserProvider {
      * @return the user (name and password) if exist. return null else
      */
     fun getUser(name: String) : User?
+
+    /**
+     * Modify password for an existing user
+     */
+    fun modifyUser(name: String, password: ByteArray, salt: ByteArray)
 }

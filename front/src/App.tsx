@@ -18,6 +18,7 @@ import MyFriends from './component/MyFriends';
 import MyWishList from './component/MyWishList';
 import SigninPage from './component/SigninPage';
 import SignupPage from './component/SignupPage';
+import ResetPassword from './component/ResetPassword';
 import { history } from './component/history';
 
 import blank_profile_picture from './component/image/blank_profile_picture.png';
@@ -149,6 +150,7 @@ class App extends React.Component<AppProps, State> {
                   <Route path="/friend/:friendName?" component={FriendWishListRoute} />
                   <Route path="/buy-list" component={MyBuyList} />
                   <Route path="/manage-account" component={ManageAccount} />
+                  <Route path="/reset-password/:uuid?" component={ResetPassword} />
               </div>
           </Router>
         );

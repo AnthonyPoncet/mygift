@@ -9,13 +9,12 @@ import io.ktor.client.request.*
 import io.ktor.client.request.post
 import io.ktor.client.response.HttpResponse
 import io.ktor.client.response.readText
+import io.ktor.features.*
 import io.ktor.http.HttpStatusCode
-import org.aponcet.authserver.ErrorResponse
-import org.aponcet.authserver.TokenResponse
-import org.aponcet.authserver.UserAndPictureJson
-import org.aponcet.authserver.UserJson
+import org.aponcet.authserver.*
 import org.aponcet.mygift.dbmanager.*
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 /** RETURN CLASSES **/
 data class User(val token: String, val name: String, val picture: String?)
@@ -30,6 +29,7 @@ data class PendingFriendRequest(val sent: List<FriendRequest>, val received: Lis
 data class Participant(val name: String, val status: RequestStatus)
 data class Event(val id: Long, val type: EventType, val name: String, val creatorName: String, val description: String, val endDate: LocalDate, val target: String?, val participants: Set<Participant>)
 data class BuyListByFriend(val friendName: String, val gifts: List<FriendGift>)
+data class ResetPassword(val userId: Long, val uuid: String, val expiry: LocalDateTime)
 
 /** INPUT CLASSES **/
 data class UserModification(val name: String?, val picture: String?)
@@ -485,5 +485,36 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
                 )
             }.toSet()
         )
+    }
+
+    fun getEntry(uuid: String) : ResetPassword {
+        val entry = databaseManager.getEntry(uuid)
+        return ResetPassword(entry.userId, entry.uuid, entry.expiry)
+    }
+
+    suspend fun modifyPassword(userAndResetPassword: UserAndResetPassword, uuid: String) {
+        if (userAndResetPassword.name == null) throw BadParamException("Username could not be null")
+        if (userAndResetPassword.password == null) throw BadParamException("Password could not be null")
+
+        val entry = databaseManager.getEntry(uuid)
+        val user = databaseManager.getUser(userAndResetPassword.name!!)
+        if (entry.userId != user?.id ?: -1L) {
+            databaseManager.deleteEntry(entry.userId, uuid)
+            throw Exception("This uuid does not belong to you. Reset password uuid have been deleted.")
+        }
+
+        //send modify to authserver
+        val client = HttpClient(Apache)
+        try {
+            client.post<HttpResponse> {
+                url("http://127.0.0.1:$authServerPort/update")
+                body = Gson().toJson(userAndResetPassword)
+            }
+        } catch (e: ResponseException) {
+            System.err.println("Error while updating user: $e")
+            throw IllegalStateException(e)
+        }
+
+        databaseManager.deleteEntry(entry.userId, uuid)
     }
 }

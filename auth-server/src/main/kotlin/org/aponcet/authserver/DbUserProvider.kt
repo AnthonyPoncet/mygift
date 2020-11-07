@@ -20,4 +20,8 @@ class DbUserProvider(dbPath: String) : UserProvider {
         val user = usersAccessor.getUser(name)
         return if (user == null) null else User(user.id, user.name, EncodedPasswordAndSalt(user.password, user.salt))
     }
+
+    override fun modifyUser(name: String, password: ByteArray, salt: ByteArray) {
+        usersAccessor.modifyPassword(name, password, salt)
+    }
 }
