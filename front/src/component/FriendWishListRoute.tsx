@@ -5,7 +5,6 @@ import FriendWishList from './FriendWishList';
 
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk'
-import { AppState } from '../redux/store';
 import { logout } from '../redux/actions/user';
 
 interface PathParam { friendName: string };
