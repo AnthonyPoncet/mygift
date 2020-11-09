@@ -68,6 +68,13 @@ class ResetPassword extends React.Component<Props, State> {
         request();
     }
 
+
+    _onKeyDown(e: any) {
+        if (e.keyCode === 13) {
+            this._handleSubmit();
+        }
+    }
+
     render() {
         console.debug("Page for " + this.uuid)
         const { status, username, password } = this.state;
@@ -85,11 +92,11 @@ class ResetPassword extends React.Component<Props, State> {
                   <div className="auth-form-body">
                       <div className="form-group">
                         <label>Username</label>
-                        <input type="text" name="username" placeholder="username" className="form-control" value={username} onChange={(e) => this._handleChange(e)} />
+                        <input type="text" name="username" placeholder="username" className="form-control" value={username} onChange={(e) => this._handleChange(e)} onKeyDown={(e) => this._onKeyDown(e)}/>
                       </div>
                       <div className="form-group">
                         <label>Password</label>
-                        <input type="password" name="password" placeholder="password" className="form-control" value={password} onChange={(e) => this._handleChange(e)} />
+                        <input type="password" name="password" placeholder="password" className="form-control" value={password} onChange={(e) => this._handleChange(e)} onKeyDown={(e) => this._onKeyDown(e)}/>
                       </div>
                       <button className="btn btn-primary btn-large" onClick={() => this._handleSubmit()}>Change</button>
                   </div>
