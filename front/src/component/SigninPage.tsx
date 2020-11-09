@@ -49,6 +49,12 @@ class SigninPage extends React.Component<Props, State> {
     }
   }
 
+  _onKeyDown(e: any) {
+    if (e.keyCode === 13) {
+        this._handleSubmit();
+    }
+  }
+
   render() {
     const { username, password } = this.state;
     const { connection } = this.props;
@@ -59,11 +65,11 @@ class SigninPage extends React.Component<Props, State> {
           <div className="auth-form-body">
               <div className="form-group">
                 <label>{connection.username}</label>
-                <input type="text" name="username" placeholder={connection.username} className="form-control" value={username} onChange={this._handleChange} />
+                <input type="text" name="username" placeholder={connection.username} className="form-control" value={username} onChange={this._handleChange} onKeyDown={(e) => this._onKeyDown(e)}/>
               </div>
               <div className="form-group">
                 <label>{connection.password}</label>
-                <input type="password" name="password" placeholder={connection.password} className="form-control" value={password} onChange={this._handleChange} />
+                <input type="password" name="password" placeholder={connection.password} className="form-control" value={password} onChange={this._handleChange} onKeyDown={(e) => this._onKeyDown(e)}/>
               </div>
               <button className="btn btn-primary btn-large" onClick={this._handleSubmit}>{connection.signInButton}</button>
           </div>
