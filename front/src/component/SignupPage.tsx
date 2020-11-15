@@ -111,7 +111,6 @@ class SignupPage extends React.Component<Props, State> {
       <div>
         <div className="textContainer"><img className="small-icon" src={create_list} alt="Create list"/><p className="textAlign">{connection.listDesc}</p></div>
         <div className="textContainer"><img className="small-icon" src={friends} alt="Friends"/><p className="textAlign">{connection.friendsDesc}</p></div>
-        <div className="textContainer"><img className="small-icon" src={events} alt="Events"/><p className="textAlign">{connection.eventsDesc}</p></div>
       </div>
     );
   }
