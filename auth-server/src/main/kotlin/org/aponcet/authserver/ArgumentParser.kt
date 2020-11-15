@@ -1,17 +1,18 @@
 package org.aponcet.authserver
 
-import com.xenomachina.argparser.ArgParser
-import com.xenomachina.argparser.default
+import kotlinx.cli.ArgParser
+import kotlinx.cli.ArgType
+import kotlinx.cli.default
 
-class ArgumentParser(parser: ArgParser) {
-    val port : Int by parser.storing(
-        "-p", "--port",
-        help = "port used by the server") {
-        toInt()
-    }.default(9876)
+data class Args(val configurationFile: String)
 
-    val db : String by parser.storing(
-        "-d", "--database",
-        help = "path to database")
-        .default("mygift.db")
+class ArgumentParser {
+    companion object {
+        fun parse(args: Array<String>): Args {
+            val parser = ArgParser("auth-server")
+            val configurationFile by parser.option(ArgType.String, shortName = "c", description = "configuration file").default("configuration.json")
+            parser.parse(args)
+            return Args(configurationFile)
+        }
+    }
 }

@@ -13,6 +13,7 @@ import io.ktor.features.*
 import io.ktor.http.HttpStatusCode
 import org.aponcet.authserver.*
 import org.aponcet.mygift.dbmanager.*
+import org.aponcet.mygift.model.AuthServer
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -88,7 +89,7 @@ class DummyEventCache(private val databaseManager: DatabaseManager) {
 }
 
 
-class UserManager(private val databaseManager: DatabaseManager, private val authServerPort: Int) {
+class UserManager(private val databaseManager: DatabaseManager, private val authServer: AuthServer) {
 
     suspend fun connect(userJson: UserJson): User {
         if (userJson.name == null) throw BadParamException("Username could not be null")
@@ -97,7 +98,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         val client = HttpClient(Apache)
         try {
             val response = client.post<HttpResponse> {
-                url("http://127.0.0.1:$authServerPort/login")
+                url("http://${authServer.host}:${authServer.port}/login")
                 body = Gson().toJson(userJson)
             }
 
@@ -116,7 +117,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         val client = HttpClient(Apache)
         try {
             client.put<HttpResponse> {
-                url("http://127.0.0.1:$authServerPort/create")
+                url("http://${authServer.host}:${authServer.port}/create")
                 body = Gson().toJson(userAndPictureJson)
             }
 
@@ -507,7 +508,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         val client = HttpClient(Apache)
         try {
             client.post<HttpResponse> {
-                url("http://127.0.0.1:$authServerPort/update")
+                url("http://${authServer.host}:${authServer.port}/update")
                 body = Gson().toJson(userAndResetPassword)
             }
         } catch (e: ResponseException) {

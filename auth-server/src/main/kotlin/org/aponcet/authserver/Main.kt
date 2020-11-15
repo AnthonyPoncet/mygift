@@ -3,8 +3,6 @@ package org.aponcet.authserver
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.gson.Gson
-import com.xenomachina.argparser.ArgParser
-import com.xenomachina.argparser.mainBody
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -21,6 +19,7 @@ import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import org.aponcet.mygift.dbmanager.DbException
+import org.aponcet.mygift.model.ConfigurationLoader
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
@@ -56,21 +55,20 @@ open class SimpleJWT(val publicKey: RSAPublicKey, secretKey: RSAPrivateKey) {
 }
 
 fun main(args: Array<String>) {
-    mainBody {
-        val arguments = ArgParser(args).parseInto(::ArgumentParser)
+    val arguments = ArgumentParser.parse(args)
+    val configuration = ConfigurationLoader.load(arguments.configurationFile)
 
-        val env = applicationEngineEnvironment {
-            module {
-                authModule(DbUserProvider(arguments.db))
-            }
-            connector {
-                host = "127.0.0.1"
-                port = arguments.port
-            }
+    val env = applicationEngineEnvironment {
+        module {
+            authModule(DbUserProvider(configuration.database.path))
         }
-
-        embeddedServer(Netty, env).start(true)
+        connector {
+            host = configuration.authServer.host
+            port = configuration.authServer.port
+        }
     }
+
+    embeddedServer(Netty, env).start(true)
 }
 
 fun Application.authModule(userProvider: UserProvider) {

@@ -5,8 +5,6 @@ import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.xenomachina.argparser.ArgParser
-import com.xenomachina.argparser.mainBody
 import io.ktor.application.*
 import io.ktor.auth.Authentication
 import io.ktor.auth.authenticate
@@ -32,6 +30,7 @@ import org.aponcet.authserver.UserJson
 import org.aponcet.mygift.dbmanager.*
 import org.aponcet.mygift.dbmanager.maintenance.AdaptTable
 import org.aponcet.mygift.dbmanager.maintenance.CleanDataNotUsed
+import org.aponcet.mygift.model.ConfigurationLoader
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.File
@@ -62,75 +61,76 @@ fun makeVerifier(publicKeyManager: PublicKeyManager): JWTVerifier {
 }
 
 fun main(args: Array<String>) {
-    mainBody {
-        val arguments = ArgParser(args).parseInto(::ArgumentParser)
-        if (arguments.adaptTable.isNotEmpty()) {
-            val adaptTable = AdaptTable(arguments.db)
-            adaptTable.execute(AdaptTable.STEP.valueOf(arguments.adaptTable))
-            return@mainBody
-        }
-        if (arguments.cleanData.isNotEmpty()) {
-            val cleanDataNotUsed = CleanDataNotUsed(arguments.db, "uploads")
-            cleanDataNotUsed.execute(CleanDataNotUsed.DATA.valueOf(arguments.cleanData))
-            return@mainBody
-        }
+    val parse = ArgumentParser.parse(args)
+    val configuration = ConfigurationLoader.load(parse.configurationFile)
 
-        val databaseManager = DatabaseManager(arguments.db)
-        val userManager = UserManager(databaseManager, arguments.authServerPort)
-        val publicKeyManager = PublicKeyManager(arguments.authServerPort)
-
-        if (arguments.resetDB) {
-            println("Reset DB with default values")
-            DbInitializerForTest(databaseManager)
-        }
-
-        val uploadsDir = File("uploads")
-        if (!uploadsDir.exists()) {
-            uploadsDir.mkdir()
-        }
-        val tmpDir = File("tmp")
-        if (!tmpDir.exists()) {
-            tmpDir.mkdir()
-        }
-
-        println("Start server on http port ${arguments.port} & https port ${arguments.httpsPort}")
-
-        publicKeyManager.start()
-
-        if (arguments.debug) {
-            val env = applicationEngineEnvironment {
-                module {
-                    mygift(userManager, publicKeyManager, arguments.debug)
-                }
-                connector {
-                    port = arguments.port
-                }
-            }
-            embeddedServer(Netty, env).start(true)
-
-        } else {
-            val keystore = KeyStore.getInstance("jks")
-            val file = File(arguments.jks)
-            keystore.load(FileInputStream(file), arguments.jksPassword.toCharArray())
-            val env = applicationEngineEnvironment {
-                module {
-                    mygift(userManager, publicKeyManager, arguments.debug)
-                }
-                connector {
-                    port = arguments.port
-                }
-                sslConnector(
-                    keyStore = keystore,
-                    keyAlias = arguments.keyAlias,
-                    keyStorePassword = { arguments.jksPassword.toCharArray() },
-                    privateKeyPassword = { arguments.aliasKey.toCharArray() }) {
-                    port = arguments.httpsPort
-                    keyAlias = arguments.keyAlias
-                }
-            }
-            embeddedServer(Netty, env).start(true)
-        }
+    if (parse.adaptTable != null) {
+        val adaptTable = AdaptTable(configuration.database.path)
+        adaptTable.execute(parse.adaptTable)
+        return
     }
+
+    if (parse.cleanData != null) {
+        val cleanDataNotUsed = CleanDataNotUsed(configuration.database.path, "uploads")
+        cleanDataNotUsed.execute(parse.cleanData)
+        return
+    }
+
+    val databaseManager = DatabaseManager(configuration.database.path)
+    val userManager = UserManager(databaseManager, configuration.authServer)
+    val publicKeyManager = PublicKeyManager(configuration.authServer)
+
+    if (configuration.mainServer.resetDB) {
+        println("Reset DB with default values")
+        DbInitializerForTest(databaseManager)
+    }
+
+    val uploadsDir = File("uploads")
+    if (!uploadsDir.exists()) {
+        uploadsDir.mkdir()
+    }
+    val tmpDir = File("tmp")
+    if (!tmpDir.exists()) {
+        tmpDir.mkdir()
+    }
+
+    publicKeyManager.start()
+
+    if (configuration.mainServer.debug) {
+        val env = applicationEngineEnvironment {
+            module {
+                mygift(userManager, publicKeyManager, configuration.mainServer.debug)
+            }
+            connector {
+                port = configuration.mainServer.httpPort
+            }
+        }
+        embeddedServer(Netty, env).start(true)
+
+    } else {
+        val keystore = KeyStore.getInstance("jks")
+        val jks = configuration.mainServer.jks
+        val file = File(jks.path)
+        keystore.load(FileInputStream(file), jks.jksPassword.toCharArray())
+        val env = applicationEngineEnvironment {
+            module {
+                mygift(userManager, publicKeyManager, configuration.mainServer.debug)
+            }
+            connector {
+                port = configuration.mainServer.httpPort
+            }
+            sslConnector(
+                keyStore = keystore,
+                keyAlias = jks.keyAlias,
+                keyStorePassword = { jks.jksPassword.toCharArray() },
+                privateKeyPassword = { jks.aliasKey.toCharArray() }) {
+                port = configuration.mainServer.httpsPort
+                keyAlias = jks.keyAlias
+            }
+        }
+        embeddedServer(Netty, env).start(true)
+    }
+
 }
 
 fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyManager, debug: Boolean) {

@@ -8,11 +8,12 @@ import io.ktor.client.request.get
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.aponcet.authserver.KeyResponse
+import org.aponcet.mygift.model.AuthServer
 import java.net.ConnectException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-class PublicKeyManager(private val port: Int) {
+class PublicKeyManager(private val authServer: AuthServer) {
 
     private val executor = Executors.newSingleThreadScheduledExecutor()
     private val client = HttpClient(Apache)
@@ -33,7 +34,7 @@ class PublicKeyManager(private val port: Int) {
         GlobalScope.launch {
             val r = Runnable { loop() }
             try {
-                val body = client.get<String>("http://127.0.0.1:$port/public-key")
+                val body = client.get<String>("http://${authServer.host}:${authServer.port}/public-key")
                 executor.schedule(r, DELAY_TOKEN, TimeUnit.SECONDS)
                 publicKey = Gson().fromJson(body, KeyResponse::class.java).key
                 System.err.println("Pubic key retrieved!")
