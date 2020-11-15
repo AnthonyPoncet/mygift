@@ -1,10 +1,11 @@
 package org.aponcet.mygift
 
-import org.aponcet.authserver.PasswordManager
 import org.aponcet.authserver.PasswordManagerException
 import org.aponcet.mygift.dbmanager.DatabaseManager
 import org.aponcet.mygift.dbmanager.NewCategory
 import org.aponcet.mygift.dbmanager.NewGift
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.security.NoSuchAlgorithmException
 import java.security.spec.InvalidKeySpecException
 import java.time.LocalDate
@@ -14,6 +15,10 @@ import javax.crypto.spec.PBEKeySpec
 
 class DbInitializerForTest(databaseManager: DatabaseManager) {
 
+    companion object {
+        val LOGGER: Logger = LoggerFactory.getLogger(DbInitializerForTest::class.java)
+    }
+
     init {
         //Clean db
         databaseManager.cleanTables()
@@ -21,15 +26,15 @@ class DbInitializerForTest(databaseManager: DatabaseManager) {
         //Create User
         val aze = databaseManager.addUser("aze", hash("aze", "salt1".toByteArray()), "salt1".toByteArray(),"black_cat.png").id
         val azeDCat = databaseManager.getUserCategories(aze)[0].id
-        println("username: aze, pwd: aze ==> id: $aze - Default category id: $azeDCat")
+        LOGGER.info("username: aze, pwd: aze ==> id: $aze - Default category id: $azeDCat")
         val eza = databaseManager.addUser("eza", hash("eza", "salt2".toByteArray()), "salt2".toByteArray(), "red_cat.png").id
         databaseManager.addCategory(eza, NewCategory("Second catégorie"))
         val ezaCats = databaseManager.getUserCategories(eza)
         val ezaDCat = ezaCats[0].id
         val ezaSCat = ezaCats[1].id
-        println("username: eza, pwd: eza ==> id: $eza - Default category id: $eza, \"Second catégorie\" id: $ezaSCat")
+        LOGGER.info("username: eza, pwd: eza ==> id: $eza - Default category id: $eza, \"Second catégorie\" id: $ezaSCat")
         val other = databaseManager.addUser("other", hash("other", "salt3".toByteArray()), "salt3".toByteArray(), null).id
-        println("usernamme: other, pwd; other ==> id: $other")
+        LOGGER.info("usernamme: other, pwd; other ==> id: $other")
 
         //Fill gift
         databaseManager.addGift(aze,
@@ -63,7 +68,7 @@ class DbInitializerForTest(databaseManager: DatabaseManager) {
             ), false)
         databaseManager.addGift(aze,
             NewGift("Only mandatory", null, null, null, azeDCat, "pc.png"), true)
-        println("5 gifts added to aze")
+        LOGGER.info("5 gifts added to aze")
 
         databaseManager.addGift(eza,
             NewGift("A first one", null, null, null, ezaDCat, "pc.png"), false)
@@ -78,23 +83,23 @@ class DbInitializerForTest(databaseManager: DatabaseManager) {
                 ezaSCat,
                 "book.png"
             ), false)
-        println("3 gift added to eza")
+        LOGGER.info("3 gift added to eza")
 
         //They are friend
         databaseManager.createFriendRequest(aze, eza)
         var fr = databaseManager.getReceivedFriendRequests(eza)[0].id
         databaseManager.acceptFriendRequest(eza, fr)
-        println("aze and eza are now friend")
+        LOGGER.info("aze and eza are now friend")
         databaseManager.createFriendRequest(other, aze)
         fr = databaseManager.getReceivedFriendRequests(aze)[0].id
         databaseManager.acceptFriendRequest(aze, fr)
-        println("other and aze are now friend")
+        LOGGER.info("other and aze are now friend")
 
         //Events
         databaseManager.createEventAllForAll("Christmas", aze, null, LocalDate.now(), setOf(aze, eza))
         databaseManager.createEventAllForOne("Birthday aze", aze, null, LocalDate.now(), aze, setOf(eza))
         databaseManager.createEventAllForOne("Birthday eza", aze, null, LocalDate.now(), eza, setOf(aze))
-        println("On ALL_FOR_ALL event, and two ALL_FOR_ONE events created")
+        LOGGER.info("On ALL_FOR_ALL event, and two ALL_FOR_ONE events created")
     }
 
     private fun hash(password : String, salt: ByteArray): ByteArray {

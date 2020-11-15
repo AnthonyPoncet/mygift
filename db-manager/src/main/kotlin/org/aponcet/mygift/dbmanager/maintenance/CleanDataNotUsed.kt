@@ -1,9 +1,16 @@
 package org.aponcet.mygift.dbmanager.maintenance
 
 import org.aponcet.mygift.dbmanager.DbConnection
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 
 class CleanDataNotUsed(dbPath: String, uploadPath: String) {
+
+    companion object {
+        val LOGGER : Logger = LoggerFactory.getLogger(CleanDataNotUsed::class.java)
+    }
+
     private val conn = DbConnection("sqlite", dbPath)
     private val uploadsFile = File(uploadPath)
 
@@ -41,7 +48,7 @@ class CleanDataNotUsed(dbPath: String, uploadPath: String) {
             }
         }, "Execution of 'SELECT * FROM gifts' throw an exception"))
 
-        println("Pictures in DB: ${pictures.size} -> $pictures")
+        LOGGER.info("Pictures in DB: ${pictures.size} -> $pictures")
 
         val filesToKeep = ArrayList<String>()
         val filesToRemove = ArrayList<File>()
@@ -55,15 +62,15 @@ class CleanDataNotUsed(dbPath: String, uploadPath: String) {
             }
         }
 
-        println("Pictures in folder to keep/remove ${filesToKeep.size}/${filesToRemove.size}")
-        println("Pictures in folder not in DB: $filesToRemove")
+        LOGGER.info("Pictures in folder to keep/remove ${filesToKeep.size}/${filesToRemove.size}")
+        LOGGER.info("Pictures in folder not in DB: $filesToRemove")
 
         val notDeleted = ArrayList<File>()
         var deleted = 0
         filesToRemove.forEach{
             if (it.delete()) deleted++ else notDeleted.add(it)
         }
-        println("Report deleted/numberToDelete $deleted/${filesToRemove.size}")
-        println("Report not deleted $notDeleted")
+        LOGGER.info("Report deleted/numberToDelete $deleted/${filesToRemove.size}")
+        LOGGER.info("Report not deleted $notDeleted")
     }
 }

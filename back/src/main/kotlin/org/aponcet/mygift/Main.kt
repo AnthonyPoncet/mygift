@@ -81,7 +81,6 @@ fun main(args: Array<String>) {
     val publicKeyManager = PublicKeyManager(configuration.authServer)
 
     if (configuration.mainServer.resetDB) {
-        println("Reset DB with default values")
         DbInitializerForTest(databaseManager)
     }
 
@@ -175,7 +174,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                 } catch (e: ConnectionException) {
                     call.respond(HttpStatusCode.Unauthorized, Error(e.error))
                 } catch (e: Exception) {
-                    System.err.println(e)
+                    call.application.environment.log.error("Error while connecting user", e)
                     call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
                 }
             }
@@ -192,7 +191,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                 } catch (e: CreateUserException) {
                     call.respond(HttpStatusCode.Conflict, Error(e.error))
                 } catch (e: Exception) {
-                    System.err.println(e)
+                    call.application.environment.log.error("Error while creating user", e)
                     call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
                 }
             }
@@ -557,7 +556,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     userManager.getEntry(uuid)
                     call.respond(HttpStatusCode.Found)
                 } catch (e: Exception) {
-                    System.err.println(e)
+                    call.application.environment.log.error("Error while getting password reset uuid", e)
                     call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
                 }
             }
@@ -569,7 +568,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     userManager.modifyPassword(userAndResetPassword, uuid)
                     call.respond(HttpStatusCode.Accepted)
                 } catch (e: Exception) {
-                    System.err.println(e)
+                    call.application.environment.log.error("Error while resetting password", e)
                     call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
                 }
             }
@@ -664,7 +663,7 @@ private suspend fun handle(call: ApplicationCall, function: suspend (Long) -> Un
     try {
         function(id)
     } catch (e: Exception) {
-        System.err.println(e)
+        call.application.environment.log.error("Error while handling request parameter parsing", e)
         call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
     }
 }

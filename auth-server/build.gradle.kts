@@ -22,6 +22,8 @@ dependencies {
 
     implementation("com.auth0:java-jwt:3.3.0")
 
+    implementation("ch.qos.logback:logback-classic:1.2.3")
+
     testImplementation(kotlin("test-junit"))
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.1.9")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")

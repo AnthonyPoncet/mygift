@@ -9,11 +9,12 @@ import io.ktor.client.request.*
 import io.ktor.client.request.post
 import io.ktor.client.response.HttpResponse
 import io.ktor.client.response.readText
-import io.ktor.features.*
 import io.ktor.http.HttpStatusCode
 import org.aponcet.authserver.*
 import org.aponcet.mygift.dbmanager.*
 import org.aponcet.mygift.model.AuthServer
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -91,6 +92,10 @@ class DummyEventCache(private val databaseManager: DatabaseManager) {
 
 class UserManager(private val databaseManager: DatabaseManager, private val authServer: AuthServer) {
 
+    companion object {
+        val LOGGER : Logger = LoggerFactory.getLogger(UserManager::class.java)
+    }
+
     suspend fun connect(userJson: UserJson): User {
         if (userJson.name == null) throw BadParamException("Username could not be null")
         if (userJson.password == null) throw BadParamException("Password could not be null")
@@ -108,7 +113,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
             return User(tokenResponse.token, user.name, user.picture)
         } catch (e: ResponseException) {
             if (e.response.status == HttpStatusCode.Unauthorized) throw ConnectionException(Gson().fromJson(e.response.readText(), ErrorResponse::class.java).error)
-            System.err.println("Error while authenticate: $e")
+            LOGGER.error("Error while authenticate: $e")
             throw IllegalStateException(e)
         }
     }
@@ -124,7 +129,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
             return connect(UserJson(userAndPictureJson.name, userAndPictureJson.password))
         } catch (e: ResponseException) {
             if (e.response.status == HttpStatusCode.Unauthorized) throw ConnectionException(Gson().fromJson(e.response.readText(), ErrorResponse::class.java).error)
-            System.err.println("Error while creating user: $e")
+            LOGGER.error("Error while creating user: $e")
             throw IllegalStateException(e)
         }
     }
@@ -512,7 +517,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
                 body = Gson().toJson(userAndResetPassword)
             }
         } catch (e: ResponseException) {
-            System.err.println("Error while updating user: $e")
+            LOGGER.error("Error while updating user: $e")
             throw IllegalStateException(e)
         }
 

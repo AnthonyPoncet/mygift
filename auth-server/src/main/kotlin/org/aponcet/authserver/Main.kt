@@ -100,6 +100,7 @@ fun Application.authModule(userProvider: UserProvider) {
             if (userAndPictureJson.name == null) throw IllegalArgumentException("/create json need name node")
             if (userAndPictureJson.password == null) throw IllegalArgumentException("/create json need password node")
             if (userProvider.getUser(userAndPictureJson.name) != null) {
+                call.application.environment.log.error("A user named ${userAndPictureJson.name} already exists.")
                 call.respond(HttpStatusCode.Conflict, Error("User already exists"))
                 return@put
             }
@@ -109,9 +110,10 @@ fun Application.authModule(userProvider: UserProvider) {
                 userProvider.addUser(userAndPictureJson.name, encodedPasswordAndSalt.encodedPassword, encodedPasswordAndSalt.salt, userAndPictureJson.picture?:"")
                 call.respond(HttpStatusCode.Created)
             } catch (e: DbException) {
+                call.application.environment.log.error("database exception while creating user", e)
                 call.respond(HttpStatusCode.BadRequest, Error(e.message))
             } catch (e: Exception) {
-                System.err.println(e)
+                call.application.environment.log.error("Unknown exception while creating user", e)
                 call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
             }
         }
@@ -128,9 +130,10 @@ fun Application.authModule(userProvider: UserProvider) {
                 userProvider.modifyUser(userAndResetPassword.name, encodedPasswordAndSalt.encodedPassword, encodedPasswordAndSalt.salt)
                 call.respond(HttpStatusCode.OK)
             } catch (e: DbException) {
+                call.application.environment.log.error("database exception while updating user", e)
                 call.respond(HttpStatusCode.BadRequest, Error(e.message))
             } catch (e: Exception) {
-                System.err.println(e)
+                call.application.environment.log.error("Unknown exception while updating user", e)
                 call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
             }
         }
