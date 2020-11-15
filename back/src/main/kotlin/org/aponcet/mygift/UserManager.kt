@@ -3,6 +3,7 @@ package org.aponcet.mygift
 //TODO: remove linked to db model?
 import com.google.gson.Gson
 import io.ktor.client.HttpClient
+import io.ktor.client.call.*
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.ResponseException
 import io.ktor.client.request.*
@@ -112,8 +113,13 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
             val user = databaseManager.getUser(name)!! //to get picture, if should come from here
             return User(tokenResponse.token, user.name, user.picture)
         } catch (e: ResponseException) {
-            if (e.response.status == HttpStatusCode.Unauthorized) throw ConnectionException(Gson().fromJson(e.response.readText(), ErrorResponse::class.java).error)
-            LOGGER.error("Error while authenticate: $e")
+            if (e.response.status == HttpStatusCode.Unauthorized) {
+                val error = Gson().fromJson(e.response.readText(), ErrorResponse::class.java).error
+                LOGGER.error("Error while authenticate '${error}'", e)
+                throw ConnectionException(error)
+            }
+
+            LOGGER.error("Error while creating user '${e.message}'", e)
             throw IllegalStateException(e)
         }
     }
@@ -121,15 +127,29 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
     suspend fun addUser(userAndPictureJson: UserAndPictureJson): User {
         val client = HttpClient(Apache)
         try {
-            client.put<HttpResponse> {
+            val put = client.put<HttpResponse> {
                 url("http://${authServer.host}:${authServer.port}/create")
                 body = Gson().toJson(userAndPictureJson)
             }
 
+
+            if (put.status != HttpStatusCode.Created) put.readText() //I really don't understand
+
             return connect(UserJson(userAndPictureJson.name, userAndPictureJson.password))
         } catch (e: ResponseException) {
-            if (e.response.status == HttpStatusCode.Unauthorized) throw ConnectionException(Gson().fromJson(e.response.readText(), ErrorResponse::class.java).error)
-            LOGGER.error("Error while creating user: $e")
+            if (e.response.status == HttpStatusCode.Unauthorized) {
+                val error = Gson().fromJson(e.response.readText(), ErrorResponse::class.java).error
+                LOGGER.error("Error while creating user '${error}'", e)
+                throw ConnectionException(error)
+            }
+            if (e.response.status == HttpStatusCode.Conflict) {
+                val readText = e.response.readText()
+                val error = Gson().fromJson(readText, ErrorResponse::class.java).error
+                LOGGER.error("Error while creating user '${error}'", e)
+                throw CreateUserException(error)
+            }
+
+            LOGGER.error("Error while creating user '${e.message}'", e)
             throw IllegalStateException(e)
         }
     }

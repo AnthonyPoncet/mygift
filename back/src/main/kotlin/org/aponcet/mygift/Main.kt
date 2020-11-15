@@ -31,7 +31,7 @@ import org.aponcet.mygift.dbmanager.*
 import org.aponcet.mygift.dbmanager.maintenance.AdaptTable
 import org.aponcet.mygift.dbmanager.maintenance.CleanDataNotUsed
 import org.aponcet.mygift.model.ConfigurationLoader
-import java.awt.Image
+import org.aponcet.mygift.model.Data
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.FileInputStream
@@ -44,7 +44,7 @@ import javax.imageio.ImageIO
 
 
 data class FileAnswer(val name: String)
-data class Error(val error: String)
+data class ErrorAnswer(val error: String)
 data class FriendRequestConflict(val ownRequest: Boolean, val status: RequestStatus, val message: String)
 data class NotANumberException(val target: String) : Exception()
 class MalformedPayloadException : Exception()
@@ -65,18 +65,18 @@ fun main(args: Array<String>) {
     val configuration = ConfigurationLoader.load(parse.configurationFile)
 
     if (parse.adaptTable != null) {
-        val adaptTable = AdaptTable(configuration.database.path)
+        val adaptTable = AdaptTable(configuration.data.database)
         adaptTable.execute(parse.adaptTable)
         return
     }
 
     if (parse.cleanData != null) {
-        val cleanDataNotUsed = CleanDataNotUsed(configuration.database.path, "uploads")
+        val cleanDataNotUsed = CleanDataNotUsed(configuration.data.database, configuration.data.uploads)
         cleanDataNotUsed.execute(parse.cleanData)
         return
     }
 
-    val databaseManager = DatabaseManager(configuration.database.path)
+    val databaseManager = DatabaseManager(configuration.data.database)
     val userManager = UserManager(databaseManager, configuration.authServer)
     val publicKeyManager = PublicKeyManager(configuration.authServer)
 
@@ -84,11 +84,11 @@ fun main(args: Array<String>) {
         DbInitializerForTest(databaseManager)
     }
 
-    val uploadsDir = File("uploads")
+    val uploadsDir = File(configuration.data.uploads)
     if (!uploadsDir.exists()) {
         uploadsDir.mkdir()
     }
-    val tmpDir = File("tmp")
+    val tmpDir = File(configuration.data.tmp)
     if (!tmpDir.exists()) {
         tmpDir.mkdir()
     }
@@ -98,7 +98,7 @@ fun main(args: Array<String>) {
     if (configuration.mainServer.debug) {
         val env = applicationEngineEnvironment {
             module {
-                mygift(userManager, publicKeyManager, configuration.mainServer.debug)
+                mygift(userManager, publicKeyManager, configuration.mainServer.debug, configuration.data)
             }
             connector {
                 port = configuration.mainServer.httpPort
@@ -113,7 +113,7 @@ fun main(args: Array<String>) {
         keystore.load(FileInputStream(file), jks.jksPassword.toCharArray())
         val env = applicationEngineEnvironment {
             module {
-                mygift(userManager, publicKeyManager, configuration.mainServer.debug)
+                mygift(userManager, publicKeyManager, configuration.mainServer.debug, configuration.data)
             }
             connector {
                 port = configuration.mainServer.httpPort
@@ -132,7 +132,7 @@ fun main(args: Array<String>) {
 
 }
 
-fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyManager, debug: Boolean) {
+fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyManager, debug: Boolean, data: Data) {
     install(CORS) {
         method(HttpMethod.Get)
         method(HttpMethod.Post)
@@ -149,7 +149,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
     }
 
     install(StatusPages) {
-        exception<NotANumberException> { e -> call.respond(HttpStatusCode.BadRequest, Error("Provided ${e.target} must be a number.")) }
+        exception<NotANumberException> { e -> call.respond(HttpStatusCode.BadRequest, ErrorAnswer("Provided ${e.target} must be a number.")) }
     }
 
     install(Authentication) {
@@ -170,12 +170,12 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     val user = userManager.connect(userJson)
                     call.respond(HttpStatusCode.OK, user)
                 } catch (e: BadParamException) {
-                    call.respond(HttpStatusCode.BadRequest, Error(e.error))
+                    call.respond(HttpStatusCode.BadRequest, ErrorAnswer(e.error))
                 } catch (e: ConnectionException) {
-                    call.respond(HttpStatusCode.Unauthorized, Error(e.error))
+                    call.respond(HttpStatusCode.Unauthorized, ErrorAnswer(e.error))
                 } catch (e: Exception) {
                     call.application.environment.log.error("Error while connecting user", e)
-                    call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
+                    call.respond(HttpStatusCode.InternalServerError, ErrorAnswer(e.message ?: "Unknown error"))
                 }
             }
         }
@@ -187,12 +187,12 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     val user = userManager.addUser(basicUserInformation)
                     call.respond(HttpStatusCode.Created, user)
                 } catch (e: BadParamException) {
-                    call.respond(HttpStatusCode.BadRequest, Error(e.error))
+                    call.respond(HttpStatusCode.BadRequest, ErrorAnswer(e.message!!))
                 } catch (e: CreateUserException) {
-                    call.respond(HttpStatusCode.Conflict, Error(e.error))
+                    call.respond(HttpStatusCode.Conflict, ErrorAnswer(e.message!!))
                 } catch (e: Exception) {
                     call.application.environment.log.error("Error while creating user", e)
-                    call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
+                    call.respond(HttpStatusCode.InternalServerError, ErrorAnswer(e.message ?: "Unknown error"))
                 }
             }
         }
@@ -207,9 +207,9 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                             val user = userManager.modifyUser(id, info)
                             call.respond(HttpStatusCode.Accepted, user)
                         } catch (e: BadParamException) {
-                            call.respond(HttpStatusCode.BadRequest, Error(e.error))
+                            call.respond(HttpStatusCode.BadRequest, ErrorAnswer(e.error))
                         } catch (e: CreateUserException) {
-                            call.respond(HttpStatusCode.Conflict, Error(e.error))
+                            call.respond(HttpStatusCode.Conflict, ErrorAnswer(e.error))
                         }
                     }
                 }
@@ -229,7 +229,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     handle(call) {id ->
                         val gift = Gson().fromJson(decode(call.receiveText()), RestGift::class.java)
                         if (gift.name == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("missing name node in json"))
+                            call.respond(HttpStatusCode.BadRequest, ErrorAnswer("missing name node in json"))
                         } else {
                             val forUser = call.request.queryParameters["forUser"] /* being the name of the user --> add a secret gift*/
                             if (forUser == null) {
@@ -246,7 +246,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     handle(call) {id ->
                         val gift = Gson().fromJson(decode(call.receiveText()), RestGift::class.java)
                         if (gift.name == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("missing name node in json"))
+                            call.respond(HttpStatusCode.BadRequest, ErrorAnswer("missing name node in json"))
                         } else {
                             userManager.modifyGift(id, gid, gift)
                             call.respond(HttpStatusCode.OK)
@@ -331,7 +331,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     handle(call) {id ->
                         val category = Gson().fromJson(decode(call.receiveText()), RestCategory::class.java)
                         if (category.name == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Invalid category json"))
+                            call.respond(HttpStatusCode.BadRequest, ErrorAnswer("Invalid category json"))
                         } else {
                             userManager.addCategory(id, category)
                             call.respond(HttpStatusCode.OK)
@@ -343,7 +343,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     handle(call) {id ->
                         val category = Gson().fromJson(decode(call.receiveText()), RestCategory::class.java)
                         if (category.name == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("Invalid category json"))
+                            call.respond(HttpStatusCode.BadRequest, ErrorAnswer("Invalid category json"))
                         } else {
                             userManager.modifyCategory(id, cid, category)
                             call.respond(HttpStatusCode.OK)
@@ -396,7 +396,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     handle(call) {id ->
                         val friendRequest = Gson().fromJson(decode(call.receiveText()), RestCreateFriendRequest::class.java)
                         if (friendRequest.name == null) {
-                            call.respond(HttpStatusCode.BadRequest, Error("missing name node in json"))
+                            call.respond(HttpStatusCode.BadRequest, ErrorAnswer("missing name node in json"))
                         } else {
                             try {
                                 userManager.createFriendRequest(id, friendRequest)
@@ -518,7 +518,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                                 val name = File(part.originalFileName!!).name
                                 val ext = File(part.originalFileName!!).extension
                                 fileName = "upload-${System.currentTimeMillis()}-${name.hashCode()}.$ext"
-                                val file = File("uploads", fileName)
+                                val file = File(data.uploads, fileName)
                                 part.streamProvider().use { input ->
                                     file.outputStream().buffered().use { output -> input.copyTo(output) }
                                 }
@@ -532,16 +532,16 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                 get("/{name}") {
                     //All the conversion part should be moved somewhere else
                     val filename = call.parameters["name"]!!
-                    val tmpFile = File("tmp/$filename")
+                    val tmpFile = File("${data.tmp}/$filename")
                     if (tmpFile.exists()) {
                         call.respondFile(tmpFile)
                         return@get
                     }
 
-                    val file = File("uploads/$filename")
+                    val file = File("${data.uploads}/$filename")
                     if (file.exists()) {
                         val resized = resize(file, 300.toDouble())
-                        val output = File("tmp/$filename")
+                        val output = File("${data.tmp}/$filename")
                         ImageIO.write(resized, tmpFile.extension, output)
                         call.respondFile(output)
                     } else call.respond(HttpStatusCode.NotFound)
@@ -557,7 +557,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     call.respond(HttpStatusCode.Found)
                 } catch (e: Exception) {
                     call.application.environment.log.error("Error while getting password reset uuid", e)
-                    call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
+                    call.respond(HttpStatusCode.InternalServerError, ErrorAnswer(e.message ?: "Unknown error"))
                 }
             }
             post {
@@ -569,7 +569,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     call.respond(HttpStatusCode.Accepted)
                 } catch (e: Exception) {
                     call.application.environment.log.error("Error while resetting password", e)
-                    call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
+                    call.respond(HttpStatusCode.InternalServerError, ErrorAnswer(e.message ?: "Unknown error"))
                 }
             }
         }
@@ -664,6 +664,6 @@ private suspend fun handle(call: ApplicationCall, function: suspend (Long) -> Un
         function(id)
     } catch (e: Exception) {
         call.application.environment.log.error("Error while handling request parameter parsing", e)
-        call.respond(HttpStatusCode.InternalServerError, Error(e.message ?: "Unknown error"))
+        call.respond(HttpStatusCode.InternalServerError, ErrorAnswer(e.message ?: "Unknown error"))
     }
 }

@@ -1,6 +1,8 @@
 {
-  "database": {
-    "path": "mygift.db"
+  "data": {
+    "database": "mygift.db",
+    "uploads": "uploads",
+    "tmp": "tmp"
   },
   "authServer": {
     "host": "127.0.0.1",
