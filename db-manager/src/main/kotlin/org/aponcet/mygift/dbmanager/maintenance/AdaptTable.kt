@@ -7,11 +7,17 @@ import java.util.*
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import kotlin.collections.HashSet
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 data class UserBeforeMigration(val id: Long, val name: String, val password: String, val picture: String)
 
 /** Adapt table used only ad-hoc when needed **/
 class AdaptTable(dbPath: String) {
+    companion object {
+        val LOGGER : Logger = LoggerFactory.getLogger(AdaptTable::class.java)
+    }
+
     private val conn = DbConnection("sqlite", dbPath)
 
     enum class STEP { ADD_RANK_TO_CATEGORY, ADD_RANK_TO_GIFT, ADD_SALT_TO_USER }
@@ -33,9 +39,9 @@ class AdaptTable(dbPath: String) {
     private fun addRankToCategory() {
         try {
             conn.executeQuery("SELECT rank FROM categories")
-            println("Column rank exists, will adapt rank values")
+            LOGGER.info("Column rank exists, will adapt rank values")
         } catch (e: Exception) {
-            println("Column rank does not exist, add it")
+            LOGGER.info("Column rank does not exist, add it")
             conn.executeUpdate("ALTER TABLE categories ADD COLUMN 'rank' INTEGER NOT NULL DEFAULT 1")
         }
 
@@ -45,26 +51,26 @@ class AdaptTable(dbPath: String) {
             userIds.add(rs.getLong("userId"))
         }
 
-        println("Will update category of users $userIds")
+        LOGGER.info("Will update category of users $userIds")
 
         val categoryAccessor = CategoryAccessor(conn)
         for (userId in userIds) {
             val categories = categoryAccessor.getUserCategories(userId)
-            println("User $userId has categories $categories")
+            LOGGER.info("User $userId has categories $categories")
             categories.sortedBy { c -> c.rank }
-            println("User $userId has sorted categories $categories")
+            LOGGER.info("User $userId has sorted categories $categories")
 
             var newRank = 1L
             val newCategories = categories.stream().map { c -> c.copy(rank = newRank++) }
-            println("User $userId will now have categories as $newCategories")
+            LOGGER.info("User $userId will now have categories as $newCategories")
 
             for (category in newCategories) {
                 categoryAccessor.modifyCategory(category.id, Category(category.name, category.rank))
             }
-            println("User $userId done")
+            LOGGER.info("User $userId done")
         }
 
-        println("Done!")
+        LOGGER.info("Done!")
     }
 
     /**
@@ -76,9 +82,9 @@ class AdaptTable(dbPath: String) {
     private fun addRankToGift() {
         try {
             conn.executeQuery("SELECT rank FROM gifts")
-            println("Column rank exists, will adapt rank values")
+            LOGGER.info("Column rank exists, will adapt rank values")
         } catch (e: Exception) {
-            println("Column rank does not exist, add it")
+            LOGGER.info("Column rank does not exist, add it")
             conn.executeUpdate("ALTER TABLE gifts ADD COLUMN 'rank' INTEGER NOT NULL DEFAULT 1")
         }
 
@@ -88,33 +94,33 @@ class AdaptTable(dbPath: String) {
             userIds.add(rs.getLong("userId"))
         }
 
-        println("Will update gifts of users $userIds")
+        LOGGER.info("Will update gifts of users $userIds")
 
         val giftAccessor = GiftAccessor(conn)
         for (userId in userIds) {
             val allGifts = giftAccessor.getUserGifts(userId)
             val categoryIds = allGifts.map { g -> g.categoryId }.toSet()
-            println("User $userId has gift on categories $categoryIds")
+            LOGGER.info("User $userId has gift on categories $categoryIds")
             for (category in categoryIds) {
                 val gifts = allGifts.filter { g -> g.categoryId == category }
-                println("\tCategory $category has gifts ${gifts.map { g -> "(${g.id}, ${g.rank})" }}")
+                LOGGER.info("\tCategory $category has gifts ${gifts.map { g -> "(${g.id}, ${g.rank})" }}")
                 gifts.sortedBy { g -> g.rank }
-                println("\tCategory $category has sorted gifts ${gifts.map { g -> "(${g.id}, ${g.rank})" }}")
+                LOGGER.info("\tCategory $category has sorted gifts ${gifts.map { g -> "(${g.id}, ${g.rank})" }}")
 
                 var newRank = 1L
                 val newGifts = gifts.map { g -> g.copy(rank = newRank++) }
-                println("\tCategory $category will now have gifts ${newGifts.map { g -> "(${g.id}, ${g.rank})" }}")
+                LOGGER.info("\tCategory $category will now have gifts ${newGifts.map { g -> "(${g.id}, ${g.rank})" }}")
 
                 for (gift in newGifts) {
                     giftAccessor.modifyGift(gift.id, Gift(gift.name, gift.description, gift.price,
                         gift.whereToBuy, gift.categoryId, gift.picture, gift.rank)
                     )
                 }
-                println("\tCategory $category done\n")
+                LOGGER.info("\tCategory $category done\n")
             }
         }
 
-        println("Done!")
+        LOGGER.info("Done!")
     }
 
     /**
@@ -127,10 +133,10 @@ class AdaptTable(dbPath: String) {
     private fun addSaltToUser() {
         try {
             conn.executeQuery("SELECT salt FROM users")
-            println("Column salt exists, stop")
+            LOGGER.info("Column salt exists, stop")
             return
         } catch (e: Exception) {
-            println("Column salt does not exist, run maintenance")
+            LOGGER.info("Column salt does not exist, run maintenance")
         }
 
         //Get users

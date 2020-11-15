@@ -9,6 +9,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.aponcet.authserver.KeyResponse
 import org.aponcet.mygift.model.AuthServer
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.net.ConnectException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -21,6 +23,8 @@ class PublicKeyManager(private val authServer: AuthServer) {
     var publicKey : ByteArray? = null
 
     companion object {
+        val LOGGER: Logger = LoggerFactory.getLogger(PublicKeyManager::class.java)
+
         const val DELAY_NO_TOKEN = 10L
         const val DELAY_TOKEN = 720L //each 12h
     }
@@ -30,22 +34,22 @@ class PublicKeyManager(private val authServer: AuthServer) {
         executor.schedule(r, 0, TimeUnit.SECONDS)
     }
 
-    fun loop() {
+    private fun loop() {
         GlobalScope.launch {
             val r = Runnable { loop() }
             try {
                 val body = client.get<String>("http://${authServer.host}:${authServer.port}/public-key")
                 executor.schedule(r, DELAY_TOKEN, TimeUnit.SECONDS)
                 publicKey = Gson().fromJson(body, KeyResponse::class.java).key
-                System.err.println("Pubic key retrieved!")
+                LOGGER.info("Pubic key retrieved!")
             } catch (e: ResponseException) {
-                System.err.println("Unable to retrieve pubic key: $e")
+                LOGGER.warn("Unable to retrieve pubic key", e)
                 executor.schedule(r, DELAY_NO_TOKEN, TimeUnit.SECONDS)
             } catch (e: ConnectException) {
-                System.err.println("Unable to retrieve pubic key, server may be down")
+                LOGGER.error("Unable to retrieve pubic key, server may be down")
                 executor.schedule(r, DELAY_NO_TOKEN, TimeUnit.SECONDS)
             } catch (e: Exception) {
-                System.err.println("Unable to retrieve pubic key, unknown exception: $e")
+                LOGGER.error("Unable to retrieve pubic key, unknown exception", e)
                 executor.schedule(r, DELAY_NO_TOKEN, TimeUnit.SECONDS)
             }
         }
