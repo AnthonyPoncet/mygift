@@ -3,13 +3,11 @@ package org.aponcet.mygift
 //TODO: remove linked to db model?
 import com.google.gson.Gson
 import io.ktor.client.HttpClient
-import io.ktor.client.call.*
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.ResponseException
 import io.ktor.client.request.*
 import io.ktor.client.request.post
-import io.ktor.client.response.HttpResponse
-import io.ktor.client.response.readText
+import io.ktor.client.statement.*
 import io.ktor.http.HttpStatusCode
 import org.aponcet.authserver.*
 import org.aponcet.mygift.dbmanager.*
@@ -103,12 +101,11 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
 
         val client = HttpClient(Apache)
         try {
-            val response = client.post<HttpResponse> {
+            val tokenResponse = client.post<TokenResponse> {
                 url("http://${authServer.host}:${authServer.port}/login")
                 body = Gson().toJson(userJson)
             }
 
-            val tokenResponse = Gson().fromJson(response.readText(), TokenResponse::class.java)
             val name = userJson.name!!
             val user = databaseManager.getUser(name)!! //to get picture, if should come from here
             return User(tokenResponse.token, user.name, user.picture)
@@ -127,13 +124,10 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
     suspend fun addUser(userAndPictureJson: UserAndPictureJson): User {
         val client = HttpClient(Apache)
         try {
-            val put = client.put<HttpResponse> {
+            client.put<HttpStatement> {
                 url("http://${authServer.host}:${authServer.port}/create")
                 body = Gson().toJson(userAndPictureJson)
-            }
-
-
-            if (put.status != HttpStatusCode.Created) put.readText() //I really don't understand
+            }.execute()
 
             return connect(UserJson(userAndPictureJson.name, userAndPictureJson.password))
         } catch (e: ResponseException) {
@@ -532,10 +526,10 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         //send modify to authserver
         val client = HttpClient(Apache)
         try {
-            client.post<HttpResponse> {
+            client.post<HttpStatement> {
                 url("http://${authServer.host}:${authServer.port}/update")
                 body = Gson().toJson(userAndResetPassword)
-            }
+            }.execute()
         } catch (e: ResponseException) {
             LOGGER.error("Error while updating user: $e")
             throw IllegalStateException(e)
