@@ -150,11 +150,12 @@ fun Application.authModule(userProvider: UserProvider) {
                 throw InvalidCredentialsException("Wrong password")
             }
 
-            call.respond(TokenResponse(simpleJwt.sign(user.id, user.name)))
+            val message = TokenResponse(simpleJwt.sign(user.id, user.name))
+            call.respond(HttpStatusCode.OK, message)
         }
 
         get("/public-key") {
-            call.respond(KeyResponse(simpleJwt.publicKey.encoded))
+            call.respond(HttpStatusCode.OK, KeyResponse(simpleJwt.publicKey.encoded))
         }
     }
 }

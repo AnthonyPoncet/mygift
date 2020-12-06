@@ -5,10 +5,11 @@ import com.google.gson.Gson
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.ResponseException
+import io.ktor.client.features.json.*
 import io.ktor.client.request.*
 import io.ktor.client.request.post
 import io.ktor.client.statement.*
-import io.ktor.http.HttpStatusCode
+import io.ktor.http.*
 import org.aponcet.authserver.*
 import org.aponcet.mygift.dbmanager.*
 import org.aponcet.mygift.model.AuthServer
@@ -99,7 +100,11 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         if (userJson.name == null) throw BadParamException("Username could not be null")
         if (userJson.password == null) throw BadParamException("Password could not be null")
 
-        val client = HttpClient(Apache)
+        val client = HttpClient(Apache){
+            install(JsonFeature){
+                serializer = GsonSerializer()
+            }
+        }
         try {
             val tokenResponse = client.post<TokenResponse> {
                 url("http://${authServer.host}:${authServer.port}/login")
