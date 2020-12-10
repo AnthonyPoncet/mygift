@@ -14,6 +14,12 @@
   width: 152px;
   margin: 10px;
 }
+.mycard-no-limit {
+  position: relative;
+  background-color: #FFFFFF;
+  z-index: 11;
+  margin: 10px;
+}
 
 .card-edit-close {
   padding: 5px;
@@ -67,6 +73,10 @@
 
 .secret-border {
   border-color: red;
+}
+
+.warning-border {
+  border-color: orange;
 }
 
 .card-name {
@@ -130,4 +140,9 @@
 .card-already-bought {
   background-color: #C0C0C0;
   opacity: 0.5;
+}
+
+.warning-gift-delete {
+    text-align: center;
+    font-weight: bold;
 }

@@ -139,9 +139,10 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         method(HttpMethod.Delete)
         method(HttpMethod.Put)
         method(HttpMethod.Patch)
-        anyHost()
         header("Authorization")
+        anyHost()
         allowCredentials = true
+        allowNonSimpleContentTypes = true
     }
     install(Compression)
     install(ContentNegotiation) {
@@ -256,7 +257,8 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                 delete("/{gid}") {
                     val gid = getGiftId(call.parameters)
                     handle(call) {id ->
-                        userManager.removeGift(id, gid)
+                        val status = Status.valueOf(call.request.queryParameters["status"] ?: throw Exception("status query parameter is mandatory"))
+                        userManager.removeGift(id, gid, status)
                         call.respond(HttpStatusCode.Accepted)
                     }
                 }
@@ -320,6 +322,13 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                 handle(call) {id ->
                     val buyList = userManager.getBuyList(id)
                     call.respond(HttpStatusCode.OK, buyList)
+                }
+            }
+            delete("/buy-list/deleted-gifts/{gid}") {
+                val gid = call.parameters["gid"]!!.toLongOrNull() ?: throw NotANumberException("Gift id")
+                handle(call) {id ->
+                    userManager.deleteDeletedGift(gid, id)
+                    call.respond(HttpStatusCode.OK)
                 }
             }
         }
@@ -457,14 +466,14 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
 
                 delete("/{eid}") {
                     val eid = getEventId(call.parameters)
-                    handle(call) {_ ->
+                    handle(call) {
                         userManager.deleteEvent(eid)
                         call.respond(HttpStatusCode.Accepted)
                     }
                 }
                 get("/{eid}") {
                     val eid = getEventId(call.parameters)
-                    handle(call) {_ ->
+                    handle(call) {
                         val event = userManager.getEvent(eid)
                         call.respond(HttpStatusCode.OK, event)
                     }

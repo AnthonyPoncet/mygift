@@ -29,13 +29,14 @@ interface State {
     friendAndGifts: any[],
     hoverId: string,
     showGift: boolean,
-    giftToShow: any | null
+    giftToShow: any | null,
+    showDeletedGift: boolean
 };
 
 class MyBuyList extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
-        this.state = {friendAndGifts: [], hoverId: '', showGift: false, giftToShow: null};
+        this.state = {friendAndGifts: [], hoverId: '', showGift: false, giftToShow: null, showDeletedGift: false};
     }
 
     componentDidMount() {
@@ -75,10 +76,10 @@ class MyBuyList extends React.Component<Props, State> {
         }
     };
 
-    async wantToBuy(token: string | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
+    async wantToBuy(token: string | null, giftId: number, iWantToBuy: boolean, iBought: boolean, refresh: boolean) {
         if (token === null) return; //Impossible
 
-        if (iBought) await this.bought(token, giftId, false, true); //Remove ibought
+        if (iBought) await this.bought(token, giftId, false, true, false); //Remove ibought
 
         let response = null;
         if (iWantToBuy === true) {
@@ -87,7 +88,7 @@ class MyBuyList extends React.Component<Props, State> {
             response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=WANT_TO_BUY', {method: "POST", headers: {'Authorization': `Bearer ${this.props.token}`}});
         }
         if (response.status === 202) {
-            this.getBuyList(token);
+            if (refresh) this.getBuyList(token);
         } else if (response.status === 401) {
             this._redirect()
         } else {
@@ -96,10 +97,10 @@ class MyBuyList extends React.Component<Props, State> {
         }
     }
 
-    async bought(token: string | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
+    async bought(token: string | null, giftId: number, iWantToBuy: boolean, iBought: boolean, refresh: boolean) {
         if (token === null) return; //Impossible
 
-        if (iWantToBuy) await this.wantToBuy(token, giftId, true, false); //Remove ibought
+        if (iWantToBuy) await this.wantToBuy(token, giftId, true, false, false); //Remove ibought
 
         let response = null;
         if (iBought === true) {
@@ -108,6 +109,21 @@ class MyBuyList extends React.Component<Props, State> {
             response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=BOUGHT', {method: "POST", headers: {'Authorization': `Bearer ${this.props.token}`}});
         }
         if (response.status === 202) {
+            if (refresh) this.getBuyList(token);
+        } else if (response.status === 401) {
+            this._redirect()
+        } else {
+            const json = await response.json();
+            console.error(json.error);
+        }
+    }
+
+    async _deleteDeletedGift(token: string | null, giftId: number) {
+        if (token === null) return; //Impossible
+
+        const response = await fetch(url + '/buy-list/deleted-gifts/' + giftId, {method: "DELETE", headers: {'Authorization': `Bearer ${this.props.token}`}});
+        if (response.status === 200) {
+            this.setState({ showDeletedGift: false, giftToShow: null });
             this.getBuyList(token);
         } else if (response.status === 401) {
             this._redirect()
@@ -117,8 +133,8 @@ class MyBuyList extends React.Component<Props, State> {
         }
     }
 
-    handleEnter(friend: number, gift: number) {
-        this.setState({ hoverId: friend + "-" + gift});
+    handleEnter(friend: number, gift: number, type: string) {
+        this.setState({ hoverId: friend + '-' + gift + '-' + type});
     }
 
     handleOut() {
@@ -129,10 +145,15 @@ class MyBuyList extends React.Component<Props, State> {
         this.setState({ showGift: true, giftToShow: gift });
     }
 
-    _renderInsideGift(fgi: number, gi: number, gift: any) {
-        if ((fgi+'-'+gi === this.state.hoverId) || isMobile) {
+    showDeletedGift(gift: any) {
+        this.setState({ showDeletedGift: true, giftToShow: gift });
+    }
+
+    _renderInsideGift(fgi: number, gi: number, type: string, fGift: any, showFun: Function) {
+        const { gift } = fGift;
+        if ((fgi+'-'+gi+'-'+type === this.state.hoverId) || isMobile) {
             return (
-                <div style={{cursor: "pointer"}} onClick={() => this.showGift(gift)}>
+                <div style={{cursor: "pointer"}} onClick={() => showFun(fGift)}>
                     <div className="card-name">{gift.name}</div>
                     <div className="card-description">{gift.description}</div>
                     <div className="mycard-footer">
@@ -145,11 +166,9 @@ class MyBuyList extends React.Component<Props, State> {
         }
     }
 
-    renderGifts() {
-      if (this.state.friendAndGifts) {
-        return this.state.friendAndGifts.map((fg, fgi) => {
-            return (
-            <div key={fgi}>
+    _renderFriend(fg: any, fgi: number) {
+        return (
+            <div key={'friendAndGifts'+fgi}>
                 <h5 style={{margin: "10px"}}>{fg.friendName}</h5>
 
                 <div className="mycard-row">
@@ -168,44 +187,77 @@ class MyBuyList extends React.Component<Props, State> {
                       for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
                   }
                   return (
-                    <div className="mycard" onMouseEnter={() => this.handleEnter(fgi, gi)} onMouseLeave={() => this.handleOut()} style={{cursor: "pointer"}} onClick={() => this.showGift(fGift)}>
+                    <div className="mycard" onMouseEnter={() => this.handleEnter(fgi, gi, 'valid')} onMouseLeave={() => this.handleOut()} style={{cursor: "pointer"}}>
                         <div className="card-edit-close">
                           <div className={iWantToBuy ? "icon-selected two-icon-first" : "two-icon-first"}>
-                            <span style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.token, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
+                            <span style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.token, gift.id, iWantToBuy, iBought, true)}><Octicon icon={Checklist}/></span>{' '}
                             {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
                           </div>
                           <div className={iBought ? "icon-selected two-icon-second" : "two-icon-second"}>
-                              <span style={{cursor: "pointer"}} onClick={() => this.bought(this.props.token, gift.id, iWantToBuy, iBought)}><Octicon icon={Gift}/></span>{' '}
+                              <span style={{cursor: "pointer"}} onClick={() => this.bought(this.props.token, gift.id, iWantToBuy, iBought, true)}><Octicon icon={Gift}/></span>{' '}
                               {bought.length !== 0 && <><span>{bought.length}</span>{' '}</>}
                           </div>
                         </div>
-                        <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
-                        {this._renderInsideGift(fgi, gi, gift)}
+                        <div style={{cursor: "pointer"}} onClick={() => this.showGift(fGift)}>
+                            <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                        </div>
+                        {this._renderInsideGift(fgi, gi, 'valid', fGift, (gift: any) => this.showGift(gift))}
                     </div>);
                 })}
+                {fg.deletedGifts.map((gift: any, gi:any) => {
+                    return (
+                        <div className="mycard warning-border" onMouseEnter={() => this.handleEnter(fgi, gi, 'deleted')} onMouseLeave={() => this.handleOut()} style={{cursor: "pointer"}}>
+                            <div className="card-edit-close warning-gift-delete">
+                                <div>{gift.status === "RECEIVED" ? this.props.myBuyList.received : this.props.myBuyList.not_wanted}</div>
+                            </div>
+                            <div style={{cursor: "pointer"}} onClick={() => this.showDeletedGift({gift: gift})}>
+                                <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                            </div>
+                            {this._renderInsideGift(fgi, gi, 'deleted', {gift: gift}, (gift: any) => this.showDeletedGift(gift))}
+                        </div>);
+                    })
+                }
                 </div>
-            </div>)
-        });
+            </div>);
+    }
+
+    renderGifts() {
+      if (this.state.friendAndGifts) {
+        return (
+            <div className="mycard-row">
+                {this.state.friendAndGifts.map((fg, fgi) => { return(<div className="mycard-no-limit">{this._renderFriend(fg, fgi)}</div>) })}
+            </div>
+        );
       }
     }
 
     render() {
         return (
         <div>
-          <h1 className="friend-wishlist-title">{this.props.myBuyList.title}</h1>
-          <div>{this.renderGifts()}</div>
+            <h1 className="friend-wishlist-title">{this.props.myBuyList.title}</h1>
+            <div>{this.renderGifts()}</div>
 
-          <DisplayGift
-            token={this.props.token}
-            username={this.props.username}
-            show={this.state.showGift}
-            fGift={this.state.giftToShow}
-            close={() => this.setState({showGift: false, giftToShow: null})}
-            friendwishlist={this.props.friendwishlist}
-            mywishlist={this.props.mywishlist}
-            wantToBuy={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.wantToBuy(this.props.token, giftId, iWantToBuy, iBought)}
-            bought={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.bought(this.props.token, giftId, iWantToBuy, iBought)}
-            />
+                <DisplayGift
+                    token={this.props.token}
+                    username={this.props.username}
+                    show={this.state.showGift}
+                    fGift={this.state.giftToShow}
+                    close={() => this.setState({showGift: false, giftToShow: null})}
+                    friendwishlist={this.props.friendwishlist}
+                    mywishlist={this.props.mywishlist}
+                    wantToBuy={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.wantToBuy(this.props.token, giftId, iWantToBuy, iBought, true)}
+                    bought={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.bought(this.props.token, giftId, iWantToBuy, iBought, true)}
+                    />
+                <DisplayDeletedGift
+                    token={this.props.token}
+                    username={this.props.username}
+                    show={this.state.showDeletedGift}
+                    fGift={this.state.giftToShow}
+                    close={() => this.setState({showDeletedGift: false, giftToShow: null})}
+                    myBuyList={this.props.myBuyList}
+                    mywishlist={this.props.mywishlist}
+                    ok={(id: number) => this._deleteDeletedGift(this.props.token, id)}
+                    />
         </div>);
     }
 }
@@ -225,7 +277,7 @@ interface DisplayGiftProps {
 class DisplayGift extends React.Component<DisplayGiftProps> {
     render() {
         const { show, fGift, close, mywishlist, friendwishlist } = this.props;
-        if (fGift === null || fGift === undefined) return <div/>;
+        if (show === false || fGift === null || fGift === undefined) return <div/>;
         const { gift } = fGift;
 
         const isContainer = isMobile ? "" : "container";
@@ -250,14 +302,10 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
             for (const [, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
             for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
         }
-        console.log(this.props.username)
-        console.log(fGift)
-        console.log(bought)
-        console.log(iBought)
 
         return (
           <Modal isOpen={show} toggle={() => close()} size="lg">
-            <ModalHeader toggle={() => close() }>{gift.name}</ModalHeader>
+            <ModalHeader toggle={ () => close() }>{gift.name}</ModalHeader>
             <ModalBody>
                 <div className={isContainer}>
                     <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
@@ -288,6 +336,67 @@ class DisplayGift extends React.Component<DisplayGiftProps> {
                   <Button color={iWantToBuy ? "primary" : "secondary"} onClick={() => this.props.wantToBuy(gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/> {friendwishlist.iWantToBuy}</Button>
                   <Button color={iBought ? "primary" : "secondary"} onClick={() => this.props.bought(gift.id, iWantToBuy, iBought)}><Octicon icon={Gift}/> {friendwishlist.iBought}</Button>
                 </ModalFooter> }
+          </Modal>);
+    }
+}
+
+interface DisplayDeletedGiftProps {
+    token: string | null,
+    username: String | null,
+    show: boolean
+    fGift: any | null,
+    close(): void,
+    mywishlist: MyWishListMessage,
+    myBuyList: MyBuyListMessage,
+    ok: Function
+};
+
+class DisplayDeletedGift extends React.Component<DisplayDeletedGiftProps> {
+    render() {
+        const { show, fGift, close, mywishlist, myBuyList } = this.props;
+        if (show === false || fGift === null || fGift === undefined) return <div/>;
+        const { gift } = fGift;
+
+        const isContainer = isMobile ? "" : "container";
+        const padding: string = isMobile ? "0px" : "10px";
+
+        let wtb : string[] = [];
+        if (gift.whereToBuy !== undefined) {
+            wtb = gift.whereToBuy.split(" ");
+        }
+
+        return (
+          <Modal isOpen={show} toggle={() => close()} size="lg">
+            <ModalHeader toggle={ () => close() }>{gift.name}</ModalHeader>
+            <ModalBody>
+                <div className={isContainer}>
+                    <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
+                    <div style={{padding: padding}}>
+                        {(gift.description !== "") && <>
+                            <div>{mywishlist.description}: {gift.description}</div>
+                            <br/>
+                            </>
+                        }
+
+                        {(gift.price !== "") &&
+                            <div>{mywishlist.price}: {gift.price}</div>
+                        }
+                        {(gift.whereToBuy !== "") &&
+                            <div>{mywishlist.whereToBuy}: {wtb.map((word: string) => {
+                                if (word.startsWith("http")) {
+                                    let smallWord = word.length > 20 ? word.substring(0,20) + '...' : word;
+                                    return <a href={word} target="_blank" rel="noopener noreferrer">{smallWord}{' '}</a>;
+                                } else {
+                                    return word + " ";
+                                }
+                            })}</div>
+                        }
+                    </div>
+                </div>
+            </ModalBody>
+            <ModalFooter>
+                <Button color="primary" onClick={() => this.props.ok(gift.id)}>{myBuyList.ok}</Button>
+            </ModalFooter>
           </Modal>);
     }
 }

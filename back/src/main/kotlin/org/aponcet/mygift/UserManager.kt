@@ -30,7 +30,8 @@ data class FriendRequest(val id: Long, val otherUser: Friend)
 data class PendingFriendRequest(val sent: List<FriendRequest>, val received: List<FriendRequest>)
 data class Participant(val name: String, val status: RequestStatus)
 data class Event(val id: Long, val type: EventType, val name: String, val creatorName: String, val description: String, val endDate: LocalDate, val target: String?, val participants: Set<Participant>)
-data class BuyListByFriend(val friendName: String, val gifts: List<FriendGift>)
+data class BuyListByFriend(val friendName: String, val gifts: List<FriendGift>, val deletedGifts: List<DeletedGifts>)
+data class DeletedGifts(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val picture: String?, val buyAction: BuyAction, val status: Status)
 data class ResetPassword(val userId: Long, val uuid: String, val expiry: LocalDateTime)
 
 /** INPUT CLASSES **/
@@ -223,35 +224,35 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
 
         val gifts = friendActionOnGiftsUserHasActionOn
             .filter { g -> g.buy != BuyAction.NONE }
-            .map { g -> databaseManager.getGift(g.giftId) }
-
-        val map = gifts
-            .filterNotNull()
+            .mapNotNull { g -> databaseManager.getGift(g.giftId) }
             .groupBy({ it.userId }, { it })
 
         val dummyUserCache = DummyUserCache(databaseManager) //Cache only by call
+
+        val deletedGiftsUserHasActionOn = databaseManager.getDeletedGiftsUserHasActionOn(userId)
+        val deletedGiftByFriend = deletedGiftsUserHasActionOn.groupBy({ it.giftUserId }, { DeletedGifts(it.giftId, it.name, it.description, it.price, it.whereToBuy, it.picture, it.friendAction, it.giftUserStatus) })
+
+        val map = (gifts.keys + deletedGiftByFriend.keys).associateWith { Pair(if (gifts[it] == null) emptyList() else gifts[it]!!, if (deletedGiftByFriend[it] == null) emptyList() else deletedGiftByFriend[it]!!) }
+
         return map
             .filter { dummyUserCache.queryName(it.key) != null }
             .map { m ->
                 BuyListByFriend(
                     dummyUserCache.queryName(m.key)!!,
-                    m.value.map { g ->
+                    m.value.first.map { g ->
                         val actions = databaseManager.getFriendActionOnGift(g.id)
                         FriendGift(toGift(g),
-                            actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }.map {
-                                dummyUserCache.queryName(
-                                    it.userId
-                                )!!
-                            },
-                            actions.filter { it.buy != BuyAction.NONE || dummyUserCache.queryName(it.userId) != null }.map {
-                                dummyUserCache.queryName(
-                                    it.userId
-                                )!! to it.buy
-                            }.toMap(),
+                            actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! },
+                            actions.filter { it.buy != BuyAction.NONE || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! to it.buy }.toMap(),
                             g.secret
                         )
-                    })
-            }
+                    }.sortedBy { it.gift.rank },
+                    m.value.second.sortedBy { it.name })
+            }.sortedBy { it.friendName }
+    }
+
+    fun deleteDeletedGift(giftId: Long, friendId: Long) {
+        return databaseManager.deleteDeletedGift(giftId, friendId)
     }
 
     fun addGift(userId: Long, gift: RestGift) {
@@ -296,8 +297,8 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         return Gift(restGift.name!!, restGift.description, restGift.price, restGift.whereToBuy, restGift.categoryId!!, restGift.picture, restGift.rank!!)
     }
 
-    fun removeGift(userId: Long, giftId: Long) {
-        databaseManager.removeGift(userId, giftId)
+    fun removeGift(userId: Long, giftId: Long, status: Status) {
+        databaseManager.removeGift(userId, giftId, status)
     }
 
     fun changeGiftRank(userId: Long, giftId: Long, rankAction: RankAction) {

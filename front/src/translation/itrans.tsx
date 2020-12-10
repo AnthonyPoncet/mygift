@@ -30,7 +30,10 @@ export interface MyWishListMessage {
     addCategoryButton: string,
     addCategoryModalTitle: string,
     updateCategoryModalTitle: string,
-    reorderButtonTitle: string
+    reorderButtonTitle: string,
+    deleteGiftModalTitle: string,
+    deleteModalButtonReceived: string,
+    deleteModalButtonNotWanted: string
 }
 
 export interface MyFriendsMessage {
@@ -98,7 +101,10 @@ export interface EventMessage {
 }
 
 export interface MyBuyListMessage {
-   title: string
+   title: string,
+   received: string,
+   not_wanted: string,
+   ok: string
 }
 
 export interface ManageAccountMessage {

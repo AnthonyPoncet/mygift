@@ -67,7 +67,7 @@ class FriendActionOnGiftAccessor(private val conn: DbConnection) : DaoAccessor()
         }, errorMessage(UPDATE_BUY, buy.name, giftId.toString(), userId.toString()))
     }
 
-    private fun delete(giftId: Long, userId: Long) {
+    fun delete(giftId: Long, userId: Long) {
         conn.safeExecute(DELETE, {
             with(it) {
                 setLong(1, giftId)

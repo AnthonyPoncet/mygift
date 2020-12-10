@@ -25,9 +25,10 @@ let url = getServerUrl();
 interface StateProps { token: string | null, mywishlist: MyWishListMessage };
 interface DispatchProps { logout: () => void };
 type Props = DispatchProps & StateProps;
+type button = { text: string, fun: any };
 interface State {
   catAndGifts: any[],
-  show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string,
+  show: boolean, title: string, bodyRender: any, buttons: button[], inputs: any, errorMessage: string,
   hoverId: string,
   editMode: boolean
 };
@@ -52,7 +53,7 @@ class MyWishList extends React.Component<Props, State> {
 
         this.state = {
             catAndGifts: [],
-            show: false, title: '', bodyRender: null, button: { text: '', fun: null }, inputs: { }, errorMessage: '',
+            show: false, title: '', bodyRender: null, buttons: [], inputs: { }, errorMessage: '',
             hoverId: '',
             editMode: false
         }
@@ -73,14 +74,20 @@ class MyWishList extends React.Component<Props, State> {
 
     openAddGift() {
         const { mywishlist } = this.props;
-        this.setState( { show: true, title: mywishlist.addGiftModalTitle, bodyRender: this.giftBodyRender, button: { text: mywishlist.addModalButton, fun: this.addGift },
+        this.setState( { show: true, title: mywishlist.addGiftModalTitle, bodyRender: this.giftBodyRender, buttons: [{ text: mywishlist.addModalButton, fun: this.addGift }],
             inputs: { name: '', nameValidity: true, description: '', price: null, whereToBuy: null, categoryId: this.state.catAndGifts[0].category.id, picture: null }, errorMessage: '' });
     }
 
     openEditGift(giftId: number, name: string, description: string, price: string, whereToBuy: string, categoryId: number, image: string | null, rank: number) {
         const { mywishlist } = this.props;
-        this.setState( { show: true, title: mywishlist.updateGiftModalTitle, bodyRender: this.giftBodyRender, button: { text: mywishlist.updateModalButton, fun: () => this.updateGift(giftId) },
+        this.setState( { show: true, title: mywishlist.updateGiftModalTitle, bodyRender: this.giftBodyRender, buttons: [{ text: mywishlist.updateModalButton, fun: () => this.updateGift(giftId) }],
             inputs: { name: name, nameValidity: true, description: description, price: price, whereToBuy: whereToBuy, categoryId: categoryId, picture: image, rank: rank }, errorMessage: '' });
+    }
+
+    openDeleteGift(giftId: number) {
+        const { mywishlist } = this.props;
+        this.setState( { show: true, title: mywishlist.deleteGiftModalTitle, bodyRender: this.giftDeleteBodyRender, buttons: [
+        { text: mywishlist.deleteModalButtonReceived, fun: () => this.deleteGift(giftId, 'RECEIVED') }, { text: mywishlist.deleteModalButtonNotWanted, fun: () => this.deleteGift(giftId, 'NOT_WANTED') }, ], errorMessage: '' });
     }
 
     handleChangeGift = async (event: any) => {
@@ -169,6 +176,10 @@ class MyWishList extends React.Component<Props, State> {
             </>);
     }
 
+    giftDeleteBodyRender() {
+        return (<div></div>);
+    }
+
     giftRestCall(url: string, method: string) {
         const {inputs} = this.state;
 
@@ -208,10 +219,11 @@ class MyWishList extends React.Component<Props, State> {
 
     updateGift(id: number) { this.giftRestCall(url + '/gifts/' + id, 'PATCH'); }
 
-    deleteGift(id: number) {
+    deleteGift(id: number, status: string) {
         const request = async () => {
-            const response = await fetch(url + '/gifts/' + id, {method: 'delete', headers: {'Authorization': `Bearer ${this.props.token}`}});
+            const response = await fetch(url + '/gifts/' + id + '?status=' + status, {method: 'delete', headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
+                this.setState({show: false});
                 this.props.token && this.getGifts(this.props.token);
             } else if (response.status === 401) {
                 this._redirect()
@@ -242,13 +254,13 @@ class MyWishList extends React.Component<Props, State> {
 
     openAddCat() {
         const { mywishlist } = this.props;
-        this.setState( { show: true, title: mywishlist.addCategoryModalTitle, bodyRender: this.catBodyRender, button: { text: mywishlist.addModalButton, fun: this.addCat },
+        this.setState( { show: true, title: mywishlist.addCategoryModalTitle, bodyRender: this.catBodyRender, buttons: [{ text: mywishlist.addModalButton, fun: this.addCat }],
             inputs: { name: '', nameValidity: true }, errorMessage: '' });
     }
 
     openEditCat(name: string, categoryId: number, rank: number) {
         const { mywishlist } = this.props;
-        this.setState( { show: true, title: mywishlist.updateCategoryModalTitle, bodyRender: this.catBodyRender, button: { text: mywishlist.updateModalButton, fun: () => this.updateCat(categoryId) },
+        this.setState( { show: true, title: mywishlist.updateCategoryModalTitle, bodyRender: this.catBodyRender, buttons: [{ text: mywishlist.updateModalButton, fun: () => this.updateCat(categoryId) }],
             inputs: { name: name, nameValidity: true, rank: rank }, errorMessage: '' });
     }
 
@@ -390,7 +402,7 @@ class MyWishList extends React.Component<Props, State> {
                   return (
                       <div className="mycard" onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()} key={gi}>
                           <div className="card-edit-close one-icon">
-                            <span style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
+                            <span style={{cursor: "pointer"}} onClick={() => this.openDeleteGift(gift.id)}><Octicon icon={X}/></span>
                           </div>
                           <div style={{cursor: "pointer"}} onClick={fun}>
                             <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
@@ -445,7 +457,7 @@ class MyWishList extends React.Component<Props, State> {
     }
 
     render() {
-        const { button, editMode } = this.state;
+        const { buttons, editMode } = this.state;
         const { mywishlist } = this.props;
         let modalBody = [];
         if (this.state.bodyRender !== null) {
@@ -465,7 +477,10 @@ class MyWishList extends React.Component<Props, State> {
                     <ModalBody>
                         { this.state.errorMessage && <p className="auth-error">{this.state.errorMessage}</p> }
                         {modalBody}
-                        <Button color="primary" onClick={button.fun}>{button.text}</Button>
+                        {buttons.map((button: any, id:any) => {
+                            return (<><Button key={'button'+id} color="primary" onClick={button.fun}>{button.text}</Button>{' '}</>);
+                            })
+                        }
                     </ModalBody>
                 </Modal>
             </div>);

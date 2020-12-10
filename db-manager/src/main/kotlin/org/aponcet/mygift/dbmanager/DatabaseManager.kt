@@ -34,6 +34,7 @@ enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
 data class DbFriendRequest(val id: Long, val userOne: Long, val userTwo: Long, val status: RequestStatus)
 data class DbEvent(val id: Long, val name: String, val creatorId: Long, val description: String, val endDate: LocalDate, val target: Long?) //target = -1 if ALL, userId other
 data class DbParticipant(val id: Long, val eventId: Long, val userId: Long, val status: RequestStatus)
+data class DbToDeleteGifts(val giftId: Long, val giftUserId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val picture: String?, val giftUserStatus: Status, val friendId: Long, val friendAction: BuyAction)
 
 data class NakedUser(val name: String, val picture: String?)
 
@@ -49,8 +50,8 @@ class DatabaseManager(dbPath: String) {
     private val usersAccessor = UsersAccessor(conn)
     private val categoryAccessor = CategoryAccessor(conn)
     private val giftAccessor = GiftAccessor(conn)
-    private val friendActionOnGiftAccessor =
-        FriendActionOnGiftAccessor(conn)
+    private val toDeleteGiftsAccessor = ToDeleteGiftsAccessor(conn)
+    private val friendActionOnGiftAccessor = FriendActionOnGiftAccessor(conn)
     private val friendRequestAccessor = FriendRequestAccessor(conn)
     private val eventsAccessor = EventsAccessor(conn)
     private val participantsAccessor = ParticipantsAccessor(conn)
@@ -65,6 +66,7 @@ class DatabaseManager(dbPath: String) {
         conn.execute("delete from ${usersAccessor.getTableName()}")
         conn.execute("delete from ${categoryAccessor.getTableName()}")
         conn.execute("delete from ${giftAccessor.getTableName()}")
+        conn.execute("delete from ${toDeleteGiftsAccessor.getTableName()}")
         conn.execute("delete from ${friendActionOnGiftAccessor.getTableName()}")
         conn.execute("delete from ${friendRequestAccessor.getTableName()}")
         conn.execute("delete from ${eventsAccessor.getTableName()}")
@@ -76,6 +78,7 @@ class DatabaseManager(dbPath: String) {
         usersAccessor.createIfNotExists()
         categoryAccessor.createIfNotExists()
         giftAccessor.createIfNotExists()
+        toDeleteGiftsAccessor.createIfNotExists()
         friendActionOnGiftAccessor.createIfNotExists()
         friendRequestAccessor.createIfNotExists()
         eventsAccessor.createIfNotExists()
@@ -140,9 +143,9 @@ class DatabaseManager(dbPath: String) {
         giftAccessor.modifyGift(giftId, gift)
     }
 
-    @Synchronized fun removeGift(userId: Long, giftId: Long) {
+    @Synchronized fun removeGift(userId: Long, giftId: Long, status: Status) {
         checkUpdateGiftsInputs(userId, giftId)
-        giftAccessor.removeGift(giftId)
+        giftAccessor.removeGift(giftId, status)
     }
 
     @Synchronized fun rankDownGift(userId: Long, giftId: Long) {
@@ -195,6 +198,19 @@ class DatabaseManager(dbPath: String) {
 
         return friendActionOnGiftAccessor.getFriendActionOnGiftsUserHasActionOn(userId)
     }
+
+    @Synchronized fun getDeletedGiftsUserHasActionOn(userId: Long) : List<DbToDeleteGifts> {
+        if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
+
+        return toDeleteGiftsAccessor.getDeletedGiftsWhereUserHasActionOn(userId)
+    }
+
+    @Synchronized fun deleteDeletedGift(giftId: Long, friendId: Long) {
+        if (!usersAccessor.userExists(friendId)) throw Exception("Unknown user $friendId")
+
+        return toDeleteGiftsAccessor.deleteDeletedGift(giftId, friendId)
+    }
+
 
     /**
      * Category

@@ -140,7 +140,20 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         }, errorMessage(UPDATE, giftId.toString(), gift.toString()))
     }
 
-    fun removeGift(giftId: Long) {
+    fun removeGift(giftId: Long, status: Status) {
+        val friendActionOnGiftAccessor = FriendActionOnGiftAccessor(conn)
+        val friendActionOnGift = friendActionOnGiftAccessor.getFriendActionOnGift(giftId)
+        val actions = friendActionOnGift.filter { it.buy != BuyAction.NONE }
+        if (actions.isNotEmpty()) {
+            val gift = getGift(giftId)!!
+            val toDeleteGiftsAccessor = ToDeleteGiftsAccessor(conn)
+            actions.forEach {
+                toDeleteGiftsAccessor.add(gift, status, it)
+                friendActionOnGiftAccessor.delete(it.giftId, it.userId)
+            }
+        }
+
+
         conn.safeExecute(DELETE, {
             with(it) {
                 setLong(1, giftId)
@@ -156,7 +169,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                 setLong(1, giftId)
                 return@with executeQuery().next()
             }
-        }, errorMessage(DELETE, giftId.toString()))
+        }, errorMessage(SELECT_BY_ID, giftId.toString()))
     }
 
     fun giftBelongToUser(userId: Long, giftId: Long): Boolean {

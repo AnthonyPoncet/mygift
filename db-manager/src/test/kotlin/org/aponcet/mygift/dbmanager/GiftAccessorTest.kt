@@ -29,7 +29,12 @@ class GiftAccessorTest : StringSpec() {
         val categoryAccessor = CategoryAccessor(conn)
         categoryAccessor.createIfNotExists()
         giftAccessor.createIfNotExists()
-        deleteTable(listOf(giftAccessor.getTableName(), categoryAccessor.getTableName(), usersAccessor.getTableName())) //order matter due to foreign key
+        FriendActionOnGiftAccessor(conn).createIfNotExists()
+        ToDeleteGiftsAccessor(conn).createIfNotExists()
+        conn.safeExecute(
+            "DELETE FROM ${ToDeleteGiftsAccessor(conn).getTableName()}", { it.executeUpdate() },
+            "Could not clean ${ToDeleteGiftsAccessor(conn).getTableName()}")
+        deleteTable(listOf(FriendActionOnGiftAccessor(conn).getTableName(), giftAccessor.getTableName(), categoryAccessor.getTableName(), usersAccessor.getTableName())) //order matter due to foreign key
 
         usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "")
         usersAccessor.addUser("name2", "pwd".toByteArray(), "otherSalt".toByteArray(), "")
@@ -40,6 +45,9 @@ class GiftAccessorTest : StringSpec() {
     }
 
     override fun afterTest(description: Description, result: TestResult) {
+        conn.safeExecute(
+            "DELETE FROM ${ToDeleteGiftsAccessor(conn).getTableName()}", { it.executeUpdate() },
+            "Could not clean ${ToDeleteGiftsAccessor(conn).getTableName()}")
         deleteTable(listOf(giftAccessor.getTableName(), CategoryAccessor(conn).getTableName(), UsersAccessor(conn).getTableName())) //order matter due to foreign key
     }
 
@@ -164,9 +172,9 @@ class GiftAccessorTest : StringSpec() {
             }
         }
 
-        "Delete gift." {
+        "Delete gift no action." {
             giftAccessor.addGift(1L, NewGift(name = "g1", categoryId = 1L), false)
-            giftAccessor.removeGift(1L)
+            giftAccessor.removeGift(1L, Status.RECEIVED)
 
             giftAccessor.getGift(1L) shouldBe null
             giftAccessor.getUserGifts(1L) shouldBe emptyList()
@@ -175,9 +183,25 @@ class GiftAccessorTest : StringSpec() {
             giftAccessor.getFriendGifts(2L) shouldBe emptyList()
         }
 
+        "Delete gift with action." {
+            giftAccessor.addGift(1L, NewGift(name = "g1", categoryId = 1L), false)
+            FriendActionOnGiftAccessor(conn).buyAction(1L, 2L, BuyAction.WANT_TO_BUY)
+            giftAccessor.removeGift(1L, Status.RECEIVED)
+
+            giftAccessor.getGift(1L) shouldBe null
+            giftAccessor.getUserGifts(1L) shouldBe emptyList()
+            giftAccessor.getUserGifts(2L) shouldBe emptyList()
+            giftAccessor.getFriendGifts(1L) shouldBe emptyList()
+            giftAccessor.getFriendGifts(2L) shouldBe emptyList()
+
+            FriendActionOnGiftAccessor(conn).getFriendActionOnGift(1L) shouldBe emptyList()
+            FriendActionOnGiftAccessor(conn).getFriendActionOnGiftsUserHasActionOn(2L) shouldBe emptyList()
+            ToDeleteGiftsAccessor(conn).getDeletedGiftsWhereUserHasActionOn(2L) shouldBe listOf(DbToDeleteGifts(1L, 1L, "g1", null, null, null, null, Status.RECEIVED, 2L, BuyAction.WANT_TO_BUY))
+        }
+
         "Delete unknown gift throw." {
             assertFailsWith(DbException::class) {
-                giftAccessor.removeGift(1L)
+                giftAccessor.removeGift(1L, Status.RECEIVED)
             }
         }
 
