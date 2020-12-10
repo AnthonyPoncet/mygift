@@ -47,7 +47,10 @@ class En implements Itrans {
             addCategoryButton: "Add Category",
             addCategoryModalTitle: "Add a new category",
             updateCategoryModalTitle: "Modify category",
-            reorderButtonTitle: "Reorder"},
+            reorderButtonTitle: "Reorder",
+            deleteGiftModalTitle: "Delete gift",
+            deleteModalButtonReceived: "I have received it",
+            deleteModalButtonNotWanted: "I don't want it anymore"},
           myfriends: {
             addFriendButton: "Add friend",
             addFriendModalTitle: "Add a new friend",
@@ -92,7 +95,12 @@ class En implements Itrans {
               participantsTitle: "Participants",
               targetIsTitle: "Event for",
           },
-          myBuyList: { title: "My Buy List" },
+          myBuyList: {
+            title: "My Buy List",
+            received: "Received",
+            not_wanted: "Deleted",
+            ok: "Delete from my list"
+          },
           manageAccount: {}
         };
     }
