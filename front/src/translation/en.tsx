@@ -41,6 +41,7 @@ class En implements Itrans {
             whereToBuy: "Where to buy",
             whereToBuyPlaceholder: "Amazon link, local shop...",
             category: "Category",
+            sharedWith: "Shared with",
             image: "Picture",
             updateGiftModalTitle: "Modify gift",
             updateModalButton: "Modify",

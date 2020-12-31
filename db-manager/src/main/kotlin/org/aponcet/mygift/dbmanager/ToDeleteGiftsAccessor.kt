@@ -29,11 +29,11 @@ class ToDeleteGiftsAccessor(private val conn: DbConnection) : DaoAccessor() {
                 "FOREIGN KEY(giftUserId) REFERENCES users(id), FOREIGN KEY(friendId) REFERENCES users(id))")
     }
 
-    fun add(gift: DbGift, status: Status, friendActionOnGift: DbFriendActionOnGift) {
+    fun add(gift: DbGift, giftUserId: Long, status: Status, friendActionOnGift: DbFriendActionOnGift) {
         conn.safeExecute(INSERT, {
             with(it) {
                 setLong(1, gift.id)
-                setLong(2, gift.userId)
+                setLong(2, giftUserId)
                 setString(3, gift.name)
                 setString(4, gift.description)
                 setString(5, gift.price)

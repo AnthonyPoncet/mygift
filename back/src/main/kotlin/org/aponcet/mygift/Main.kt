@@ -339,10 +339,10 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                 put {
                     handle(call) {id ->
                         val category = Gson().fromJson(decode(call.receiveText()), RestCategory::class.java)
-                        if (category.name == null) {
+                        if (category.name == null || category.share == null) {
                             call.respond(HttpStatusCode.BadRequest, ErrorAnswer("Invalid category json"))
                         } else {
-                            userManager.addCategory(id, category)
+                            userManager.addCategory(category, id, category.share)
                             call.respond(HttpStatusCode.OK)
                         }
                     }

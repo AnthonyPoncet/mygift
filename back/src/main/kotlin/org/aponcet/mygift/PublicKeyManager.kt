@@ -12,6 +12,10 @@ import org.aponcet.mygift.model.AuthServer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.ConnectException
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -26,7 +30,7 @@ class PublicKeyManager(private val authServer: AuthServer) {
         val LOGGER: Logger = LoggerFactory.getLogger(PublicKeyManager::class.java)
 
         const val DELAY_NO_TOKEN = 10L
-        const val DELAY_TOKEN = 720L //each 12h
+        const val DELAY_TOKEN = 43200L //each 12h
     }
 
     fun start() {
@@ -41,7 +45,7 @@ class PublicKeyManager(private val authServer: AuthServer) {
                 val body = client.get<String>("http://${authServer.host}:${authServer.port}/public-key")
                 executor.schedule(r, DELAY_TOKEN, TimeUnit.SECONDS)
                 publicKey = Gson().fromJson(body, KeyResponse::class.java).key
-                LOGGER.info("Pubic key retrieved!")
+                LOGGER.info("${DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.from(ZoneOffset.UTC)).format(Instant.now())} - Pubic key retrieved!")
             } catch (e: ResponseException) {
                 LOGGER.warn("Unable to retrieve pubic key", e)
                 executor.schedule(r, DELAY_NO_TOKEN, TimeUnit.SECONDS)
