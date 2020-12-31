@@ -46,7 +46,8 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
     init {
         "Add one gift." {
             toDeleteGiftsAccessor.add(
-                DbGift(1L, 1L, "g1", null, null, null, 1L, null, false, 1L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
+                1L,
                 Status.RECEIVED,
                 DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)
             )
@@ -56,7 +57,8 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
 
         "Delete one gift" {
             toDeleteGiftsAccessor.add(
-                DbGift(1L, 1L, "g1", null, null, null, 1L, null, false, 1L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
+                1L,
                 Status.RECEIVED,
                 DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)
             )
@@ -67,7 +69,8 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
 
         "Delete one gift wrong friend id" {
             toDeleteGiftsAccessor.add(
-                DbGift(1L, 1L, "g1", null, null, null, 1L, null, false, 1L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
+                1L,
                 Status.RECEIVED,
                 DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)
             )
@@ -79,7 +82,8 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
 
         "Delete one gift wrong gift id" {
             toDeleteGiftsAccessor.add(
-                DbGift(1L, 1L, "g1", null, null, null, 1L, null, false, 1L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
+                1L,
                 Status.RECEIVED,
                 DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)
             )

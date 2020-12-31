@@ -24,6 +24,7 @@ export interface MyWishListMessage {
     whereToBuy: string,
     whereToBuyPlaceholder: string,
     category: string,
+    sharedWith: string,
     image: string,
     updateGiftModalTitle: string,
     updateModalButton: string,

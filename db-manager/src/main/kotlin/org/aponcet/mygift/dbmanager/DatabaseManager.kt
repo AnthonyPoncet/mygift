@@ -26,8 +26,8 @@ data class DbUser(val id: Long, val name: String, val password: ByteArray, val s
     }
 }
 
-data class DbCategory(val id: Long, val userId: Long, val name: String, val rank: Long)
-data class DbGift(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?, val secret: Boolean, val rank: Long)
+data class DbCategory(val id: Long, val name: String, val rank: Long)
+data class DbGift(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?, val secret: Boolean, val rank: Long)
 enum class BuyAction { NONE, WANT_TO_BUY, BOUGHT }
 data class DbFriendActionOnGift(val id: Long, val giftId: Long, val userId: Long, val interested: Boolean, val buy: BuyAction)
 enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
@@ -54,6 +54,7 @@ class DatabaseManager(dbPath: String) {
     private val friendActionOnGiftAccessor = FriendActionOnGiftAccessor(conn)
     private val friendRequestAccessor = FriendRequestAccessor(conn)
     private val resetPasswordAccessor = ResetPasswordAccessor(conn)
+    private val joinUserAndCategoryAccessor = JoinUserAndCategoryAccessor(conn)
 
     init {
         createDataModelIfNeeded()
@@ -68,6 +69,7 @@ class DatabaseManager(dbPath: String) {
         conn.execute("delete from ${friendActionOnGiftAccessor.getTableName()}")
         conn.execute("delete from ${friendRequestAccessor.getTableName()}")
         conn.execute("delete from ${resetPasswordAccessor.getTableName()}")
+        conn.execute("delete from ${joinUserAndCategoryAccessor.getTableName()}")
     }
 
     private fun createDataModelIfNeeded() {
@@ -78,6 +80,7 @@ class DatabaseManager(dbPath: String) {
         friendActionOnGiftAccessor.createIfNotExists()
         friendRequestAccessor.createIfNotExists()
         resetPasswordAccessor.createIfNotExists()
+        joinUserAndCategoryAccessor.createIfNotExists()
     }
 
     /**
@@ -85,7 +88,7 @@ class DatabaseManager(dbPath: String) {
      */
     @Synchronized fun addUser(userName: String, password: ByteArray, salt: ByteArray, picture: String?): DbUser {
         val newUser = usersAccessor.addUser(userName, password, salt, picture ?: "")
-        addCategory(newUser.id, NewCategory(DEFAULT_CATEGORY_NAME))
+        addCategory(NewCategory(DEFAULT_CATEGORY_NAME), listOf(newUser.id))
         return newUser
     }
 
@@ -109,7 +112,7 @@ class DatabaseManager(dbPath: String) {
         if (!categoryAccessor.categoryExists(gift.categoryId)) throw Exception("Unknown category " + gift.categoryId)
         if (!categoryAccessor.categoryBelongToUser(userId, gift.categoryId)) throw Exception("Category " + gift.categoryId + " does not belong to user $userId")
 
-        giftAccessor.addGift(userId, gift, secret)
+        giftAccessor.addGift(gift, secret)
     }
 
     @Synchronized fun getGift(giftId: Long) : DbGift? {
@@ -209,10 +212,10 @@ class DatabaseManager(dbPath: String) {
     /**
      * Category
      */
-    @Synchronized fun addCategory(userId: Long, category: NewCategory) {
-        if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
+    @Synchronized fun addCategory(category: NewCategory, userIds: List<Long>) {
+        userIds.forEach { if (!usersAccessor.userExists(it)) throw Exception("Unknown user $it") }
 
-        categoryAccessor.addCategory(userId, category)
+        categoryAccessor.addCategory(category, userIds)
     }
 
     @Synchronized fun getUserCategories(userId: Long) : List<DbCategory> {
@@ -227,12 +230,12 @@ class DatabaseManager(dbPath: String) {
         val friend = getUser(friendName) ?: throw Exception("Unknown user name $friendName")
         friendRequestAccessor.getFriendRequest(userId, friend.id) ?: friendRequestAccessor.getFriendRequest(friend.id, userId) ?: throw Exception("You are not friend with $friendName")
 
-        return categoryAccessor.getFriendCategories(friend.id)
+        return categoryAccessor.getFriendCategories(userId, friend.id)
     }
 
     @Synchronized fun modifyCategory(userId: Long, categoryId: Long, category: Category) {
         checkCategoryInputs(userId, categoryId)
-        categoryAccessor.modifyCategory(categoryId, category)
+        categoryAccessor.modifyCategory(userId, categoryId, category)
     }
 
     @Synchronized fun removeCategory(userId: Long, categoryId: Long) {
@@ -248,6 +251,11 @@ class DatabaseManager(dbPath: String) {
     @Synchronized fun rankUpCategory(userId: Long, categoryId: Long) {
         checkCategoryInputs(userId, categoryId)
         categoryAccessor.rankUpCategory(userId, categoryId)
+    }
+
+    @Synchronized fun getUsersFromCategory(categoryId: Long): Set<Long> {
+        if (!categoryAccessor.categoryExists(categoryId)) throw Exception("Unknown category $categoryId")
+        return joinUserAndCategoryAccessor.getUsers(categoryId)
     }
 
     private fun checkCategoryInputs(userId: Long, categoryId: Long) {

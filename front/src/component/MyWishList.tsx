@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
+import { Form, Modal, ModalHeader, ModalBody, Button, Input, Label, FormGroup, FormFeedback, CustomInput } from "reactstrap";
 
 import Octicon, {Pencil, X, ArrowDown, ArrowUp, ArrowLeft, ArrowRight} from '@primer/octicons-react';
 
@@ -28,6 +28,7 @@ type Props = DispatchProps & StateProps;
 type button = { text: string, fun: any };
 interface State {
   catAndGifts: any[],
+  friends: any[],
   show: boolean, title: string, bodyRender: any, buttons: button[], inputs: any, errorMessage: string,
   hoverId: string,
   editMode: boolean
@@ -53,6 +54,7 @@ class MyWishList extends React.Component<Props, State> {
 
         this.state = {
             catAndGifts: [],
+            friends: [],
             show: false, title: '', bodyRender: null, buttons: [], inputs: { }, errorMessage: '',
             hoverId: '',
             editMode: false
@@ -62,6 +64,7 @@ class MyWishList extends React.Component<Props, State> {
     componentDidMount() {
         if (this.props.token) {
             this.getGifts(this.props.token);
+            this._getFriends(this.props.token);
         }
     }
 
@@ -255,27 +258,51 @@ class MyWishList extends React.Component<Props, State> {
     openAddCat() {
         const { mywishlist } = this.props;
         this.setState( { show: true, title: mywishlist.addCategoryModalTitle, bodyRender: this.catBodyRender, buttons: [{ text: mywishlist.addModalButton, fun: this.addCat }],
-            inputs: { name: '', nameValidity: true }, errorMessage: '' });
+            inputs: { name: '', nameValidity: true, share: [] }, errorMessage: '' });
     }
 
     openEditCat(name: string, categoryId: number, rank: number) {
         const { mywishlist } = this.props;
         this.setState( { show: true, title: mywishlist.updateCategoryModalTitle, bodyRender: this.catBodyRender, buttons: [{ text: mywishlist.updateModalButton, fun: () => this.updateCat(categoryId) }],
-            inputs: { name: name, nameValidity: true, rank: rank }, errorMessage: '' });
+            inputs: { name: name, nameValidity: true, rank: rank, share: [] }, errorMessage: '' });
     }
 
     handleChangeCat = async (event: any) => {
-        await this.setState({ inputs: { name: event.target.value, nameValidity: event.target.value.length > 0, rank: this.state.inputs.rank } });
+        await this.setState({ inputs: { name: event.target.value, nameValidity: event.target.value.length > 0, rank: this.state.inputs.rank, share: this.state.inputs.share } });
     };
+
+    handleChangeCatSharing = async (id: string) => {
+        const { inputs } = this.state;
+
+        const index = inputs.share.indexOf(id);
+        if (index === -1) {
+            inputs.share.push(id);
+        } else {
+            const index = inputs.share.indexOf(id);
+            inputs.share.splice(index, 1);
+        }
+        await this.setState({ inputs: inputs });
+    }
 
     catBodyRender() {
         const { mywishlist } = this.props;
+
+        const { share } = this.state.inputs;
+        const names = this.state.friends.map((f, i) => {
+            return (<CustomInput type="checkbox" id={f.id + "-" + i} label={f.otherUser.name} checked={share.indexOf(f.otherUser.name) !== -1} onChange={() => this.handleChangeCatSharing(f.otherUser.name)}/>);
+        })
         return (
-            <FormGroup>
-                <Label>{mywishlist.name}</Label>
-                <Input name="name" placeholder={mywishlist.name} value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChangeCat(e)}/>
-                <FormFeedback>{mywishlist.nameErrorMessage}</FormFeedback>
-            </FormGroup>);
+            <Form>
+                <FormGroup>
+                    <Label>{mywishlist.name}</Label>
+                    <Input name="name" placeholder={mywishlist.name} value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChangeCat(e)}/>
+                    <FormFeedback>{mywishlist.nameErrorMessage}</FormFeedback>
+                </FormGroup>
+                <FormGroup>
+                    <Label>{mywishlist.sharedWith}</Label>
+                    {names}
+                </FormGroup>
+            </Form>);
     }
 
     catRestCall(url: string, method: string) {
@@ -285,11 +312,13 @@ class MyWishList extends React.Component<Props, State> {
             return;
         }
 
+        console.log(JSON.stringify({"name": inputs.name, "rank": inputs.rank, "share": inputs.share}));
+
         const request = async () => {
             const response = await fetch(url, {
                 method: method,
                 headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${this.props.token}`},
-                body: JSON.stringify({"name": inputs.name, "rank": inputs.rank})
+                body: JSON.stringify({"name": inputs.name, "rank": inputs.rank, "share": inputs.share})
             });
             if (response.status === 200) {
                 this.setState({ show: false });
@@ -356,6 +385,19 @@ class MyWishList extends React.Component<Props, State> {
             } else {
                 console.error(json.error);
             }
+        }
+    };
+
+    async _getFriends(token: string) {
+        const response = await fetch(url + '/friends', {headers: {'Authorization': `Bearer ${token}`}});
+        if (response.status === 200) {
+            const json = await response.json();
+            this.setState({ friends: json });
+        } else if (response.status === 401) {
+            this._redirect()
+        } else {
+            const json = await response.json();
+            console.log(json.error);
         }
     };
 

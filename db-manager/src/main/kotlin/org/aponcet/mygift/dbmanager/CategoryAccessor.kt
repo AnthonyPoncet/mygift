@@ -5,16 +5,19 @@ data class Category(val name: String, val rank: Long)
 
 class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
 
+    private val joinUserAndCategoryAccessor = JoinUserAndCategoryAccessor(conn)
+
     companion object {
-        const val INSERT = "INSERT INTO categories(userId,name,rank) VALUES (?,?,?)"
-        const val SELECT_BY_ID = "SELECT * FROM categories WHERE id=?"
-        const val SELECT_BY_USER = "SELECT * FROM categories WHERE userId=? ORDER BY rank ASC"
-        const val SELECT_BY_ID_AND_USER = "SELECT * FROM categories WHERE id=? AND userId=? ORDER BY rank ASC"
-        const val UPDATE = "UPDATE categories SET name=?, rank=? WHERE id=?"
+        const val INSERT = "INSERT INTO categories(name) VALUES (?)"
+        const val SELECT_BY_ID = "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE C.id=?"
+        const val SELECT_BY_ID_AND_USER_ID = "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE C.id=? AND J.userId=?"
+        const val SELECT_FRIEND_CATEGORY = "select * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=? and c.id not in (select id FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=?)"
+        const val SELECT_BY_USER_ID = "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE J.userId=? ORDER BY RANK"
+        const val UPDATE = "UPDATE categories SET name=? WHERE id=?"
         const val DELETE = "DELETE FROM categories WHERE id=?"
-        const val SELECT_MAX_RANK = "SELECT MAX(rank) FROM categories WHERE userId=?"
-        const val SELECT_CAT_WITH_SMALLER_RANK = "SELECT * FROM categories WHERE userId=? AND rank=(SELECT MAX(rank) FROM categories WHERE userId=? AND rank<?)"
-        const val SELECT_CAT_WITH_HIGHER_RANK = "SELECT * FROM categories WHERE userId=? AND rank=(SELECT MIN(rank) FROM categories WHERE userId=? AND rank>?)"
+
+        const val SELECT_CAT_WITH_SMALLER_RANK = "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE userId=? AND rank=(SELECT MAX(rank) FROM joinUserAndCategory WHERE userId=? AND rank<?)"
+        const val SELECT_CAT_WITH_HIGHER_RANK = "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE userId=? AND rank=(SELECT MIN(rank) FROM joinUserAndCategory WHERE userId=? AND rank>?)"
     }
 
     override fun getTableName(): String {
@@ -24,27 +27,28 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
     override fun createIfNotExists() {
         conn.execute("CREATE TABLE IF NOT EXISTS categories (" +
             "id     INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
-            "userId INTEGER NOT NULL, " +
-            "name   TEXT NOT NULL, " +
-            "rank   INTEGER NOT NULL," +
-            "FOREIGN KEY(userId) REFERENCES users(id))")
+            "name   TEXT NOT NULL)")
     }
 
-    fun addCategory(userId: Long, category: NewCategory) {
-        val maxId = getCurrentMaxRank(userId)
-        conn.safeExecute(INSERT, {
+    fun addCategory(category: NewCategory, userIds: List<Long>) {
+        val categoryId = conn.safeExecute(INSERT, {
             with(it) {
-                setLong(1, userId)
-                setString(2, category.name)
-                setLong(3, maxId + 1)
+                setString(1, category.name)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
+                if (generatedKeys.next()) {
+                    return@with generatedKeys.getLong(1)
+                } else {
+                    throw Exception("executeUpdate, no key generated")
+                }
             }
-        }, errorMessage(INSERT, userId.toString(), category.name, (maxId + 1).toString()))
+        }, errorMessage(INSERT, category.name))
+
+        joinUserAndCategoryAccessor.addCategory(userIds, categoryId)
     }
 
     fun getUserCategories(userId: Long) : List<DbCategory> {
-         return conn.safeExecute(SELECT_BY_USER, {
+        return conn.safeExecute(SELECT_BY_USER_ID, {
             with(it){
                 setLong(1, userId)
                 val res = executeQuery()
@@ -53,7 +57,6 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
                     categories.add(
                         DbCategory(
                             res.getLong("id"),
-                            userId,
                             res.getString("name"),
                             res.getLong("rank")
                         )
@@ -61,26 +64,46 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
                 }
                 return@with categories
             }
-        }, errorMessage(SELECT_BY_USER, userId.toString()))
+        }, errorMessage(SELECT_BY_USER_ID, userId.toString()))
     }
 
-    fun getFriendCategories(friendId: Long): List<DbCategory> {
-        return getUserCategories(friendId)
+    fun getFriendCategories(userId: Long, friendId: Long): List<DbCategory> {
+        return conn.safeExecute(SELECT_FRIEND_CATEGORY, {
+            with(it){
+                setLong(1, friendId)
+                setLong(2, userId)
+                val res = executeQuery()
+                val categories = arrayListOf<DbCategory>()
+                while (res.next()) {
+                    categories.add(
+                        DbCategory(
+                            res.getLong("id"),
+                            res.getString("name"),
+                            res.getLong("rank")
+                        )
+                    )
+                }
+                return@with categories
+            }
+        }, errorMessage(SELECT_BY_USER_ID, userId.toString()))
     }
 
-    fun modifyCategory(categoryId: Long, category: Category) {
+    fun modifyCategory(userId: Long, categoryId: Long, category: Category) {
         conn.safeExecute(UPDATE, {
             with(it) {
                 setString(1, category.name)
-                setLong(2, category.rank)
-                setLong(3, categoryId)
+                setLong(2, categoryId)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
             }
-        }, errorMessage(UPDATE, category.name, category.rank.toString(), categoryId.toString()))
+        }, errorMessage(UPDATE, category.name, categoryId.toString()))
+
+        joinUserAndCategoryAccessor.modifyRank(userId, categoryId, category.rank)
     }
 
     fun removeCategory(categoryId: Long) {
+        joinUserAndCategoryAccessor.deleteCategory(categoryId)
+
         //TODO: either remove gift or move it to another Category (client or side?)
         //TODO: should be handle by foreign key...
         conn.safeExecute(DELETE, {
@@ -102,44 +125,34 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     fun categoryBelongToUser(userId: Long, categoryId: Long): Boolean {
-        return conn.safeExecute(SELECT_BY_ID_AND_USER, {
-            with(it) {
-                setLong(1, categoryId)
-                setLong(2, userId)
-                return@with executeQuery().next()
-            }
-        }, errorMessage(SELECT_BY_ID_AND_USER, categoryId.toString(), userId.toString()))
+        return joinUserAndCategoryAccessor.getCategories(userId).contains(categoryId)
     }
 
     fun rankDownCategory(userId: Long, categoryId: Long) {
-        val dbCategory = getCategory(categoryId)
-        val otherCat = getOtherCategory(userId, dbCategory,
-            SELECT_CAT_WITH_SMALLER_RANK
-        )
+        val dbCategory = getCategory(userId, categoryId)
+        val otherCat = getOtherCategory(userId, dbCategory, SELECT_CAT_WITH_SMALLER_RANK)
             ?: throw Exception("There is no category with smaller rank, could not proceed.")
 
-        switchCategory(dbCategory, otherCat)
+        switchCategory(userId, dbCategory, otherCat)
     }
 
     fun rankUpCategory(userId: Long, categoryId: Long) {
-        val dbCategory = getCategory(categoryId)
-        val otherCat = getOtherCategory(userId, dbCategory,
-            SELECT_CAT_WITH_HIGHER_RANK
-        )
+        val dbCategory = getCategory(userId,categoryId)
+        val otherCat = getOtherCategory(userId, dbCategory, SELECT_CAT_WITH_HIGHER_RANK)
             ?: throw Exception("There is no category with higher rank, could not proceed.")
 
-        switchCategory(dbCategory, otherCat)
+        switchCategory(userId, dbCategory, otherCat)
     }
 
-    private fun getCategory(categoryId: Long): DbCategory {
-        return conn.safeExecute(SELECT_BY_ID, {
+    private fun getCategory(userId: Long, categoryId: Long): DbCategory {
+        return conn.safeExecute(SELECT_BY_ID_AND_USER_ID, {
             with(it) {
                 setLong(1, categoryId)
+                setLong(2, userId)
                 val rs = executeQuery()
                 if (!rs.next()) throw IllegalStateException("No category $categoryId")
                 return@with DbCategory(
                     rs.getLong("id"),
-                    rs.getLong("userId"),
                     rs.getString("name"),
                     rs.getLong("rank")
                 )
@@ -157,35 +170,21 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
                 if (!rs.next()) return@with null
                 return@with DbCategory(
                     rs.getLong("id"),
-                    rs.getLong("userId"),
                     rs.getString("name"),
                     rs.getLong("rank")
                 )
             }
-        }, errorMessage(SELECT_CAT_WITH_SMALLER_RANK, userId.toString(), userId.toString(), dbCategory.rank.toString()))
+        }, errorMessage(query, userId.toString(), dbCategory.rank.toString()))
     }
 
-    private fun switchCategory(dbCategory: DbCategory, downCat: DbCategory) {
-        modifyCategory(dbCategory.id, Category(dbCategory.name, downCat.rank))
+    private fun switchCategory(userId: Long, dbCategory: DbCategory, downCat: DbCategory) {
+        modifyCategory(userId, dbCategory.id, Category(dbCategory.name, downCat.rank))
         try {
-            modifyCategory(downCat.id, Category(downCat.name, dbCategory.rank))
+            modifyCategory(userId, downCat.id, Category(downCat.name, dbCategory.rank))
         } catch (e: DbException) {
             //Try to reverse first switch
-            modifyCategory(dbCategory.id, Category(dbCategory.name, dbCategory.rank))
+            modifyCategory(userId, dbCategory.id, Category(dbCategory.name, dbCategory.rank))
             throw DbException("No change applied", e)
         }
-    }
-
-    private fun getCurrentMaxRank(userId: Long) : Long {
-        return conn.safeExecute(SELECT_MAX_RANK, {
-            with(it) {
-                setLong(1, userId)
-                val res = executeQuery()
-                if (res.next()) {
-                    return@with res.getLong(1)
-                }
-                return@with 0
-            }
-        }, errorMessage(SELECT_MAX_RANK, userId.toString()))
     }
 }

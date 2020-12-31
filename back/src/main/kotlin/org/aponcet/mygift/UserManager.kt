@@ -37,7 +37,7 @@ data class ResetPassword(val userId: Long, val uuid: String, val expiry: LocalDa
 /** INPUT CLASSES **/
 data class UserModification(val name: String?, val picture: String?)
 data class RestGift(val name: String?, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long?, val picture: String?, val rank: Long?)
-data class RestCategory(val name: String?, val rank: Long?)
+data class RestCategory(val name: String?, val rank: Long?, val share: List<String>?)
 data class RestCreateFriendRequest(val name: String?)
 enum class EventType { ALL_FOR_ALL, ALL_FOR_ONE }
 data class RestCreateEvent(val type: EventType?, val name: String?, val description: String?, val endDate: LocalDate?, val target: Long?) //end date being epoch
@@ -207,10 +207,17 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
     fun getBuyList(userId: Long) : List<BuyListByFriend> {
         val friendActionOnGiftsUserHasActionOn = databaseManager.getFriendActionOnGiftsUserHasActionOn(userId)
 
-        val gifts = friendActionOnGiftsUserHasActionOn
+        val dbGifts = friendActionOnGiftsUserHasActionOn
             .filter { g -> g.buy != BuyAction.NONE }
             .mapNotNull { g -> databaseManager.getGift(g.giftId) }
-            .groupBy({ it.userId }, { it })
+
+        val giftsAndUser = ArrayList<Pair<Long, DbGift>>()
+        for (gift in dbGifts) {
+            val usersFromCategory = databaseManager.getUsersFromCategory(gift.categoryId)
+            usersFromCategory.forEach { giftsAndUser.add(Pair(it, gift)) }
+        }
+
+        val gifts = giftsAndUser.groupBy( { it.first }, { it.second } )
 
         val dummyUserCache = DummyUserCache(databaseManager) //Cache only by call
 
@@ -309,8 +316,11 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         databaseManager.buyAction(giftId, userId, BuyAction.NONE)
     }
 
-    fun addCategory(userId: Long, category: RestCategory) {
-        databaseManager.addCategory(userId, toNewCategory(category))
+    fun addCategory(category: RestCategory, userId: Long, userNames: List<String>) {
+        val users = userNames.map { databaseManager.getUser(it) }
+        if (users.any { it == null }) throw BadParamException("At leats one passed user does not exist")
+        val userIds = users.map { it!!.id }
+        databaseManager.addCategory(toNewCategory(category), userIds.plus(userId))
     }
 
     private fun validateRestCategory(category: RestCategory, withRank: Boolean) {
