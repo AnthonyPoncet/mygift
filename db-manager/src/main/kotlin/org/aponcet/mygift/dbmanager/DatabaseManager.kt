@@ -53,8 +53,6 @@ class DatabaseManager(dbPath: String) {
     private val toDeleteGiftsAccessor = ToDeleteGiftsAccessor(conn)
     private val friendActionOnGiftAccessor = FriendActionOnGiftAccessor(conn)
     private val friendRequestAccessor = FriendRequestAccessor(conn)
-    private val eventsAccessor = EventsAccessor(conn)
-    private val participantsAccessor = ParticipantsAccessor(conn)
     private val resetPasswordAccessor = ResetPasswordAccessor(conn)
 
     init {
@@ -69,8 +67,6 @@ class DatabaseManager(dbPath: String) {
         conn.execute("delete from ${toDeleteGiftsAccessor.getTableName()}")
         conn.execute("delete from ${friendActionOnGiftAccessor.getTableName()}")
         conn.execute("delete from ${friendRequestAccessor.getTableName()}")
-        conn.execute("delete from ${eventsAccessor.getTableName()}")
-        conn.execute("delete from ${participantsAccessor.getTableName()}")
         conn.execute("delete from ${resetPasswordAccessor.getTableName()}")
     }
 
@@ -81,8 +77,6 @@ class DatabaseManager(dbPath: String) {
         toDeleteGiftsAccessor.createIfNotExists()
         friendActionOnGiftAccessor.createIfNotExists()
         friendRequestAccessor.createIfNotExists()
-        eventsAccessor.createIfNotExists()
-        participantsAccessor.createIfNotExists()
         resetPasswordAccessor.createIfNotExists()
     }
 
@@ -319,92 +313,6 @@ class DatabaseManager(dbPath: String) {
         if (!friendRequestAccessor.friendRequestIsNotForUser(userId, friendRequestId)) throw Exception("Friend request $friendRequestId is not targeting user $userId")
 
         friendRequestAccessor.declineFriendRequest(friendRequestId, blockUser)
-    }
-
-    /**
-     * Events
-     */
-    @Synchronized fun createEventAllForAll(name: String, creatorId: Long, description: String?, endDate: LocalDate, participantIds: Set<Long>) {
-        createEventAllForOne(name, creatorId, description, endDate, -1, participantIds)
-    }
-
-    @Synchronized fun createEventAllForOne(name: String, creatorId: Long, description: String?, endDate: LocalDate, target: Long, participantIds: Set<Long>) {
-        if (target != -1L && !usersAccessor.userExists(target)) throw Exception("Unknown target user $target")
-
-        val eventId = eventsAccessor.insertEvent(name, creatorId, description, endDate, target)
-
-        addParticipants(eventId, participantIds)
-        if (target != creatorId) acceptEventInvitation(creatorId, eventId)
-    }
-
-    fun deleteEvent(eventId: Long) {
-        if (!eventsAccessor.eventExists(eventId)) throw Exception("Unknown event $eventId")
-        eventsAccessor.deleteEvent(eventId)
-    }
-
-    @Synchronized fun addParticipants(eventId: Long, participantIds: Set<Long>) {
-        if (!eventsAccessor.eventExists(eventId)) throw Exception("Unknown event $eventId")
-
-        val unknownParticipantIds = arrayListOf<Long>()
-        for (participantId: Long in participantIds) {
-            if (!usersAccessor.userExists(participantId)) {
-                unknownParticipantIds.add(participantId)
-                continue
-            }
-            participantsAccessor.insert(eventId, participantId)
-        }
-
-        if (unknownParticipantIds.isNotEmpty()) throw Exception("Unknown participants $participantIds")
-    }
-
-    @Synchronized fun acceptEventInvitation(userId: Long, eventId: Long) {
-        if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
-        if (!eventsAccessor.eventExists(eventId)) throw Exception("Unknown event $eventId")
-        if (!participantsAccessor.userInvitedToEvent(eventId, userId)) throw Exception("User $userId not invited to event $eventId")
-
-        participantsAccessor.update(eventId, userId,
-            RequestStatus.ACCEPTED
-        )
-    }
-
-    @Synchronized fun declineEventInvitation(userId: Long, eventId: Long, blockInvites: Boolean) {
-        if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
-        if (!eventsAccessor.eventExists(eventId)) throw Exception("Unknown event $eventId")
-        if (!participantsAccessor.userInvitedToEvent(eventId, userId)) throw Exception("User $userId not invited to event $eventId")
-
-        if (blockInvites) {
-            participantsAccessor.update(eventId, userId,
-                RequestStatus.REJECTED
-            )
-        } else {
-            participantsAccessor.delete(eventId, userId)
-        }
-    }
-
-    @Synchronized fun getEventsById(eventId: Long) : DbEvent? {
-        return eventsAccessor.getEventsById(eventId)
-    }
-
-    @Synchronized fun getEventsCreateBy(userId: Long) : List<DbEvent> {
-        if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
-
-        return eventsAccessor.getEventsCreateBy(userId)
-    }
-
-    @Synchronized fun getEventsNamed(name: String) : List<DbEvent> {
-        return eventsAccessor.getEventsNamed(name)
-    }
-
-    @Synchronized fun getEventsAsParticipants(userId: Long) : List<DbParticipant>{
-        if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
-
-        return participantsAccessor.getEventsAsParticipants(userId)
-    }
-
-    @Synchronized fun getParticipants(eventId: Long) : List<DbParticipant> {
-        if (!eventsAccessor.eventExists(eventId)) throw Exception("Unknown event $eventId")
-
-        return participantsAccessor.getParticipants(eventId)
     }
 
     /**
