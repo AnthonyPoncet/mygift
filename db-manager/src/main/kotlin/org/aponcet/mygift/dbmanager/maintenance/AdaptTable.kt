@@ -20,13 +20,14 @@ class AdaptTable(dbPath: String) {
 
     private val conn = DbConnection("sqlite", dbPath)
 
-    enum class STEP { ADD_RANK_TO_CATEGORY, ADD_RANK_TO_GIFT, ADD_SALT_TO_USER }
+    enum class STEP { ADD_RANK_TO_CATEGORY, ADD_RANK_TO_GIFT, ADD_SALT_TO_USER, DELETE_EVENTS }
 
     fun execute(step: STEP) {
         when (step) {
             STEP.ADD_RANK_TO_CATEGORY -> addRankToCategory()
             STEP.ADD_RANK_TO_GIFT -> addRankToGift()
             STEP.ADD_SALT_TO_USER -> addSaltToUser()
+            STEP.DELETE_EVENTS -> deleteEvents()
         }
     }
 
@@ -188,5 +189,23 @@ class AdaptTable(dbPath: String) {
         Arrays.fill(passwordChar, Char.MIN_VALUE)
         val skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
         return skf.generateSecret(spec).encoded
+    }
+
+    private fun deleteEvents() {
+        try {
+            conn.executeQuery("DROP TABLE events")
+            LOGGER.info("Table 'events' deleted")
+            return
+        } catch (e: Exception) {
+            LOGGER.info("Table 'events' does not exist", e)
+        }
+
+        try {
+            conn.executeQuery("DROP TABLE participants")
+            LOGGER.info("Table 'participants' deleted")
+            return
+        } catch (e: Exception) {
+            LOGGER.info("Table 'participants' does not exist", e)
+        }
     }
 }

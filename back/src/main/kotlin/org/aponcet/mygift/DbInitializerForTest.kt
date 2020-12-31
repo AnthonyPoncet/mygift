@@ -94,12 +94,6 @@ class DbInitializerForTest(databaseManager: DatabaseManager) {
         fr = databaseManager.getReceivedFriendRequests(aze)[0].id
         databaseManager.acceptFriendRequest(aze, fr)
         LOGGER.info("other and aze are now friend")
-
-        //Events
-        databaseManager.createEventAllForAll("Christmas", aze, null, LocalDate.now(), setOf(aze, eza))
-        databaseManager.createEventAllForOne("Birthday aze", aze, null, LocalDate.now(), aze, setOf(eza))
-        databaseManager.createEventAllForOne("Birthday eza", aze, null, LocalDate.now(), eza, setOf(aze))
-        LOGGER.info("On ALL_FOR_ALL event, and two ALL_FOR_ONE events created")
     }
 
     private fun hash(password : String, salt: ByteArray): ByteArray {

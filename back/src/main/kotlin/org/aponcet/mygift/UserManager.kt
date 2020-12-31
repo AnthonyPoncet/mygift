@@ -75,21 +75,6 @@ class DummyUserCache(private val databaseManager: DatabaseManager) {
     }
 }
 
-class DummyEventCache(private val databaseManager: DatabaseManager) {
-    private val cacheIds = HashMap<Long, DbEvent?>()
-
-    fun query(eventId: Long) : DbEvent? {
-        val event = cacheIds[eventId]
-        return if (event != null) event
-        else {
-            val dbEvent = databaseManager.getEventsById(eventId)
-            cacheIds[eventId] = dbEvent
-            cacheIds[eventId]
-        }
-    }
-
-}
-
 
 class UserManager(private val databaseManager: DatabaseManager, private val authServer: AuthServer) {
 
@@ -431,86 +416,6 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
     private fun toFriend(userId: Long) : Friend {
         val user = databaseManager.getUser(userId)!!
         return Friend(user.name, user.picture)
-    }
-
-    fun createEvent(event: RestCreateEvent, userId: Long) {
-        if (event.type == null) throw Exception("Event type is mandatory")
-        if (event.name == null) throw Exception("Event Name is mandatory")
-        if (event.endDate == null) throw Exception("Event End Date is mandatory")
-        if (event.type == EventType.ALL_FOR_ONE && event.target == null) throw Exception("Event End Date is mandatory")
-
-        when (event.type) {
-            EventType.ALL_FOR_ALL -> databaseManager.createEventAllForAll(event.name, userId, event.description, event.endDate, setOf(userId))
-            EventType.ALL_FOR_ONE -> databaseManager.createEventAllForOne(event.name, userId, event.description, event.endDate, event.target!!, if (userId != event.target) setOf(userId) else setOf())
-        }
-    }
-
-    fun deleteEvent(eventId: Long) {
-        databaseManager.deleteEvent(eventId)
-    }
-
-    fun addParticipants(eventId: Long, participants: Set<String>) {
-        val dummyUserCache = DummyUserCache(databaseManager)
-        databaseManager.addParticipants(eventId, participants.filterNot { dummyUserCache.queryId(it) == -1L }.map { dummyUserCache.queryId(it) }.toSet())
-    }
-
-    fun acceptEventInvitation(userId: Long, eventId: Long) {
-        databaseManager.acceptEventInvitation(userId, eventId)
-    }
-
-    fun declineEventInvitation(userId: Long, eventId: Long, blockInvites: Boolean) {
-        databaseManager.declineEventInvitation(userId, eventId, blockInvites)
-    }
-
-    fun getEvent(eventId: Long): Event {
-        val dbEvent = databaseManager.getEventsById(eventId) ?: throw Exception("Unknown event with id $eventId")
-        val dummyUserCache = DummyUserCache(databaseManager)
-        return toEvent(dbEvent, dummyUserCache)
-    }
-
-    fun getEventsCreateBy(userId: Long) : List<Event> {
-        return toEvents(databaseManager.getEventsCreateBy(userId))
-    }
-
-    fun getEventsNamed(name: String)  : List<Event> {
-        return toEvents(databaseManager.getEventsNamed(name))
-    }
-
-    fun getEventsAsParticipants(userId: Long) : List<Event>{
-        val dummyUserCache = DummyUserCache(databaseManager)
-        val dummyEventCache = DummyEventCache(databaseManager)
-
-        val events = databaseManager.getEventsAsParticipants(userId)
-            .filterNot { dummyUserCache.queryName(it.userId) == null  }
-            .filterNot { dummyEventCache.query(it.eventId) == null }
-            .map { dummyEventCache.query(it.eventId)!! }
-
-        return toEvents(events)
-    }
-
-    private fun toEvents(dbEvents: List<DbEvent>) : List<Event> {
-        val dummyUserCache = DummyUserCache(databaseManager)
-
-        return dbEvents
-            .filterNot { dummyUserCache.queryName(it.creatorId) == null  }
-            .map { toEvent(it, dummyUserCache) }
-    }
-
-    private fun toEvent(dbEvent: DbEvent, dummyUserCache: DummyUserCache) : Event {
-        return Event(dbEvent.id,
-            if (dbEvent.target == null) EventType.ALL_FOR_ALL else EventType.ALL_FOR_ONE,
-            dbEvent.name,
-            dummyUserCache.queryName(dbEvent.creatorId)!!,
-            dbEvent.description,
-            dbEvent.endDate,
-            if (dbEvent.target == null) null else dummyUserCache.queryName(dbEvent.target as Long),
-            databaseManager.getParticipants(dbEvent.id).filterNot { p -> dummyUserCache.queryName(p.userId) == null }.map { p ->
-                Participant(
-                    dummyUserCache.queryName(p.userId)!!,
-                    p.status
-                )
-            }.toSet()
-        )
     }
 
     fun getEntry(uuid: String) : ResetPassword {
