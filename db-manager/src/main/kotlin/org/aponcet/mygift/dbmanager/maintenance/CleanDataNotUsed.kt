@@ -34,7 +34,7 @@ class CleanDataNotUsed(dbPath: String, uploadPath: String) {
                 }
                 return@with userPictures
             }
-        }, "Execution of 'SELECT * FROM users' throw an exception")
+        }, "Execution of 'SELECT picture FROM users' throw an exception")
 
         pictures.addAll(conn.safeExecute("SELECT picture FROM gifts", {
             with(it) {
@@ -46,7 +46,19 @@ class CleanDataNotUsed(dbPath: String, uploadPath: String) {
                 }
                 return@with giftPictures
             }
-        }, "Execution of 'SELECT * FROM gifts' throw an exception"))
+        }, "Execution of 'SELECT picture FROM gifts' throw an exception"))
+
+        pictures.addAll(conn.safeExecute("SELECT picture FROM toDeleteGifts", {
+            with(it) {
+                val res = executeQuery()
+                val giftPictures = HashSet<String>()
+                while (res.next()) {
+                    val element = res.getString("picture")
+                    if (element != null && element.isNotBlank() && element.isNotEmpty()) giftPictures.add(element)
+                }
+                return@with giftPictures
+            }
+        }, "Execution of 'SELECT picture FROM toDeleteGifts' throw an exception"))
 
         LOGGER.info("Pictures in DB: ${pictures.size} -> $pictures")
 
@@ -73,4 +85,5 @@ class CleanDataNotUsed(dbPath: String, uploadPath: String) {
         LOGGER.info("Report deleted/numberToDelete $deleted/${filesToRemove.size}")
         LOGGER.info("Report not deleted $notDeleted")
     }
+
 }
