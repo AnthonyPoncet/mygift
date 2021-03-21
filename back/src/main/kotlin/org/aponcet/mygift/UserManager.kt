@@ -101,7 +101,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
             val user = databaseManager.getUser(name)!! //to get picture, if should come from here
             return User(tokenResponse.token, user.name, user.picture)
         } catch (e: ResponseException) {
-            val response = e.response?: throw IllegalStateException("No response received")
+            val response = e.response
 
             if (response.status == HttpStatusCode.Unauthorized) {
                 val error = Gson().fromJson(response.readText(), ErrorResponse::class.java).error
@@ -124,7 +124,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
 
             return connect(UserJson(userAndPictureJson.name, userAndPictureJson.password))
         } catch (e: ResponseException) {
-            val response = e.response?: throw IllegalStateException("No response received")
+            val response = e.response
 
             if (response.status == HttpStatusCode.Unauthorized) {
                 val error = Gson().fromJson(response.readText(), ErrorResponse::class.java).error
