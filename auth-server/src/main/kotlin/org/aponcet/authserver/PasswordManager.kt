@@ -34,12 +34,12 @@ class PasswordManager {
         private const val ITERATIONS = 10000
         private const val KEY_LENGTH = 256
 
-        fun generateEncodedPassword(password : String): EncodedPasswordAndSalt {
+        fun generateEncodedPassword(password: String): EncodedPasswordAndSalt {
             val salt = nextSalt()
             return EncodedPasswordAndSalt(hash(password, salt), salt)
         }
 
-        fun isPasswordOk(password: String, salt: ByteArray, encodedPassword: ByteArray) : Boolean {
+        fun isPasswordOk(password: String, salt: ByteArray, encodedPassword: ByteArray): Boolean {
             val encoded = hash(password, salt)
             return encoded.contentEquals(encodedPassword)
         }
@@ -47,7 +47,7 @@ class PasswordManager {
         /**
          * Generate salt
          */
-        private fun nextSalt() : ByteArray {
+        private fun nextSalt(): ByteArray {
             val salt = ByteArray(16)
             RANDOM.nextBytes(salt)
             return salt
@@ -57,7 +57,7 @@ class PasswordManager {
          * Hash password with a given salt
          * @return encoded password
          */
-        fun hash(password : String, salt: ByteArray): ByteArray {
+        fun hash(password: String, salt: ByteArray): ByteArray {
             val passwordChar = password.toCharArray()
             val spec = PBEKeySpec(passwordChar, salt, ITERATIONS, KEY_LENGTH)
             Arrays.fill(passwordChar, Char.MIN_VALUE)

@@ -30,7 +30,7 @@ dependencies {
     testRuntimeOnly("com.h2database:h2:1.4.200")
 }
 
-tasks.withType<ShadowJar>() {
+tasks.withType<ShadowJar> {
     manifest {
         attributes(mapOf("Main-Class" to "org.aponcet.authserver.MainKt"))
     }

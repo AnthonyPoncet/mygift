@@ -1,13 +1,11 @@
 package org.aponcet.mygift.dbmanager
 
-import io.kotlintest.Description
-import io.kotlintest.Spec
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import java.sql.SQLException
 import kotlin.test.assertFailsWith
 
-class DbConnectionTest : StringSpec(){
+class DbConnectionTest : StringSpec() {
     private val conn = DbConnection("h2", "mem:test")
 
     override fun closeResources() {

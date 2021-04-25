@@ -8,7 +8,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.security.NoSuchAlgorithmException
 import java.security.spec.InvalidKeySpecException
-import java.time.LocalDate
 import java.util.*
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
@@ -24,20 +23,28 @@ class DbInitializerForTest(databaseManager: DatabaseManager) {
         databaseManager.cleanTables()
 
         //Create User
-        val aze = databaseManager.addUser("aze", hash("aze", "salt1".toByteArray()), "salt1".toByteArray(),"black_cat.png").id
+        val aze = databaseManager.addUser(
+            "aze",
+            hash("aze", "salt1".toByteArray()),
+            "salt1".toByteArray(),
+            "black_cat.png"
+        ).id
         val azeDCat = databaseManager.getUserCategories(aze)[0].id
         LOGGER.info("username: aze, pwd: aze ==> id: $aze - Default category id: $azeDCat")
-        val eza = databaseManager.addUser("eza", hash("eza", "salt2".toByteArray()), "salt2".toByteArray(), "red_cat.png").id
+        val eza =
+            databaseManager.addUser("eza", hash("eza", "salt2".toByteArray()), "salt2".toByteArray(), "red_cat.png").id
         databaseManager.addCategory(NewCategory("Second catégorie"), listOf(eza))
         val ezaCats = databaseManager.getUserCategories(eza)
         val ezaDCat = ezaCats[0].id
         val ezaSCat = ezaCats[1].id
         LOGGER.info("username: eza, pwd: eza ==> id: $eza - Default category id: $eza, \"Second catégorie\" id: $ezaSCat")
-        val other = databaseManager.addUser("other", hash("other", "salt3".toByteArray()), "salt3".toByteArray(), null).id
+        val other =
+            databaseManager.addUser("other", hash("other", "salt3".toByteArray()), "salt3".toByteArray(), null).id
         LOGGER.info("usernamme: other, pwd; other ==> id: $other")
 
         //Fill gift
-        databaseManager.addGift(aze,
+        databaseManager.addGift(
+            aze,
             NewGift(
                 "One",
                 "First description with spécial char and ' ",
@@ -45,10 +52,14 @@ class DbInitializerForTest(databaseManager: DatabaseManager) {
                 "http://mysite.com",
                 azeDCat,
                 null
-            ), false)
-        databaseManager.addGift(aze,
-            NewGift("No desc", null, "20$", "a place", azeDCat, null), false)
-        databaseManager.addGift(aze,
+            ), false
+        )
+        databaseManager.addGift(
+            aze,
+            NewGift("No desc", null, "20$", "a place", azeDCat, null), false
+        )
+        databaseManager.addGift(
+            aze,
             NewGift(
                 "No price",
                 "There is no price",
@@ -56,8 +67,10 @@ class DbInitializerForTest(databaseManager: DatabaseManager) {
                 "http://mysite.com or ici, 75000 Paris",
                 azeDCat,
                 null
-            ), false)
-        databaseManager.addGift(aze,
+            ), false
+        )
+        databaseManager.addGift(
+            aze,
             NewGift(
                 "No where to buy",
                 "There is no where to buy",
@@ -65,16 +78,24 @@ class DbInitializerForTest(databaseManager: DatabaseManager) {
                 null,
                 azeDCat,
                 null
-            ), false)
-        databaseManager.addGift(aze,
-            NewGift("Only mandatory", null, null, null, azeDCat, "pc.png"), true)
+            ), false
+        )
+        databaseManager.addGift(
+            aze,
+            NewGift("Only mandatory", null, null, null, azeDCat, "pc.png"), true
+        )
         LOGGER.info("5 gifts added to aze")
 
-        databaseManager.addGift(eza,
-            NewGift("A first one", null, null, null, ezaDCat, "pc.png"), false)
-        databaseManager.addGift(eza,
-            NewGift("A second one", null, null, null, ezaDCat, null), false)
-        databaseManager.addGift(eza,
+        databaseManager.addGift(
+            eza,
+            NewGift("A first one", null, null, null, ezaDCat, "pc.png"), false
+        )
+        databaseManager.addGift(
+            eza,
+            NewGift("A second one", null, null, null, ezaDCat, null), false
+        )
+        databaseManager.addGift(
+            eza,
             NewGift(
                 "One in another cat",
                 null,
@@ -82,7 +103,8 @@ class DbInitializerForTest(databaseManager: DatabaseManager) {
                 null,
                 ezaSCat,
                 "book.png"
-            ), false)
+            ), false
+        )
         LOGGER.info("3 gift added to eza")
 
         //They are friend
@@ -96,7 +118,7 @@ class DbInitializerForTest(databaseManager: DatabaseManager) {
         LOGGER.info("other and aze are now friend")
     }
 
-    private fun hash(password : String, salt: ByteArray): ByteArray {
+    private fun hash(password: String, salt: ByteArray): ByteArray {
         val passwordChar = password.toCharArray()
         val spec = PBEKeySpec(passwordChar, salt, 10000, 256)
         Arrays.fill(passwordChar, Char.MIN_VALUE)

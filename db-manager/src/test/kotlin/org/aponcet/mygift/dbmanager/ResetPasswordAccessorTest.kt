@@ -6,7 +6,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.test.assertFailsWith
 
-class ResetPasswordAccessorTest: StringSpec() {
+class ResetPasswordAccessorTest : StringSpec() {
     private val conn = DbConnection("h2", "mem:test")
     private val resetPasswordAccessor = ResetPasswordAccessor(conn)
 
@@ -37,7 +37,12 @@ class ResetPasswordAccessorTest: StringSpec() {
     }
 
     override fun afterTest(description: Description, result: TestResult) {
-        deleteTable(listOf(resetPasswordAccessor.getTableName(), UsersAccessor(conn).getTableName())) //order matter due to foreign key
+        deleteTable(
+            listOf(
+                resetPasswordAccessor.getTableName(),
+                UsersAccessor(conn).getTableName()
+            )
+        ) //order matter due to foreign key
     }
 
     override fun testCaseOrder(): TestCaseOrder? {
@@ -95,6 +100,7 @@ class ResetPasswordAccessorTest: StringSpec() {
                     if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
                 }
             },
-            "")
+            ""
+        )
     }
 }

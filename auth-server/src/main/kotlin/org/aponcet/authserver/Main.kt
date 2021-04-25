@@ -3,21 +3,15 @@ package org.aponcet.authserver
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.gson.Gson
-import io.ktor.application.Application
-import io.ktor.application.call
-import io.ktor.application.install
-import io.ktor.features.ContentNegotiation
-import io.ktor.features.StatusPages
-import io.ktor.gson.gson
-import io.ktor.http.HttpStatusCode
-import io.ktor.request.receiveText
-import io.ktor.response.respond
+import io.ktor.application.*
+import io.ktor.features.*
+import io.ktor.gson.*
+import io.ktor.http.*
+import io.ktor.request.*
+import io.ktor.response.*
 import io.ktor.routing.*
-import io.ktor.routing.post
-import io.ktor.server.engine.applicationEngineEnvironment
-import io.ktor.server.engine.connector
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
 import org.aponcet.mygift.dbmanager.DbException
 import org.aponcet.mygift.model.ConfigurationLoader
 import java.security.KeyPairGenerator
@@ -80,7 +74,7 @@ fun Application.authModule(userProvider: UserProvider) {
         generateKeyPair.private as RSAPrivateKey
     )
 
-    install(ContentNegotiation){
+    install(ContentNegotiation) {
         gson { setPrettyPrinting() }
     }
     install(StatusPages) {
@@ -107,11 +101,16 @@ fun Application.authModule(userProvider: UserProvider) {
 
             try {
                 val encodedPasswordAndSalt = PasswordManager.generateEncodedPassword(userAndPictureJson.password)
-                userProvider.addUser(userAndPictureJson.name, encodedPasswordAndSalt.encodedPassword, encodedPasswordAndSalt.salt, userAndPictureJson.picture?:"")
+                userProvider.addUser(
+                    userAndPictureJson.name,
+                    encodedPasswordAndSalt.encodedPassword,
+                    encodedPasswordAndSalt.salt,
+                    userAndPictureJson.picture ?: ""
+                )
                 call.respond(HttpStatusCode.Created)
             } catch (e: DbException) {
                 call.application.environment.log.error("database exception while creating user", e)
-                call.respond(HttpStatusCode.BadRequest, ErrorResponse(e.message?:""))
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse(e.message ?: ""))
             } catch (e: Exception) {
                 call.application.environment.log.error("Unknown exception while creating user", e)
                 call.respond(HttpStatusCode.InternalServerError, ErrorResponse(e.message ?: "Unknown error"))
@@ -127,11 +126,15 @@ fun Application.authModule(userProvider: UserProvider) {
 
             try {
                 val encodedPasswordAndSalt = PasswordManager.generateEncodedPassword(userAndResetPassword.password)
-                userProvider.modifyUser(userAndResetPassword.name, encodedPasswordAndSalt.encodedPassword, encodedPasswordAndSalt.salt)
+                userProvider.modifyUser(
+                    userAndResetPassword.name,
+                    encodedPasswordAndSalt.encodedPassword,
+                    encodedPasswordAndSalt.salt
+                )
                 call.respond(HttpStatusCode.OK)
             } catch (e: DbException) {
                 call.application.environment.log.error("database exception while updating user", e)
-                call.respond(HttpStatusCode.BadRequest, ErrorResponse(e.message?:""))
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse(e.message ?: ""))
             } catch (e: Exception) {
                 call.application.environment.log.error("Unknown exception while updating user", e)
                 call.respond(HttpStatusCode.InternalServerError, ErrorResponse(e.message ?: "Unknown error"))
@@ -145,8 +148,14 @@ fun Application.authModule(userProvider: UserProvider) {
             if (jsonUser.name == null) throw IllegalArgumentException("/login json need name node")
             if (jsonUser.password == null) throw IllegalArgumentException("/login json need password node")
 
-            val user = userProvider.getUser(jsonUser.name) ?: throw InvalidCredentialsException("Unknown user '${jsonUser.name}' or password mismatch")
-            if (!PasswordManager.isPasswordOk(jsonUser.password, user.encodedPasswordAndSalt.salt, user.encodedPasswordAndSalt.encodedPassword)) {
+            val user = userProvider.getUser(jsonUser.name)
+                ?: throw InvalidCredentialsException("Unknown user '${jsonUser.name}' or password mismatch")
+            if (!PasswordManager.isPasswordOk(
+                    jsonUser.password,
+                    user.encodedPasswordAndSalt.salt,
+                    user.encodedPasswordAndSalt.encodedPassword
+                )
+            ) {
                 throw InvalidCredentialsException("Wrong password")
             }
 

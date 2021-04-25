@@ -1,10 +1,10 @@
 package org.aponcet.mygift
 
 import com.google.gson.Gson
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
-import io.ktor.client.features.ResponseException
-import io.ktor.client.request.get
+import io.ktor.client.*
+import io.ktor.client.engine.apache.*
+import io.ktor.client.features.*
+import io.ktor.client.request.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.aponcet.authserver.KeyResponse
@@ -24,7 +24,7 @@ class PublicKeyManager(private val authServer: AuthServer) {
     private val executor = Executors.newSingleThreadScheduledExecutor()
     private val client = HttpClient(Apache)
 
-    var publicKey : ByteArray? = null
+    var publicKey: ByteArray? = null
 
     companion object {
         val LOGGER: Logger = LoggerFactory.getLogger(PublicKeyManager::class.java)
@@ -45,7 +45,12 @@ class PublicKeyManager(private val authServer: AuthServer) {
                 val body = client.get<String>("http://${authServer.host}:${authServer.port}/public-key")
                 executor.schedule(r, DELAY_TOKEN, TimeUnit.SECONDS)
                 publicKey = Gson().fromJson(body, KeyResponse::class.java).key
-                LOGGER.info("${DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.from(ZoneOffset.UTC)).format(Instant.now())} - Pubic key retrieved!")
+                LOGGER.info(
+                    "${
+                        DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.from(ZoneOffset.UTC))
+                            .format(Instant.now())
+                    } - Pubic key retrieved!"
+                )
             } catch (e: ResponseException) {
                 LOGGER.warn("Unable to retrieve pubic key", e)
                 executor.schedule(r, DELAY_NO_TOKEN, TimeUnit.SECONDS)

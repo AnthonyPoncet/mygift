@@ -17,32 +17,35 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     override fun createIfNotExists() {
-        conn.execute("CREATE TABLE IF NOT EXISTS users (" +
-            "id         INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
-            "name       TEXT NOT NULL, " +
-            "password   BLOB NOT NULL, " +
-            "salt       BLOB NOT NULL, " +
-            "picture    TEXT)")
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS users (" +
+                    "id         INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
+                    "name       TEXT NOT NULL, " +
+                    "password   BLOB NOT NULL, " +
+                    "salt       BLOB NOT NULL, " +
+                    "picture    TEXT)"
+        )
     }
 
     fun addUser(userName: String, password: ByteArray, salt: ByteArray, picture: String): DbUser {
         val nextUserId = conn.safeExecute(
             INSERT, {
-            with(it) {
-                setString(1, userName)
-                setBinaryStream(2, ByteArrayInputStream(password), password.size)
-                setBinaryStream(3, ByteArrayInputStream(salt), salt.size)
-                setString(4, picture)
-                val rowCount = executeUpdate()
-                if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
-                if (generatedKeys.next()) {
-                    return@with generatedKeys.getLong(1)
-                } else {
-                    throw Exception("executeUpdate, no key generated")
+                with(it) {
+                    setString(1, userName)
+                    setBinaryStream(2, ByteArrayInputStream(password), password.size)
+                    setBinaryStream(3, ByteArrayInputStream(salt), salt.size)
+                    setString(4, picture)
+                    val rowCount = executeUpdate()
+                    if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
+                    if (generatedKeys.next()) {
+                        return@with generatedKeys.getLong(1)
+                    } else {
+                        throw Exception("executeUpdate, no key generated")
+                    }
                 }
-            }
-        },
-        errorMessage(INSERT, userName, password.toString(), salt.toString(), picture))
+            },
+            errorMessage(INSERT, userName, password.toString(), salt.toString(), picture)
+        )
 
         return DbUser(nextUserId, userName, password, salt, picture)
     }
@@ -75,7 +78,7 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
             with(it) {
                 setLong(1, userId)
                 val res = executeQuery()
-                return@with if(res.next()) {
+                return@with if (res.next()) {
                     val picture = res.getString("picture")
                     NakedUser(
                         res.getString("name"),
@@ -101,7 +104,7 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     fun userExists(userId: Long): Boolean {
-        return conn.safeExecute(SELECT_BY_ID,{
+        return conn.safeExecute(SELECT_BY_ID, {
             with(it) {
                 setLong(1, userId)
                 val res = executeQuery()

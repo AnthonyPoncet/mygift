@@ -20,7 +20,11 @@ class PasswordManagerTest : StringSpec() {
     private fun deleteTable(tables: List<String>) {
         for (table in tables) {
             conn.safeExecute("DELETE FROM $table", { it.executeUpdate() }, "Could not clean $table")
-            conn.safeExecute("ALTER TABLE $table ALTER COLUMN id RESTART WITH 1", { it.executeUpdate() }, "Could not reset sequence id $table")
+            conn.safeExecute(
+                "ALTER TABLE $table ALTER COLUMN id RESTART WITH 1",
+                { it.executeUpdate() },
+                "Could not reset sequence id $table"
+            )
         }
     }
 
@@ -40,18 +44,30 @@ class PasswordManagerTest : StringSpec() {
     init {
         "Generate password with salt and compare ok" {
             val generateEncodedPassword = PasswordManager.generateEncodedPassword("Toto")
-            assert(PasswordManager.isPasswordOk("Toto", generateEncodedPassword.salt, generateEncodedPassword.encodedPassword))
+            assert(
+                PasswordManager.isPasswordOk(
+                    "Toto",
+                    generateEncodedPassword.salt,
+                    generateEncodedPassword.encodedPassword
+                )
+            )
         }
 
         "Generate password with salt and compare nok" {
             val generateEncodedPassword = PasswordManager.generateEncodedPassword("Toto")
-            assert(!PasswordManager.isPasswordOk("toto", generateEncodedPassword.salt, generateEncodedPassword.encodedPassword))
+            assert(
+                !PasswordManager.isPasswordOk(
+                    "toto",
+                    generateEncodedPassword.salt,
+                    generateEncodedPassword.encodedPassword
+                )
+            )
         }
 
         "Could save generated password to DB" {
             val encodedPassword = PasswordManager.generateEncodedPassword("Toto")
             usersAccessor.addUser("name", encodedPassword.encodedPassword, encodedPassword.salt, "") shouldBe
-                    DbUser(1L, "name", encodedPassword.encodedPassword, encodedPassword.salt, "" )
+                    DbUser(1L, "name", encodedPassword.encodedPassword, encodedPassword.salt, "")
         }
 
         "Compare password to saved one work" {

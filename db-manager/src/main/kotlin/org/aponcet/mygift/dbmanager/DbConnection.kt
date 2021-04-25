@@ -12,14 +12,14 @@ class DbConnection(driver: String, dbPath: String) {
     init {
         val url = "jdbc:$driver:$dbPath"
         conn = DriverManager.getConnection(url)
-        autoIncrement = when(driver) {
+        autoIncrement = when (driver) {
             "sqlite" -> "AUTOINCREMENT"
             "h2" -> "AUTO_INCREMENT"
             else -> throw IllegalArgumentException("Not supported driver: $driver")
         }
     }
 
-    fun <T> safeExecute(queryString: String, function: (PreparedStatement)->T, message: String) : T {
+    fun <T> safeExecute(queryString: String, function: (PreparedStatement) -> T, message: String): T {
         val query = prepare(queryString)
         try {
             return function(query)
@@ -32,7 +32,8 @@ class DbConnection(driver: String, dbPath: String) {
 
     private fun prepare(query: String): PreparedStatement {
         try {
-            return conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS) ?: throw IllegalStateException("prepareStatement returned null")
+            return conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)
+                ?: throw IllegalStateException("prepareStatement returned null")
         } catch (e: Exception) {
             throw DbException("Unable to prepare query: $query", e)
         }

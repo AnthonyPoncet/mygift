@@ -11,7 +11,8 @@ class ArgumentParser {
     companion object {
         fun parse(args: Array<String>): Args {
             val parser = ArgParser("reset-password")
-            val configurationFile by parser.option(ArgType.String, shortName = "c", description = "configuration file").default("configuration.json")
+            val configurationFile by parser.option(ArgType.String, shortName = "c", description = "configuration file")
+                .default("configuration.json")
             val userName by parser.option(ArgType.String, shortName = "u", description = "user name").required()
             parser.parse(args)
             return Args(userName, configurationFile)

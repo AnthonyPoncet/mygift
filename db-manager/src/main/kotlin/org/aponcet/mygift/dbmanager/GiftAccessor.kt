@@ -1,9 +1,23 @@
 package org.aponcet.mygift.dbmanager
 
-import java.lang.IllegalStateException
+data class NewGift(
+    val name: String,
+    val description: String? = null,
+    val price: String? = null,
+    val whereToBuy: String? = null,
+    val categoryId: Long,
+    val picture: String? = null
+)
 
-data class NewGift(val name: String, val description: String? = null, val price: String? = null, val whereToBuy: String? = null, val categoryId: Long, val picture: String? = null)
-data class Gift(val name: String, val description: String? = null, val price: String? = null, val whereToBuy: String? = null, val categoryId: Long, val picture: String? = null, val rank: Long)
+data class Gift(
+    val name: String,
+    val description: String? = null,
+    val price: String? = null,
+    val whereToBuy: String? = null,
+    val categoryId: Long,
+    val picture: String? = null,
+    val rank: Long
+)
 
 class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
 
@@ -12,14 +26,18 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                 "VALUES (?,?,?,?,?,?,?,?)"
         const val SELECT_BY_ID = "SELECT * FROM gifts WHERE id=?"
         const val SELECT_SOME_BY_CATEGORIES = "SELECT * FROM gifts WHERE categoryId in (%s) ORDER BY rank ASC"
-        const val SELECT_SOME_BY_CATEGORIES_NO_SECRET = "SELECT * FROM gifts WHERE categoryId in (%s) AND secret=0 ORDER BY rank ASC"
+        const val SELECT_SOME_BY_CATEGORIES_NO_SECRET =
+            "SELECT * FROM gifts WHERE categoryId in (%s) AND secret=0 ORDER BY rank ASC"
         const val SELECT_MAX_RANK_OF_GIVEN_CATEGORY = "SELECT MAX(rank) FROM gifts WHERE categoryId=?"
-        const val UPDATE = "UPDATE gifts SET name=?, description=?, price=?, whereToBuy=?, categoryId=?, picture=?, rank=? WHERE id=?"
+        const val UPDATE =
+            "UPDATE gifts SET name=?, description=?, price=?, whereToBuy=?, categoryId=?, picture=?, rank=? WHERE id=?"
         const val DELETE = "DELETE FROM gifts WHERE id=?"
         const val IS_SECRET = "SELECT * FROM gifts WHERE id=? AND secret=1"
 
-        const val SELECT_NO_SECRET_GIFT_WITH_SMALLER_RANK = "SELECT * FROM gifts WHERE categoryId=? AND rank=(SELECT MAX(rank) FROM gifts WHERE categoryId=? AND rank<? AND secret=0)"
-        const val SELECT_NO_SECRET_GIFT_WITH_HIGHER_RANK = "SELECT * FROM gifts WHERE categoryId=? AND rank=(SELECT MIN(rank) FROM gifts WHERE categoryId=? AND rank>? AND secret=0)"
+        const val SELECT_NO_SECRET_GIFT_WITH_SMALLER_RANK =
+            "SELECT * FROM gifts WHERE categoryId=? AND rank=(SELECT MAX(rank) FROM gifts WHERE categoryId=? AND rank<? AND secret=0)"
+        const val SELECT_NO_SECRET_GIFT_WITH_HIGHER_RANK =
+            "SELECT * FROM gifts WHERE categoryId=? AND rank=(SELECT MIN(rank) FROM gifts WHERE categoryId=? AND rank>? AND secret=0)"
 
     }
 
@@ -28,17 +46,19 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     override fun createIfNotExists() {
-        conn.execute("CREATE TABLE IF NOT EXISTS gifts (" +
-            "id             INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
-            "name           TEXT NOT NULL, " +
-            "description    TEXT, " +
-            "price          TEXT, " +
-            "whereToBuy     TEXT, " +
-            "categoryId     INTEGER NOT NULL, " +
-            "picture        TEXT, " +
-            "secret         INTEGER NOT NULL, " +
-            "rank           INTEGER NOT NULL," +
-            "FOREIGN KEY(categoryId) REFERENCES categories(id))")
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS gifts (" +
+                    "id             INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
+                    "name           TEXT NOT NULL, " +
+                    "description    TEXT, " +
+                    "price          TEXT, " +
+                    "whereToBuy     TEXT, " +
+                    "categoryId     INTEGER NOT NULL, " +
+                    "picture        TEXT, " +
+                    "secret         INTEGER NOT NULL, " +
+                    "rank           INTEGER NOT NULL," +
+                    "FOREIGN KEY(categoryId) REFERENCES categories(id))"
+        )
     }
 
     fun addGift(gift: NewGift, secret: Boolean) {
@@ -59,7 +79,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         }, errorMessage(INSERT, gift.toString(), secret.toString(), (maxId + 1).toString()))
     }
 
-    fun getGift(giftId: Long) : DbGift? {
+    fun getGift(giftId: Long): DbGift? {
         return conn.safeExecute(SELECT_BY_ID, {
             with(it) {
                 setLong(1, giftId)
@@ -83,10 +103,10 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         }, errorMessage(SELECT_BY_ID, giftId.toString()))
     }
 
-    private fun getGifts(userId: Long, withSecret: Boolean) : List<DbGift> {
+    private fun getGifts(userId: Long, withSecret: Boolean): List<DbGift> {
         val query = if (withSecret) SELECT_SOME_BY_CATEGORIES else SELECT_SOME_BY_CATEGORIES_NO_SECRET
         val categories = JoinUserAndCategoryAccessor(conn).getCategories(userId)
-        return conn.safeExecute(query.format(categories.joinToString()),{
+        return conn.safeExecute(query.format(categories.joinToString()), {
             val gifts = arrayListOf<DbGift>()
             with(it) {
                 val res = executeQuery()
@@ -111,7 +131,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     /** Return gift for a given user, secret gift will be filter out */
-    fun getUserGifts(userId: Long) : List<DbGift> {
+    fun getUserGifts(userId: Long): List<DbGift> {
         return getGifts(userId, false)
     }
 
@@ -143,7 +163,8 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         val actions = friendActionOnGift.filter { it.buy != BuyAction.NONE }
         if (actions.isNotEmpty()) {
             val gift = getGift(giftId)!!
-            val giftUserIds = JoinUserAndCategoryAccessor(conn).getUsers(gift.categoryId) //all users that have this gift
+            val giftUserIds =
+                JoinUserAndCategoryAccessor(conn).getUsers(gift.categoryId) //all users that have this gift
             val toDeleteGiftsAccessor = ToDeleteGiftsAccessor(conn)
             for (giftUserId in giftUserIds) {
                 actions.forEach {
@@ -163,7 +184,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     fun giftExists(giftId: Long): Boolean {
-        return conn.safeExecute(SELECT_BY_ID,{
+        return conn.safeExecute(SELECT_BY_ID, {
             with(it) {
                 setLong(1, giftId)
                 return@with executeQuery().next()
@@ -186,7 +207,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         }, errorMessage(IS_SECRET, giftId.toString()))
     }
 
-    private fun getCurrentMaxRankOfGivenCategory(categoryId: Long) : Long {
+    private fun getCurrentMaxRankOfGivenCategory(categoryId: Long): Long {
         return conn.safeExecute(SELECT_MAX_RANK_OF_GIVEN_CATEGORY, {
             with(it) {
                 setLong(1, categoryId)
@@ -201,7 +222,8 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     fun rankDownGift(userId: Long, giftId: Long) {
         val gift = getGift(giftId)!!
-        val otherGift = getOtherGift(userId, gift,
+        val otherGift = getOtherGift(
+            userId, gift,
             SELECT_NO_SECRET_GIFT_WITH_SMALLER_RANK
         )
             ?: throw Exception("There is no gift with smaller rank, could not proceed.")
@@ -211,7 +233,8 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     fun rankUpGift(userId: Long, giftId: Long) {
         val gift = getGift(giftId)!!
-        val otherGift = getOtherGift(userId, gift,
+        val otherGift = getOtherGift(
+            userId, gift,
             SELECT_NO_SECRET_GIFT_WITH_HIGHER_RANK
         )
             ?: throw Exception("There is no gift with higher rank, could not proceed.")

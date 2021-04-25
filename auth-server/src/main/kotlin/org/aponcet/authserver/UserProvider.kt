@@ -18,7 +18,7 @@ interface UserProvider {
      * @param name name of the user
      * @return the user (name and password) if exist. return null else
      */
-    fun getUser(name: String) : User?
+    fun getUser(name: String): User?
 
     /**
      * Modify password for an existing user

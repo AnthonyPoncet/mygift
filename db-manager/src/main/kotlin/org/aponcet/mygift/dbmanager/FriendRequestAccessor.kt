@@ -20,13 +20,15 @@ class FriendRequestAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     override fun createIfNotExists() {
-        conn.execute("CREATE TABLE IF NOT EXISTS friendRequest (" +
-            "id         INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
-            "userOne    INTEGER NOT NULL, " +
-            "userTwo    INTEGER NOT NULL, " +
-            "status     TEXT NOT NULL, " +
-            "FOREIGN KEY(userOne) REFERENCES users(id), " +
-            "FOREIGN KEY(userTwo) REFERENCES users(id))")
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS friendRequest (" +
+                    "id         INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
+                    "userOne    INTEGER NOT NULL, " +
+                    "userTwo    INTEGER NOT NULL, " +
+                    "status     TEXT NOT NULL, " +
+                    "FOREIGN KEY(userOne) REFERENCES users(id), " +
+                    "FOREIGN KEY(userTwo) REFERENCES users(id))"
+        )
     }
 
     fun createFriendRequest(userOne: Long, userTwo: Long) {
@@ -50,7 +52,7 @@ class FriendRequestAccessor(private val conn: DbConnection) : DaoAccessor() {
         )
     }
 
-    fun getInitiatedFriendRequests(userId: Long) : List<DbFriendRequest> {
+    fun getInitiatedFriendRequests(userId: Long): List<DbFriendRequest> {
         return conn.safeExecute(SELECT_BY_USERONE, {
             with(it) {
                 setLong(1, userId)
@@ -62,7 +64,7 @@ class FriendRequestAccessor(private val conn: DbConnection) : DaoAccessor() {
         }, errorMessage(SELECT_BY_USERONE, userId.toString()))
     }
 
-    fun getReceivedFriendRequests(userId: Long) : List<DbFriendRequest> {
+    fun getReceivedFriendRequests(userId: Long): List<DbFriendRequest> {
         return conn.safeExecute(SELECT_BY_USERTWO, {
             with(it) {
                 setLong(1, userId)
@@ -107,7 +109,7 @@ class FriendRequestAccessor(private val conn: DbConnection) : DaoAccessor() {
         }
     }
 
-    fun getFriendRequest(userOne: Long, userTwo: Long) : DbFriendRequest? {
+    fun getFriendRequest(userOne: Long, userTwo: Long): DbFriendRequest? {
         return conn.safeExecute(SELECT_BY_BOTH_USER, {
             with(it) {
                 setLong(1, userOne)

@@ -8,7 +8,7 @@ import java.io.File
 class CleanDataNotUsed(dbPath: String, uploadPath: String) {
 
     companion object {
-        val LOGGER : Logger = LoggerFactory.getLogger(CleanDataNotUsed::class.java)
+        val LOGGER: Logger = LoggerFactory.getLogger(CleanDataNotUsed::class.java)
     }
 
     private val conn = DbConnection("sqlite", dbPath)
@@ -65,10 +65,10 @@ class CleanDataNotUsed(dbPath: String, uploadPath: String) {
 
         val filesToKeep = ArrayList<String>()
         val filesToRemove = ArrayList<File>()
-        uploadsFile.walk().forEach{file ->
+        uploadsFile.walk().forEach { file ->
             if (!file.isFile) return@forEach
 
-            if (pictures.find{ file.name == it } == null) {
+            if (pictures.find { file.name == it } == null) {
                 filesToRemove.add(file.absoluteFile)
             } else {
                 filesToKeep.add(file.name)
@@ -80,7 +80,7 @@ class CleanDataNotUsed(dbPath: String, uploadPath: String) {
 
         val notDeleted = ArrayList<File>()
         var deleted = 0
-        filesToRemove.forEach{
+        filesToRemove.forEach {
             if (it.delete()) deleted++ else notDeleted.add(it)
         }
         LOGGER.info("Report deleted/numberToDelete $deleted/${filesToRemove.size}")
@@ -104,18 +104,22 @@ class CleanDataNotUsed(dbPath: String, uploadPath: String) {
         }
 
         /** Remove this user from all friend **/
-        val friendRequests = conn.safeExecute("SELECT id FROM friendRequest WHERE userOne=? OR userTwo=?", {
-            with(it) {
-                setLong(1, user.id)
-                setLong(2, user.id)
-                val res = executeQuery()
-                val requests = HashSet<Long>()
-                while (res.next()) {
-                    requests.add(res.getLong("id"))
+        val friendRequests = conn.safeExecute(
+            "SELECT id FROM friendRequest WHERE userOne=? OR userTwo=?",
+            {
+                with(it) {
+                    setLong(1, user.id)
+                    setLong(2, user.id)
+                    val res = executeQuery()
+                    val requests = HashSet<Long>()
+                    while (res.next()) {
+                        requests.add(res.getLong("id"))
+                    }
+                    return@with requests
                 }
-                return@with requests
-            }
-        }, "Execution of 'SELECT id FROM friendRequest WHERE userOne=${user.id} OR userTwo=${user.id}' throw an exception")
+            },
+            "Execution of 'SELECT id FROM friendRequest WHERE userOne=${user.id} OR userTwo=${user.id}' throw an exception"
+        )
 
         if (friendRequests.isEmpty()) {
             LOGGER.info("No friend requests to remove")
@@ -138,7 +142,8 @@ class CleanDataNotUsed(dbPath: String, uploadPath: String) {
 
         /** Remove friend action **/
         val friendActionOnGiftAccessor = FriendActionOnGiftAccessor(conn)
-        val friendActionOnGiftsUserHasActionOn = friendActionOnGiftAccessor.getFriendActionOnGiftsUserHasActionOn(user.id)
+        val friendActionOnGiftsUserHasActionOn =
+            friendActionOnGiftAccessor.getFriendActionOnGiftsUserHasActionOn(user.id)
         if (friendActionOnGiftsUserHasActionOn.isEmpty()) {
             LOGGER.info("User has no action on any gift")
         } else {
@@ -151,7 +156,8 @@ class CleanDataNotUsed(dbPath: String, uploadPath: String) {
         if (userGifts.isEmpty()) {
             LOGGER.info("User has no gift so nobody can have action on")
         } else {
-            val actions = userGifts.map { friendActionOnGiftAccessor.getFriendActionOnGift(it.id) }.flatMap { it.toList() }
+            val actions =
+                userGifts.map { friendActionOnGiftAccessor.getFriendActionOnGift(it.id) }.flatMap { it.toList() }
             if (actions.isEmpty()) {
                 LOGGER.info("No action from friend on gift to remove")
             } else {

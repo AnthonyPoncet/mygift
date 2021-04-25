@@ -7,7 +7,6 @@ class JoinUserAndCategoryAccessor(private val conn: DbConnection) : DaoAccessor(
         const val SELECT_BY_CATEGORY_ID = "SELECT userId from joinUserAndCategory where categoryId=?"
         const val UPDATE = "UPDATE joinUserAndCategory SET rank=? WHERE userId=? AND categoryId=?"
         const val DELETE_BY_CATEGORY_ID = "DELETE from joinUserAndCategory where categoryId=?"
-
         const val SELECT_MAX_RANK = "SELECT MAX(rank) FROM joinUserAndCategory WHERE userId=?"
     }
 
@@ -16,12 +15,14 @@ class JoinUserAndCategoryAccessor(private val conn: DbConnection) : DaoAccessor(
     }
 
     override fun createIfNotExists() {
-        conn.execute("CREATE TABLE IF NOT EXISTS joinUserAndCategory (" +
-                "userId INTEGER NOT NULL, " +
-                "categoryId INTEGER NOT NULL, " +
-                "rank INTEGER NOT NULL," +
-                "FOREIGN KEY(userId) REFERENCES users(id)," +
-                "FOREIGN KEY(categoryId) REFERENCES categories(id))")
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS joinUserAndCategory (" +
+                    "userId INTEGER NOT NULL, " +
+                    "categoryId INTEGER NOT NULL, " +
+                    "rank INTEGER NOT NULL," +
+                    "FOREIGN KEY(userId) REFERENCES users(id)," +
+                    "FOREIGN KEY(categoryId) REFERENCES categories(id))"
+        )
     }
 
     fun addCategory(userId: Long, categoryId: Long) {
@@ -41,7 +42,7 @@ class JoinUserAndCategoryAccessor(private val conn: DbConnection) : DaoAccessor(
         userIds.forEach { addCategory(it, categoryId) }
     }
 
-    fun getCategories(userId: Long) : Set<Long> {
+    fun getCategories(userId: Long): Set<Long> {
         return conn.safeExecute(SELECT_BY_USER_ID, {
             with(it) {
                 setLong(1, userId)
@@ -55,7 +56,7 @@ class JoinUserAndCategoryAccessor(private val conn: DbConnection) : DaoAccessor(
         }, errorMessage(SELECT_BY_USER_ID, userId.toString()))
     }
 
-    fun getUsers(categoryId: Long) : Set<Long> {
+    fun getUsers(categoryId: Long): Set<Long> {
         return conn.safeExecute(SELECT_BY_CATEGORY_ID, {
             with(it) {
                 setLong(1, categoryId)
@@ -91,7 +92,7 @@ class JoinUserAndCategoryAccessor(private val conn: DbConnection) : DaoAccessor(
         }, errorMessage(DELETE_BY_CATEGORY_ID, categoryId.toString()))
     }
 
-    private fun getCurrentMaxRank(userId: Long) : Long {
+    private fun getCurrentMaxRank(userId: Long): Long {
         return conn.safeExecute(SELECT_MAX_RANK, {
             with(it) {
                 setLong(1, userId)

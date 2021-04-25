@@ -1,7 +1,6 @@
 package org.aponcet.authserver
 
 import org.aponcet.mygift.dbmanager.DbConnection
-import org.aponcet.mygift.dbmanager.DbException
 import org.aponcet.mygift.dbmanager.UsersAccessor
 
 class DbUserProvider(dbPath: String) : UserProvider {

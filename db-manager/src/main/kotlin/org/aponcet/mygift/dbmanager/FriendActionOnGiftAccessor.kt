@@ -1,6 +1,5 @@
 package org.aponcet.mygift.dbmanager
 
-import java.lang.Exception
 import java.sql.ResultSet
 
 class FriendActionOnGiftAccessor(private val conn: DbConnection) : DaoAccessor() {
@@ -20,14 +19,16 @@ class FriendActionOnGiftAccessor(private val conn: DbConnection) : DaoAccessor()
     }
 
     override fun createIfNotExists() {
-        conn.execute("CREATE TABLE IF NOT EXISTS friendActionOnGift (" +
-            "id             INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
-            "giftId         INTEGER NOT NULL, " +
-            "userId         INTEGER NOT NULL, " +
-            "interested     INTEGER NOT NULL, " +
-            "buy            TEXT NOT NULL, " +
-            "FOREIGN KEY(userId) REFERENCES users(id), " +
-            "FOREIGN KEY(giftId) REFERENCES gifts(id))")
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS friendActionOnGift (" +
+                    "id             INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
+                    "giftId         INTEGER NOT NULL, " +
+                    "userId         INTEGER NOT NULL, " +
+                    "interested     INTEGER NOT NULL, " +
+                    "buy            TEXT NOT NULL, " +
+                    "FOREIGN KEY(userId) REFERENCES users(id), " +
+                    "FOREIGN KEY(giftId) REFERENCES gifts(id))"
+        )
     }
 
     private fun insert(giftId: Long, userId: Long, interested: Boolean, buy: BuyAction) {
@@ -112,7 +113,7 @@ class FriendActionOnGiftAccessor(private val conn: DbConnection) : DaoAccessor()
         }
     }
 
-    fun getFriendActionOnGift(giftId: Long) : List<DbFriendActionOnGift> {
+    fun getFriendActionOnGift(giftId: Long): List<DbFriendActionOnGift> {
         return conn.safeExecute(SELECT_SOME_BY_GIFT, {
             with(it) {
                 setLong(1, giftId)
@@ -122,7 +123,7 @@ class FriendActionOnGiftAccessor(private val conn: DbConnection) : DaoAccessor()
         }, errorMessage(SELECT_SOME_BY_GIFT, giftId.toString()))
     }
 
-    fun getFriendActionOnGiftsUserHasActionOn(userId: Long) : List<DbFriendActionOnGift> {
+    fun getFriendActionOnGiftsUserHasActionOn(userId: Long): List<DbFriendActionOnGift> {
         return conn.safeExecute(SELECT_SOME_BY_USER, {
             with(it) {
                 setLong(1, userId)

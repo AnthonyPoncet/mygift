@@ -1,23 +1,33 @@
 package org.aponcet.mygift.dbmanager.maintenance
 
 import org.aponcet.mygift.dbmanager.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.security.SecureRandom
 import java.util.*
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
-import kotlin.collections.HashSet
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 data class UserBeforeMigration(val id: Long, val name: String, val password: String, val picture: String)
 data class CategoryBeforeMigration(val id: Long, val userId: Long, val name: String, val rank: Long)
-data class GiftBeforeMigration(val id: Long, val userId: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?, val secret: Boolean, val rank: Long)
+data class GiftBeforeMigration(
+    val id: Long,
+    val userId: Long,
+    val name: String,
+    val description: String?,
+    val price: String?,
+    val whereToBuy: String?,
+    val categoryId: Long,
+    val picture: String?,
+    val secret: Boolean,
+    val rank: Long
+)
 
 /** Adapt table used only ad-hoc when needed **/
 class AdaptTable(dbPath: String) {
     companion object {
-        val LOGGER : Logger = LoggerFactory.getLogger(AdaptTable::class.java)
+        val LOGGER: Logger = LoggerFactory.getLogger(AdaptTable::class.java)
     }
 
     private val conn = DbConnection("sqlite", dbPath)
@@ -116,8 +126,11 @@ class AdaptTable(dbPath: String) {
                 LOGGER.info("\tCategory $category will now have gifts ${newGifts.map { g -> "(${g.id}, ${g.rank})" }}")
 
                 for (gift in newGifts) {
-                    giftAccessor.modifyGift(gift.id, Gift(gift.name, gift.description, gift.price,
-                        gift.whereToBuy, gift.categoryId, gift.picture, gift.rank)
+                    giftAccessor.modifyGift(
+                        gift.id, Gift(
+                            gift.name, gift.description, gift.price,
+                            gift.whereToBuy, gift.categoryId, gift.picture, gift.rank
+                        )
                     )
                 }
                 LOGGER.info("\tCategory $category done\n")
@@ -147,7 +160,14 @@ class AdaptTable(dbPath: String) {
         val users = HashSet<UserBeforeMigration>()
         val rs = conn.executeQuery("SELECT id, name, password, picture FROM users")
         while (rs.next()) {
-            users.add(UserBeforeMigration(rs.getLong("id"), rs.getString("name"), rs.getString("password"), rs.getString("picture")))
+            users.add(
+                UserBeforeMigration(
+                    rs.getLong("id"),
+                    rs.getString("name"),
+                    rs.getString("password"),
+                    rs.getString("picture")
+                )
+            )
         }
 
         //Disable foreign keys
@@ -178,7 +198,8 @@ class AdaptTable(dbPath: String) {
                         val rowCount = executeUpdate()
                         if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
                     }
-                }, "Insert user ${user.name} generated an error")
+                }, "Insert user ${user.name} generated an error"
+            )
         }
 
         //Clean DB
@@ -186,7 +207,7 @@ class AdaptTable(dbPath: String) {
         conn.execute("PRAGMA foreign_keys = ON")
     }
 
-    private fun hash(password : String, salt: ByteArray): ByteArray {
+    private fun hash(password: String, salt: ByteArray): ByteArray {
         val passwordChar = password.toCharArray()
         val spec = PBEKeySpec(passwordChar, salt, 10000, 256)
         Arrays.fill(passwordChar, Char.MIN_VALUE)
@@ -230,7 +251,14 @@ class AdaptTable(dbPath: String) {
         val categories = HashSet<CategoryBeforeMigration>()
         val rs = conn.executeQuery("SELECT id, userId, name, rank FROM categories")
         while (rs.next()) {
-            categories.add(CategoryBeforeMigration(rs.getLong("id"), rs.getLong("userId"), rs.getString("name"), rs.getLong("rank")))
+            categories.add(
+                CategoryBeforeMigration(
+                    rs.getLong("id"),
+                    rs.getLong("userId"),
+                    rs.getString("name"),
+                    rs.getLong("rank")
+                )
+            )
         }
 
         //Clean DB
@@ -248,22 +276,22 @@ class AdaptTable(dbPath: String) {
         val insertJoin = "INSERT into joinUserAndCategory(userId,categoryId,rank) VALUES (?,?,?)"
         for (category in categories) {
             conn.safeExecute(insert, {
-                    with(it) {
-                        setLong(1, category.id)
-                        setString(2, category.name)
-                        val rowCount = executeUpdate()
-                        if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
-                    }
-                }, "Insert category ${category.name} generated an error")
+                with(it) {
+                    setLong(1, category.id)
+                    setString(2, category.name)
+                    val rowCount = executeUpdate()
+                    if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
+                }
+            }, "Insert category ${category.name} generated an error")
             conn.safeExecute(insertJoin, {
-                    with(it) {
-                        setLong(1, category.userId)
-                        setLong(2, category.id)
-                        setLong(3, category.rank)
-                        val rowCount = executeUpdate()
-                        if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
-                    }
-                }, "Insert join ${category.name} generated an error")
+                with(it) {
+                    setLong(1, category.userId)
+                    setLong(2, category.id)
+                    setLong(3, category.rank)
+                    val rowCount = executeUpdate()
+                    if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
+                }
+            }, "Insert join ${category.name} generated an error")
         }
     }
 
@@ -278,19 +306,23 @@ class AdaptTable(dbPath: String) {
 
         //Get gifts
         val gifts = HashSet<GiftBeforeMigration>()
-        val rs = conn.executeQuery("SELECT id,userId,name,description,price,whereToBuy,categoryId,picture,secret,rank FROM gifts")
+        val rs =
+            conn.executeQuery("SELECT id,userId,name,description,price,whereToBuy,categoryId,picture,secret,rank FROM gifts")
         while (rs.next()) {
-            gifts.add(GiftBeforeMigration(
-                rs.getLong("id"),
-                rs.getLong("userId"),
-                rs.getString("name"),
-                rs.getString("description"),
-                rs.getString("price"),
-                rs.getString("whereToBuy"),
-                rs.getLong("categoryId"),
-                rs.getString("picture"),
-                rs.getBoolean("secret"),
-                rs.getLong("rank")))
+            gifts.add(
+                GiftBeforeMigration(
+                    rs.getLong("id"),
+                    rs.getLong("userId"),
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getString("price"),
+                    rs.getString("whereToBuy"),
+                    rs.getLong("categoryId"),
+                    rs.getString("picture"),
+                    rs.getBoolean("secret"),
+                    rs.getLong("rank")
+                )
+            )
         }
 
         //Clean DB
@@ -318,7 +350,8 @@ class AdaptTable(dbPath: String) {
                         val rowCount = executeUpdate()
                         if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
                     }
-                }, "Insert gift ${gift.name} generated an error")
+                }, "Insert gift ${gift.name} generated an error"
+            )
         }
     }
 }
