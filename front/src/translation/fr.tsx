@@ -41,7 +41,7 @@ class Fr implements Itrans {
             whereToBuy: "Où acheter",
             whereToBuyPlaceholder: "Lien Amazon, magasin local...",
             category: "Catégorie",
-            sharedWith: "Partagée avec",
+            sharedWith: "En commun avec",
             image: "Photo du cadeau",
             updateGiftModalTitle: "Modifier ce cadeau",
             updateModalButton: "Modifier",
