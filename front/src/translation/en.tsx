@@ -68,7 +68,9 @@ class En implements Itrans {
             title: "Wish list of ",
             imInterested: "Like",
             iWantToBuy: "Add to my buy list",
-            iBought: "I bought"
+            iBought: "I bought",
+            deleteModalButtonReceived: "Gift received",
+            deleteModalButtonNotWanted: "Gift to delete"
           },
           myevents: {
             createEventButton: "Create event",

@@ -26,19 +26,20 @@ interface ConnectProps { token: string | null, username: String | null, friendwi
 interface StateProps extends ConnectProps { friendName: string };
 interface DispatchProps { logout: () => void };
 type Props = DispatchProps & StateProps;
+type button = { text: string, fun: any };
 interface State {
     catAndGifts: any[],
     hoverId: string,
     showGift: boolean,
     giftToShow: any | null,
-    show: boolean, title: string, bodyRender: any, button: { text: string, fun: any }, inputs: any, errorMessage: string //to refactor, duplicate
+    show: boolean, title: string, bodyRender: any, buttons: button[], inputs: any, errorMessage: string //to refactor, duplicate
 };
 
 class FriendWishList extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
         this.state = {catAndGifts: [], hoverId: '', showGift: false, giftToShow: null,
-                      show: false, title: '', bodyRender: null, button: { text: '', fun: null }, inputs: { }, errorMessage: ''};
+                      show: false, title: '', bodyRender: null, buttons: [], inputs: { }, errorMessage: ''};
     }
 
     componentDidMount() {
@@ -49,15 +50,21 @@ class FriendWishList extends React.Component<Props, State> {
 
     openAddGift() {
         const { mywishlist } = this.props;
-        this.setState( { show: true, title: mywishlist.addGiftModalTitle, bodyRender: () => this.giftBodyRender(), button: { text: mywishlist.addModalButton, fun: () => this.addGift() },
+        this.setState( { show: true, title: mywishlist.addGiftModalTitle, bodyRender: () => this.giftBodyRender(), buttons: [{ text: mywishlist.addModalButton, fun: () => this.addGift() }],
             inputs: { name: '', nameValidity: true, description: null, price: null, whereToBuy: null, categoryId: this.state.catAndGifts[0].category.id }, errorMessage: '' });
     }
 
     openEditGift(giftId: number, name: string, description: string, price: string, whereToBuy: string, categoryId: number, image: string | null, rank: number) {
         const { mywishlist } = this.props;
-        this.setState( { show: true, title: mywishlist.updateGiftModalTitle, bodyRender: () => this.giftBodyRender(), button: { text: mywishlist.updateModalButton, fun: () => this.updateGift(giftId) },
+        this.setState( { show: true, title: mywishlist.updateGiftModalTitle, bodyRender: () => this.giftBodyRender(), buttons: [{ text: mywishlist.updateModalButton, fun: () => this.updateGift(giftId) }],
             inputs: { name: name, nameValidity: true, description: description, price: price, whereToBuy: whereToBuy, categoryId: categoryId, picture: image, rank: rank }, errorMessage: '' });
     }
+
+    openDeleteGift(giftId: number) {
+            const { friendwishlist, mywishlist } = this.props;
+            this.setState( { show: true, title: mywishlist.deleteGiftModalTitle, bodyRender: () => this.giftDeleteBodyRender(), buttons: [
+            { text: friendwishlist.deleteModalButtonReceived, fun: () => this.deleteGift(giftId, 'RECEIVED') }, { text: friendwishlist.deleteModalButtonNotWanted, fun: () => this.deleteGift(giftId, 'NOT_WANTED') }, ], errorMessage: '' });
+        }
 
     handleChangeGift = async (event: any) => {
         const { inputs } = this.state;
@@ -140,6 +147,10 @@ class FriendWishList extends React.Component<Props, State> {
             </>);
     }
 
+    giftDeleteBodyRender() {
+        return (<div></div>);
+    }
+
     giftRestCall(url: string, method: string) {
         const {inputs} = this.state;
 
@@ -180,10 +191,11 @@ class FriendWishList extends React.Component<Props, State> {
 
     updateGift(id: number) { this.giftRestCall(url + '/gifts/' + id, 'PATCH'); }
 
-    deleteGift(id: number) {
+    deleteGift(id: number, status: string) {
         const request = async () => {
-            const response = await fetch(url + '/gifts/' + id, {method: 'delete', headers: {'Authorization': `Bearer ${this.props.token}`}});
+            const response = await fetch(url + '/gifts/' + id + '?status=' + status, {method: 'delete', headers: {'Authorization': `Bearer ${this.props.token}`}});
             if (response.status === 202) {
+                this.setState({ show: false });
                 this.props.token && this.getGifts(this.props.token, this.props.friendName);
             } else if (response.status === 401) {
                 console.error("Unauthorized. Disconnect and redirect to connect");
@@ -316,6 +328,7 @@ class FriendWishList extends React.Component<Props, State> {
 
     renderGifts() {
       if (this.state.catAndGifts) {
+        console.log(this.state.catAndGifts)
         return this.state.catAndGifts.map((cg, cgi) => {
             return (
             <div key={cgi}>
@@ -349,7 +362,7 @@ class FriendWishList extends React.Component<Props, State> {
                               <span className="three-icon-first" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture, gift.rank)}><Octicon icon={Pencil}/></span>
                               {' '}
                               <div className="three-icon-second secret-text">Secret</div>
-                              <span className="three-icon-third" style={{cursor: "pointer"}} onClick={() => this.deleteGift(gift.id)}><Octicon icon={X}/></span>
+                              <span className="three-icon-third" style={{cursor: "pointer"}} onClick={() => this.openDeleteGift(gift.id)}><Octicon icon={X}/></span>
                             </div>
                             }
                           { (bought.length === 0 || imInterested || iWantToBuy || iWantToBuy) &&
@@ -388,7 +401,7 @@ class FriendWishList extends React.Component<Props, State> {
     }
 
     render() {
-          const { button } = this.state;
+          const { buttons } = this.state;
           const { mywishlist } = this.props;
           let modalBody = [];
           if (this.state.bodyRender !== null) {
@@ -418,7 +431,10 @@ class FriendWishList extends React.Component<Props, State> {
               <ModalBody>
                   { this.state.errorMessage && <p className="auth-error">{this.state.errorMessage}</p> }
                   {modalBody}
-                  <Button color="primary" onClick={button.fun}>{button.text}</Button>
+                  {buttons.map((button: any, id:any) => {
+                      return (<><Button key={'button'+id} color="primary" onClick={button.fun}>{button.text}</Button>{' '}</>);
+                      })
+                  }
               </ModalBody>
           </Modal>
         </div>);

@@ -68,7 +68,9 @@ class Fr implements Itrans {
             title: "Liste de ",
             imInterested: "J'aime",
             iWantToBuy: "Je veux acheter",
-            iBought: "J'ai acheté"
+            iBought: "J'ai acheté",
+            deleteModalButtonReceived: "Cadeau reçu",
+            deleteModalButtonNotWanted: "Cadeau à supprimer"
           },
           myevents: {
             createEventButton: "Créer un évènement",
