@@ -4,13 +4,8 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.gson.Gson
 import io.kotlintest.specs.StringSpec
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.setBody
-import io.ktor.server.testing.withTestApplication
+import io.ktor.http.*
+import io.ktor.server.testing.*
 import java.security.KeyFactory
 import java.security.interfaces.RSAPublicKey
 import java.security.spec.X509EncodedKeySpec
@@ -22,22 +17,26 @@ import kotlin.test.assertTrue
 class ApplicationTest : StringSpec({
 
     "test could contact end point /public-key" {
-        withTestApplication({authModule(TestUserProvider())}) {
+        withTestApplication({ authModule(TestUserProvider()) }) {
             with(handleRequest(HttpMethod.Get, "public-key")) {
                 assertEquals(HttpStatusCode.OK, response.status())
-                val fromJson = Gson().fromJson(response.content, Map::class.java)//verify could org.aponcet.authserver.decode
+                val fromJson =
+                    Gson().fromJson(response.content, Map::class.java)//verify could org.aponcet.authserver.decode
                 assertTrue(fromJson["key"] != null)
             }
         }
     }
 
     "test end point /login valid credentials" {
-        withTestApplication({authModule(TestUserProvider())}) {
+        withTestApplication({ authModule(TestUserProvider()) }) {
             //Get current public key
             var currentKey: RSAPublicKey
             with(handleRequest(HttpMethod.Get, "public-key")) {
                 assertEquals(HttpStatusCode.OK, response.status())
-                val keyResponse = Gson().fromJson(response.content, KeyResponse::class.java) //verify could org.aponcet.authserver.decode
+                val keyResponse = Gson().fromJson(
+                    response.content,
+                    KeyResponse::class.java
+                ) //verify could org.aponcet.authserver.decode
                 val keyFactory = KeyFactory.getInstance("RSA")
                 currentKey = keyFactory.generatePublic(X509EncodedKeySpec(keyResponse.key)) as RSAPublicKey
             }
@@ -69,52 +68,64 @@ class ApplicationTest : StringSpec({
     }
 
     "test end point /login invalid credentials" {
-        withTestApplication({authModule(TestUserProvider())}) {
+        withTestApplication({ authModule(TestUserProvider()) }) {
             with(handleRequest(HttpMethod.Post, "login") {
                 addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                 setBody(Gson().toJson(UserJson("toto", "test")))
             }) {
                 assertEquals(HttpStatusCode.Unauthorized, response.status())
-                assertEquals(ErrorResponse("Unknown user 'toto' or password mismatch"), Gson().fromJson(response.content, ErrorResponse::class.java))
+                assertEquals(
+                    ErrorResponse("Unknown user 'toto' or password mismatch"),
+                    Gson().fromJson(response.content, ErrorResponse::class.java)
+                )
             }
         }
     }
 
     "test end point /login missing body" {
-        withTestApplication({authModule(TestUserProvider())}) {
+        withTestApplication({ authModule(TestUserProvider()) }) {
             with(handleRequest(HttpMethod.Post, "login")) {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
-                assertEquals(ErrorResponse("/login need a json as input"), Gson().fromJson(response.content, ErrorResponse::class.java))
+                assertEquals(
+                    ErrorResponse("/login need a json as input"),
+                    Gson().fromJson(response.content, ErrorResponse::class.java)
+                )
             }
         }
     }
 
     "test end point /login missing name in body" {
-        withTestApplication({authModule(TestUserProvider())}) {
+        withTestApplication({ authModule(TestUserProvider()) }) {
             with(handleRequest(HttpMethod.Post, "login") {
                 addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                 setBody(Gson().toJson(UserJson(null, "test")))
             }) {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
-                assertEquals(ErrorResponse("/login json need name node"), Gson().fromJson(response.content, ErrorResponse::class.java))
+                assertEquals(
+                    ErrorResponse("/login json need name node"),
+                    Gson().fromJson(response.content, ErrorResponse::class.java)
+                )
             }
         }
     }
 
     "test end point /login missing password in body" {
-        withTestApplication({authModule(TestUserProvider())}) {
+        withTestApplication({ authModule(TestUserProvider()) }) {
             with(handleRequest(HttpMethod.Post, "login") {
                 addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                 setBody(Gson().toJson(UserJson("toto", null)))
             }) {
                 assertEquals(HttpStatusCode.BadRequest, response.status())
-                assertEquals(ErrorResponse("/login json need password node"), Gson().fromJson(response.content, ErrorResponse::class.java))
+                assertEquals(
+                    ErrorResponse("/login json need password node"),
+                    Gson().fromJson(response.content, ErrorResponse::class.java)
+                )
             }
         }
     }
 
     "test end point /create valid" {
-        withTestApplication({authModule(TestUserProvider())}) {
+        withTestApplication({ authModule(TestUserProvider()) }) {
             with(handleRequest(HttpMethod.Put, "create") {
                 addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                 setBody(Gson().toJson(UserAndPictureJson("toto", "pwd", "picture")))
@@ -125,7 +136,7 @@ class ApplicationTest : StringSpec({
     }
 
     "test end point /create call two times same user" {
-        withTestApplication({authModule(TestUserProvider())}) {
+        withTestApplication({ authModule(TestUserProvider()) }) {
             with(handleRequest(HttpMethod.Put, "create") {
                 addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                 setBody(Gson().toJson(UserAndPictureJson("test", "pwd", "picture")))
@@ -136,7 +147,7 @@ class ApplicationTest : StringSpec({
     }
 
     "test end point /create call missing name" {
-        withTestApplication({authModule(TestUserProvider())}) {
+        withTestApplication({ authModule(TestUserProvider()) }) {
             with(handleRequest(HttpMethod.Put, "create") {
                 addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                 setBody(Gson().toJson(UserAndPictureJson(null, "pwd", "picture")))
@@ -147,7 +158,7 @@ class ApplicationTest : StringSpec({
     }
 
     "test end point /create call missing password" {
-        withTestApplication({authModule(TestUserProvider())}) {
+        withTestApplication({ authModule(TestUserProvider()) }) {
             with(handleRequest(HttpMethod.Put, "create") {
                 addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                 setBody(Gson().toJson(UserAndPictureJson("toto", null, "picture")))
@@ -159,7 +170,13 @@ class ApplicationTest : StringSpec({
 })
 
 class TestUserProvider : UserProvider {
-    private val users = mapOf("test" to User(1, "test", EncodedPasswordAndSalt(PasswordManager.hash("test", "salt".toByteArray()), "salt".toByteArray())))
+    private val users = mapOf(
+        "test" to User(
+            1,
+            "test",
+            EncodedPasswordAndSalt(PasswordManager.hash("test", "salt".toByteArray()), "salt".toByteArray())
+        )
+    )
 
     override fun addUser(name: String, password: ByteArray, salt: ByteArray, picture: String) {
     }

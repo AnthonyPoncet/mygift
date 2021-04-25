@@ -18,7 +18,10 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
     private fun deleteTable(tables: List<String>) {
         for (table in tables) {
             conn.safeExecute("DELETE FROM $table", { it.executeUpdate() }, "Could not clean $table")
-            conn.safeExecute("ALTER TABLE $table ALTER COLUMN id RESTART WITH 1", { it.executeUpdate() }, "Could not reset sequence id $table"
+            conn.safeExecute(
+                "ALTER TABLE $table ALTER COLUMN id RESTART WITH 1",
+                { it.executeUpdate() },
+                "Could not reset sequence id $table"
             )
         }
     }
@@ -27,7 +30,11 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
         val usersAccessor = UsersAccessor(conn)
         usersAccessor.createIfNotExists()
         toDeleteGiftsAccessor.createIfNotExists()
-        conn.safeExecute("DELETE FROM ${toDeleteGiftsAccessor.getTableName()}", { it.executeUpdate() }, "Could not clean ${toDeleteGiftsAccessor.getTableName()}")
+        conn.safeExecute(
+            "DELETE FROM ${toDeleteGiftsAccessor.getTableName()}",
+            { it.executeUpdate() },
+            "Could not clean ${toDeleteGiftsAccessor.getTableName()}"
+        )
         deleteTable(listOf(usersAccessor.getTableName())) //order matter due to foreign key
 
         usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "")
@@ -35,7 +42,11 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
     }
 
     override fun afterTest(description: Description, result: TestResult) {
-        conn.safeExecute("DELETE FROM ${toDeleteGiftsAccessor.getTableName()}", { it.executeUpdate() }, "Could not clean ${toDeleteGiftsAccessor.getTableName()}")
+        conn.safeExecute(
+            "DELETE FROM ${toDeleteGiftsAccessor.getTableName()}",
+            { it.executeUpdate() },
+            "Could not clean ${toDeleteGiftsAccessor.getTableName()}"
+        )
         deleteTable(listOf(UsersAccessor(conn).getTableName())) //order matter due to foreign key
     }
 
@@ -52,7 +63,20 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
                 DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)
             )
 
-            toDeleteGiftsAccessor.getDeletedGiftsWhereUserHasActionOn(2L) shouldBe listOf(DbToDeleteGifts(1L, 1L, "g1", null, null, null, null, Status.RECEIVED, 2L, BuyAction.WANT_TO_BUY))
+            toDeleteGiftsAccessor.getDeletedGiftsWhereUserHasActionOn(2L) shouldBe listOf(
+                DbToDeleteGifts(
+                    1L,
+                    1L,
+                    "g1",
+                    null,
+                    null,
+                    null,
+                    null,
+                    Status.RECEIVED,
+                    2L,
+                    BuyAction.WANT_TO_BUY
+                )
+            )
         }
 
         "Delete one gift" {

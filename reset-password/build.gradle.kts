@@ -17,7 +17,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.2.3")
 }
 
-tasks.withType<ShadowJar>() {
+tasks.withType<ShadowJar> {
     manifest {
         attributes(mapOf("Main-Class" to "org.aponcet.mygift.resetpassword.MainKt"))
     }

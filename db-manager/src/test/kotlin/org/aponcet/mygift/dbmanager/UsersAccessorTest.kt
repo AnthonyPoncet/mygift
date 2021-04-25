@@ -6,7 +6,7 @@ import io.kotlintest.TestResult
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 
-class UsersAccessorTest: StringSpec() {
+class UsersAccessorTest : StringSpec() {
     private val conn = DbConnection("h2", "mem:test")
     private val usersAccessor = UsersAccessor(conn)
 
@@ -17,7 +17,11 @@ class UsersAccessorTest: StringSpec() {
     private fun deleteTable(tables: List<String>) {
         for (table in tables) {
             conn.safeExecute("DELETE FROM $table", { it.executeUpdate() }, "Could not clean $table")
-            conn.safeExecute("ALTER TABLE $table ALTER COLUMN id RESTART WITH 1", { it.executeUpdate() }, "Could not reset sequence id $table")
+            conn.safeExecute(
+                "ALTER TABLE $table ALTER COLUMN id RESTART WITH 1",
+                { it.executeUpdate() },
+                "Could not reset sequence id $table"
+            )
         }
     }
 
@@ -58,7 +62,13 @@ class UsersAccessorTest: StringSpec() {
 
             usersAccessor.modifyUser(1L, "other", "best_pic.jpg")
             usersAccessor.getUser("name") shouldBe null
-            usersAccessor.getUser("other") shouldBe DbUser(1L, "other", "pwd".toByteArray(), "azerty".toByteArray(), "best_pic.jpg")
+            usersAccessor.getUser("other") shouldBe DbUser(
+                1L,
+                "other",
+                "pwd".toByteArray(),
+                "azerty".toByteArray(),
+                "best_pic.jpg"
+            )
             usersAccessor.getUser(1L) shouldBe NakedUser("other", "best_pic.jpg")
         }
 

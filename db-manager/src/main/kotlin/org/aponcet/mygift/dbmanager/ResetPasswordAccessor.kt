@@ -27,11 +27,13 @@ class ResetPasswordAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     override fun createIfNotExists() {
-        conn.execute("CREATE TABLE IF NOT EXISTS ${getTableName()} (" +
-                "userId  INTEGER NOT NULL, " +
-                "uuid    TEXT NOT NULL, " +
-                "expiry  INTEGER NOT NULL," +
-                "FOREIGN KEY(userId) REFERENCES users(id))")
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS ${getTableName()} (" +
+                    "userId  INTEGER NOT NULL, " +
+                    "uuid    TEXT NOT NULL, " +
+                    "expiry  INTEGER NOT NULL," +
+                    "FOREIGN KEY(userId) REFERENCES users(id))"
+        )
     }
 
     fun addEntry(userId: Long): DbResetPassword {
@@ -52,7 +54,8 @@ class ResetPasswordAccessor(private val conn: DbConnection) : DaoAccessor() {
                     if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
                 }
             },
-            errorMessage(INSERT, userId.toString(), uuid.toString(), expiry.toString()))
+            errorMessage(INSERT, userId.toString(), uuid.toString(), expiry.toString())
+        )
 
         return DbResetPassword(userId, uuid.toString(), LocalDateTime.ofEpochSecond(expiry, 0, ZONE_OFFSET))
     }

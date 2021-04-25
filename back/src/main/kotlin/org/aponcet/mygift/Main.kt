@@ -4,26 +4,18 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import io.ktor.application.*
-import io.ktor.auth.Authentication
-import io.ktor.auth.authenticate
-import io.ktor.auth.authentication
-import io.ktor.auth.jwt.JWTPrincipal
-import io.ktor.auth.jwt.jwt
+import io.ktor.auth.*
+import io.ktor.auth.jwt.*
 import io.ktor.features.*
-import io.ktor.gson.gson
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.Parameters
+import io.ktor.gson.*
+import io.ktor.http.*
 import io.ktor.http.content.*
-import io.ktor.request.receiveMultipart
-import io.ktor.request.receiveText
-import io.ktor.response.respond
-import io.ktor.response.respondFile
+import io.ktor.request.*
+import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
-import io.ktor.server.netty.Netty
+import io.ktor.server.netty.*
 import org.aponcet.authserver.UserAndPictureJson
 import org.aponcet.authserver.UserAndResetPassword
 import org.aponcet.authserver.UserJson
@@ -150,7 +142,12 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
     }
 
     install(StatusPages) {
-        exception<NotANumberException> { e -> call.respond(HttpStatusCode.BadRequest, ErrorAnswer("Provided ${e.target} must be a number.")) }
+        exception<NotANumberException> { e ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorAnswer("Provided ${e.target} must be a number.")
+            )
+        }
     }
 
     install(Authentication) {
@@ -202,7 +199,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         authenticate {
             route("/users") {
                 patch {
-                    handle(call) {id ->
+                    handle(call) { id ->
                         val info = Gson().fromJson(decode(call.receiveText()), UserModification::class.java)
                         try {
                             val user = userManager.modifyUser(id, info)
@@ -221,18 +218,19 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         authenticate {
             route("gifts") {
                 get {
-                    handle(call) {id ->
+                    handle(call) { id ->
                         val userGifts = userManager.getUserGifts(id)
                         call.respond(HttpStatusCode.OK, userGifts)
                     }
                 }
                 put {
-                    handle(call) {id ->
+                    handle(call) { id ->
                         val gift = Gson().fromJson(decode(call.receiveText()), RestGift::class.java)
                         if (gift.name == null) {
                             call.respond(HttpStatusCode.BadRequest, ErrorAnswer("missing name node in json"))
                         } else {
-                            val forUser = call.request.queryParameters["forUser"] /* being the name of the user --> add a secret gift*/
+                            val forUser =
+                                call.request.queryParameters["forUser"] /* being the name of the user --> add a secret gift*/
                             if (forUser == null) {
                                 userManager.addGift(id, gift)
                             } else {
@@ -244,7 +242,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                 }
                 patch("/{gid}") {
                     val gid = getGiftId(call.parameters)
-                    handle(call) {id ->
+                    handle(call) { id ->
                         val gift = Gson().fromJson(decode(call.receiveText()), RestGift::class.java)
                         if (gift.name == null) {
                             call.respond(HttpStatusCode.BadRequest, ErrorAnswer("missing name node in json"))
@@ -256,8 +254,11 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                 }
                 delete("/{gid}") {
                     val gid = getGiftId(call.parameters)
-                    handle(call) {id ->
-                        val status = Status.valueOf(call.request.queryParameters["status"] ?: throw Exception("status query parameter is mandatory"))
+                    handle(call) { id ->
+                        val status = Status.valueOf(
+                            call.request.queryParameters["status"]
+                                ?: throw Exception("status query parameter is mandatory")
+                        )
                         userManager.removeGift(id, gid, status)
                         call.respond(HttpStatusCode.Accepted)
                     }
@@ -269,14 +270,14 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                     if (action != "down" && action != "up") {
                         throw IllegalStateException("Only allowed action are up or down")
                     }
-                    handle(call) {id ->
+                    handle(call) { id ->
                         userManager.changeGiftRank(id, gid, RankAction.valueOf(action.toUpperCase()))
                         call.respond(HttpStatusCode.Accepted)
                     }
                 }
 
                 get("/{friendName}") {
-                    handle(call) {id ->
+                    handle(call) { id ->
                         val friendName = call.parameters["friendName"]!!
                         val userGifts = userManager.getFriendGifts(id, friendName)
                         call.respond(HttpStatusCode.OK, userGifts)
@@ -285,14 +286,14 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
 
                 post("/{gid}/interested") {
                     val gid = getGiftId(call.parameters)
-                    handle(call) {id ->
+                    handle(call) { id ->
                         userManager.interested(gid, id)
                         call.respond(HttpStatusCode.Accepted)
                     }
                 }
                 delete("/{gid}/interested") {
                     val gid = getGiftId(call.parameters)
-                    handle(call) {id ->
+                    handle(call) { id ->
                         userManager.notInterested(gid, id)
                         call.respond(HttpStatusCode.Accepted)
                     }
@@ -300,15 +301,18 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
 
                 post("/{gid}/buy-action") {
                     val gid = getGiftId(call.parameters)
-                    handle(call) {id ->
-                        val action = BuyAction.valueOf(call.request.queryParameters["action"] ?: throw Exception("action query parameter is mandatory"))
+                    handle(call) { id ->
+                        val action = BuyAction.valueOf(
+                            call.request.queryParameters["action"]
+                                ?: throw Exception("action query parameter is mandatory")
+                        )
                         userManager.buy(gid, id, action)
                         call.respond(HttpStatusCode.Accepted)
                     }
                 }
                 delete("/{gid}/buy-action") {
                     val gid = getGiftId(call.parameters)
-                    handle(call) {id ->
+                    handle(call) { id ->
                         userManager.stopBuy(gid, id)
                         call.respond(HttpStatusCode.Accepted)
                     }
@@ -319,14 +323,14 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         /** BUY LIST **/
         authenticate {
             get("/buy-list") {
-                handle(call) {id ->
+                handle(call) { id ->
                     val buyList = userManager.getBuyList(id)
                     call.respond(HttpStatusCode.OK, buyList)
                 }
             }
             delete("/buy-list/deleted-gifts/{gid}") {
                 val gid = call.parameters["gid"]!!.toLongOrNull() ?: throw NotANumberException("Gift id")
-                handle(call) {id ->
+                handle(call) { id ->
                     userManager.deleteDeletedGift(gid, id)
                     call.respond(HttpStatusCode.OK)
                 }
@@ -337,7 +341,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         authenticate {
             route("/categories") {
                 put {
-                    handle(call) {id ->
+                    handle(call) { id ->
                         val category = Gson().fromJson(decode(call.receiveText()), RestCategory::class.java)
                         if (category.name == null || category.share == null) {
                             call.respond(HttpStatusCode.BadRequest, ErrorAnswer("Invalid category json"))
@@ -349,7 +353,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                 }
                 patch("/{cid}") {
                     val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException("Category id")
-                    handle(call) {id ->
+                    handle(call) { id ->
                         val category = Gson().fromJson(decode(call.receiveText()), RestCategory::class.java)
                         if (category.name == null) {
                             call.respond(HttpStatusCode.BadRequest, ErrorAnswer("Invalid category json"))
@@ -361,14 +365,14 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                 }
                 delete("/{cid}") {
                     val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException("Category id")
-                    handle(call) {id ->
+                    handle(call) { id ->
                         userManager.removeCategory(id, cid)
                         call.respond(HttpStatusCode.Accepted)
                     }
                 }
                 post("/{cid}/rank-actions/{action}") {
                     val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException("Category id")
-                    handle(call) {id ->
+                    handle(call) { id ->
                         val action = call.parameters["action"] ?: throw IllegalStateException("Missing action")
                         if (action != "down" && action != "up") {
                             throw IllegalStateException("Only allowed action are up or down")
@@ -383,27 +387,28 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         /** FRIEND REQUEST **/
         authenticate {
             get("/friends") {
-                handle(call) {id ->
+                handle(call) { id ->
                     call.respond(HttpStatusCode.OK, userManager.getFriends(id))
                 }
             }
 
             route("/friend-requests") {
                 get("/pending") {
-                    handle(call) {id ->
+                    handle(call) { id ->
                         val requests = userManager.getPendingFriendRequests(id)
                         call.respond(HttpStatusCode.OK, requests)
                     }
                 }
                 get("/received-blocked") {
-                    handle(call) {id ->
+                    handle(call) { id ->
                         val requests = userManager.getReceivedBlockedFriendRequests(id)
                         call.respond(HttpStatusCode.OK, requests)
                     }
                 }
                 put {
-                    handle(call) {id ->
-                        val friendRequest = Gson().fromJson(decode(call.receiveText()), RestCreateFriendRequest::class.java)
+                    handle(call) { id ->
+                        val friendRequest =
+                            Gson().fromJson(decode(call.receiveText()), RestCreateFriendRequest::class.java)
                         if (friendRequest.name == null) {
                             call.respond(HttpStatusCode.BadRequest, ErrorAnswer("missing name node in json"))
                         } else {
@@ -411,29 +416,39 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
                                 userManager.createFriendRequest(id, friendRequest)
                                 call.respond(HttpStatusCode.OK)
                             } catch (e: FriendRequestAlreadyExistException) {
-                                call.respond(HttpStatusCode.Conflict, FriendRequestConflict(id == e.dbFriendRequest.userOne, e.dbFriendRequest.status, e.message!!))
+                                call.respond(
+                                    HttpStatusCode.Conflict,
+                                    FriendRequestConflict(
+                                        id == e.dbFriendRequest.userOne,
+                                        e.dbFriendRequest.status,
+                                        e.message!!
+                                    )
+                                )
                             }
                         }
                     }
                 }
                 delete("/{fid}") {
-                    val fid = call.parameters["fid"]!!.toLongOrNull() ?: throw NumberFormatException("Friend Request id")
-                    handle(call) {id ->
+                    val fid =
+                        call.parameters["fid"]!!.toLongOrNull() ?: throw NumberFormatException("Friend Request id")
+                    handle(call) { id ->
                         userManager.deleteFriendRequest(id, fid)
                         call.respond(HttpStatusCode.Accepted)
                     }
                 }
                 //not convince by get
                 get("/{fid}/accept") {
-                    val fid = call.parameters["fid"]!!.toLongOrNull() ?: throw NumberFormatException("Friend Request id")
-                    handle(call) {id ->
+                    val fid =
+                        call.parameters["fid"]!!.toLongOrNull() ?: throw NumberFormatException("Friend Request id")
+                    handle(call) { id ->
                         userManager.acceptFriendRequest(id, fid)
                         call.respond(HttpStatusCode.Accepted)
                     }
                 }
                 post("/{fid}/decline") {
-                    val fid = call.parameters["fid"]!!.toLongOrNull() ?: throw NumberFormatException("Friend Request id")
-                    handle(call) {id ->
+                    val fid =
+                        call.parameters["fid"]!!.toLongOrNull() ?: throw NumberFormatException("Friend Request id")
+                    handle(call) { id ->
                         val blockUser = (call.request.queryParameters["blockUser"] ?: "false").toBoolean()
                         userManager.declineFriendRequest(id, fid, blockUser)
                         call.respond(HttpStatusCode.Accepted)
@@ -512,8 +527,8 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         }
 
         static("/") {
-           resources("static")
-           defaultResource("static/index.html")
+            resources("static")
+            defaultResource("static/index.html")
         }
 
         static("/signin") {
@@ -558,21 +573,21 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         }
 
         static("static") {
-           resources("static/static")
+            resources("static/static")
         }
     }
 }
 
 
-fun getGiftId(parameters: Parameters) : Long {
+fun getGiftId(parameters: Parameters): Long {
     return parameters["gid"]!!.toLongOrNull() ?: throw NotANumberException("Gift id")
 }
 
-fun getEventId(parameters: Parameters) : Long {
+fun getEventId(parameters: Parameters): Long {
     return parameters["eid"]!!.toLongOrNull() ?: throw NotANumberException("Event id")
 }
 
-fun decode(input: String) : String {
+fun decode(input: String): String {
     return input.toByteArray(StandardCharsets.ISO_8859_1).toString(StandardCharsets.UTF_8)
 }
 
@@ -587,7 +602,11 @@ private fun resize(file: File, size: Double): BufferedImage {
     val width = (oWidth / scale).toInt()
     val height = (oHeight / scale).toInt()
 
-    val resized = BufferedImage(width, height, if (img.colorModel.hasAlpha()) BufferedImage.TYPE_INT_ARGB else BufferedImage.TYPE_INT_RGB)
+    val resized = BufferedImage(
+        width,
+        height,
+        if (img.colorModel.hasAlpha()) BufferedImage.TYPE_INT_ARGB else BufferedImage.TYPE_INT_RGB
+    )
     val g2d = resized.createGraphics()
     g2d.drawImage(img, 0, 0, width, height, null)
     g2d.dispose()

@@ -10,14 +10,15 @@ fun main(args: Array<String>) {
     val logger = LoggerFactory.getLogger("reset-password")
 
     val arguments = ArgumentParser.parse(args)
-
+    
     val configuration = ConfigurationLoader.load(arguments.configurationFile)
 
     logger.info("Create reset password for user ${arguments.userName}")
 
     val dbConnection = DbConnection("sqlite", configuration.data.database)
 
-    val userId = UsersAccessor(dbConnection).getUser(arguments.userName)?.id ?: throw Exception("Unknown user ${arguments.userName}")
+    val userId = UsersAccessor(dbConnection).getUser(arguments.userName)?.id
+        ?: throw Exception("Unknown user ${arguments.userName}")
 
     val resetPasswordAccessor = ResetPasswordAccessor(dbConnection)
     resetPasswordAccessor.createIfNotExists()

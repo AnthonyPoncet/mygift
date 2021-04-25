@@ -9,15 +9,21 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     companion object {
         const val INSERT = "INSERT INTO categories(name) VALUES (?)"
-        const val SELECT_BY_ID = "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE C.id=?"
-        const val SELECT_BY_ID_AND_USER_ID = "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE C.id=? AND J.userId=?"
-        const val SELECT_FRIEND_CATEGORY = "select * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=? and c.id not in (select id FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=?)"
-        const val SELECT_BY_USER_ID = "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE J.userId=? ORDER BY RANK"
+        const val SELECT_BY_ID =
+            "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE C.id=?"
+        const val SELECT_BY_ID_AND_USER_ID =
+            "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE C.id=? AND J.userId=?"
+        const val SELECT_FRIEND_CATEGORY =
+            "select * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=? and c.id not in (select id FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=?)"
+        const val SELECT_BY_USER_ID =
+            "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE J.userId=? ORDER BY RANK"
         const val UPDATE = "UPDATE categories SET name=? WHERE id=?"
         const val DELETE = "DELETE FROM categories WHERE id=?"
 
-        const val SELECT_CAT_WITH_SMALLER_RANK = "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE userId=? AND rank=(SELECT MAX(rank) FROM joinUserAndCategory WHERE userId=? AND rank<?)"
-        const val SELECT_CAT_WITH_HIGHER_RANK = "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE userId=? AND rank=(SELECT MIN(rank) FROM joinUserAndCategory WHERE userId=? AND rank>?)"
+        const val SELECT_CAT_WITH_SMALLER_RANK =
+            "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE userId=? AND rank=(SELECT MAX(rank) FROM joinUserAndCategory WHERE userId=? AND rank<?)"
+        const val SELECT_CAT_WITH_HIGHER_RANK =
+            "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE userId=? AND rank=(SELECT MIN(rank) FROM joinUserAndCategory WHERE userId=? AND rank>?)"
     }
 
     override fun getTableName(): String {
@@ -25,9 +31,11 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     override fun createIfNotExists() {
-        conn.execute("CREATE TABLE IF NOT EXISTS categories (" +
-            "id     INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
-            "name   TEXT NOT NULL)")
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS categories (" +
+                    "id     INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
+                    "name   TEXT NOT NULL)"
+        )
     }
 
     fun addCategory(category: NewCategory, userIds: List<Long>) {
@@ -47,9 +55,9 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
         joinUserAndCategoryAccessor.addCategory(userIds, categoryId)
     }
 
-    fun getUserCategories(userId: Long) : List<DbCategory> {
+    fun getUserCategories(userId: Long): List<DbCategory> {
         return conn.safeExecute(SELECT_BY_USER_ID, {
-            with(it){
+            with(it) {
                 setLong(1, userId)
                 val res = executeQuery()
                 val categories = arrayListOf<DbCategory>()
@@ -69,7 +77,7 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     fun getFriendCategories(userId: Long, friendId: Long): List<DbCategory> {
         return conn.safeExecute(SELECT_FRIEND_CATEGORY, {
-            with(it){
+            with(it) {
                 setLong(1, friendId)
                 setLong(2, userId)
                 val res = executeQuery()
@@ -137,7 +145,7 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     fun rankUpCategory(userId: Long, categoryId: Long) {
-        val dbCategory = getCategory(userId,categoryId)
+        val dbCategory = getCategory(userId, categoryId)
         val otherCat = getOtherCategory(userId, dbCategory, SELECT_CAT_WITH_HIGHER_RANK)
             ?: throw Exception("There is no category with higher rank, could not proceed.")
 

@@ -29,7 +29,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3")
 }
 
-tasks.withType<ShadowJar>() {
+tasks.withType<ShadowJar> {
     manifest {
         attributes(mapOf("Main-Class" to "org.aponcet.mygift.MainKt"))
     }

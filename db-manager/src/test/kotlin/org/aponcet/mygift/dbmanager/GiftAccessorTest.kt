@@ -18,7 +18,10 @@ class GiftAccessorTest : StringSpec() {
     private fun deleteTable(tables: List<String>) {
         for (table in tables) {
             conn.safeExecute("DELETE FROM $table", { it.executeUpdate() }, "Could not clean $table")
-            conn.safeExecute("ALTER TABLE $table ALTER COLUMN id RESTART WITH 1", { it.executeUpdate() }, "Could not reset sequence id $table"
+            conn.safeExecute(
+                "ALTER TABLE $table ALTER COLUMN id RESTART WITH 1",
+                { it.executeUpdate() },
+                "Could not reset sequence id $table"
             )
         }
     }
@@ -34,11 +37,20 @@ class GiftAccessorTest : StringSpec() {
         JoinUserAndCategoryAccessor(conn).createIfNotExists()
         conn.safeExecute(
             "DELETE FROM ${JoinUserAndCategoryAccessor(conn).getTableName()}", { it.executeUpdate() },
-            "Could not clean ${JoinUserAndCategoryAccessor(conn).getTableName()}")
+            "Could not clean ${JoinUserAndCategoryAccessor(conn).getTableName()}"
+        )
         conn.safeExecute(
             "DELETE FROM ${ToDeleteGiftsAccessor(conn).getTableName()}", { it.executeUpdate() },
-            "Could not clean ${ToDeleteGiftsAccessor(conn).getTableName()}")
-        deleteTable(listOf(FriendActionOnGiftAccessor(conn).getTableName(), giftAccessor.getTableName(), categoryAccessor.getTableName(), usersAccessor.getTableName())) //order matter due to foreign key
+            "Could not clean ${ToDeleteGiftsAccessor(conn).getTableName()}"
+        )
+        deleteTable(
+            listOf(
+                FriendActionOnGiftAccessor(conn).getTableName(),
+                giftAccessor.getTableName(),
+                categoryAccessor.getTableName(),
+                usersAccessor.getTableName()
+            )
+        ) //order matter due to foreign key
 
         usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "")
         usersAccessor.addUser("name2", "pwd".toByteArray(), "otherSalt".toByteArray(), "")
@@ -51,11 +63,20 @@ class GiftAccessorTest : StringSpec() {
     override fun afterTest(description: Description, result: TestResult) {
         conn.safeExecute(
             "DELETE FROM ${JoinUserAndCategoryAccessor(conn).getTableName()}", { it.executeUpdate() },
-            "Could not clean ${JoinUserAndCategoryAccessor(conn).getTableName()}")
+            "Could not clean ${JoinUserAndCategoryAccessor(conn).getTableName()}"
+        )
         conn.safeExecute(
             "DELETE FROM ${ToDeleteGiftsAccessor(conn).getTableName()}", { it.executeUpdate() },
-            "Could not clean ${ToDeleteGiftsAccessor(conn).getTableName()}")
-        deleteTable(listOf(FriendActionOnGiftAccessor(conn).getTableName(), giftAccessor.getTableName(), CategoryAccessor(conn).getTableName(), UsersAccessor(conn).getTableName())) //order matter due to foreign key
+            "Could not clean ${ToDeleteGiftsAccessor(conn).getTableName()}"
+        )
+        deleteTable(
+            listOf(
+                FriendActionOnGiftAccessor(conn).getTableName(),
+                giftAccessor.getTableName(),
+                CategoryAccessor(conn).getTableName(),
+                UsersAccessor(conn).getTableName()
+            )
+        ) //order matter due to foreign key
     }
 
     override fun testCaseOrder(): TestCaseOrder? {
@@ -86,7 +107,7 @@ class GiftAccessorTest : StringSpec() {
         }
 
         "Add one gift with all fields ranked one." {
-            giftAccessor.addGift(NewGift("g1", "desc", "1€", "Here", 3L, "nice_pic.jpg"),false)
+            giftAccessor.addGift(NewGift("g1", "desc", "1€", "Here", 3L, "nice_pic.jpg"), false)
 
             val expected = DbGift(1L, "g1", "desc", "1€", "Here", 3L, "nice_pic.jpg", false, 1L)
             giftAccessor.getGift(1L) shouldBe expected
@@ -138,8 +159,8 @@ class GiftAccessorTest : StringSpec() {
         }
 
         "Modify gift from values to null." {
-            giftAccessor.addGift(NewGift("g1", "desc", "1€", "Here", 1L, "nice_pic.jpg"),false)
-            giftAccessor.modifyGift(1L, Gift(name = "modified", categoryId =  2L, rank = 1L))
+            giftAccessor.addGift(NewGift("g1", "desc", "1€", "Here", 1L, "nice_pic.jpg"), false)
+            giftAccessor.modifyGift(1L, Gift(name = "modified", categoryId = 2L, rank = 1L))
 
             val expected = DbGift(1L, "modified", null, null, null, 2L, null, false, 1L)
             giftAccessor.getGift(1L) shouldBe expected
@@ -151,7 +172,7 @@ class GiftAccessorTest : StringSpec() {
 
         "Modify unknown gift throw." {
             assertFailsWith(DbException::class) {
-                giftAccessor.modifyGift(1L, Gift(name = "modified", categoryId =  2L, rank = 1L))
+                giftAccessor.modifyGift(1L, Gift(name = "modified", categoryId = 2L, rank = 1L))
             }
         }
 
@@ -179,7 +200,20 @@ class GiftAccessorTest : StringSpec() {
 
             FriendActionOnGiftAccessor(conn).getFriendActionOnGift(1L) shouldBe emptyList()
             FriendActionOnGiftAccessor(conn).getFriendActionOnGiftsUserHasActionOn(2L) shouldBe emptyList()
-            ToDeleteGiftsAccessor(conn).getDeletedGiftsWhereUserHasActionOn(2L) shouldBe listOf(DbToDeleteGifts(1L, 1L, "g1", null, null, null, null, Status.RECEIVED, 2L, BuyAction.WANT_TO_BUY))
+            ToDeleteGiftsAccessor(conn).getDeletedGiftsWhereUserHasActionOn(2L) shouldBe listOf(
+                DbToDeleteGifts(
+                    1L,
+                    1L,
+                    "g1",
+                    null,
+                    null,
+                    null,
+                    null,
+                    Status.RECEIVED,
+                    2L,
+                    BuyAction.WANT_TO_BUY
+                )
+            )
         }
 
         "Delete unknown gift throw." {
@@ -218,13 +252,15 @@ class GiftAccessorTest : StringSpec() {
             giftAccessor.getUserGifts(1L) shouldBe listOf(
                 DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
                 DbGift(2L, "g2", null, null, null, 1L, null, false, 2L),
-                DbGift(3L, "g3", null, null, null, 1L, null, false, 3L))
+                DbGift(3L, "g3", null, null, null, 1L, null, false, 3L)
+            )
 
             giftAccessor.rankDownGift(1L, 2L)
             giftAccessor.getUserGifts(1L) shouldBe listOf(
                 DbGift(2L, "g2", null, null, null, 1L, null, false, 1L),
                 DbGift(1L, "g1", null, null, null, 1L, null, false, 2L),
-                DbGift(3L, "g3", null, null, null, 1L, null, false, 3L))
+                DbGift(3L, "g3", null, null, null, 1L, null, false, 3L)
+            )
 
             giftAccessor.rankDownGift(1L, 3L)
             giftAccessor.getUserGifts(1L) shouldBe listOf(
@@ -253,7 +289,8 @@ class GiftAccessorTest : StringSpec() {
             giftAccessor.getUserGifts(1L) shouldBe listOf(
                 DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
                 DbGift(2L, "g2", null, null, null, 1L, null, false, 2L),
-                DbGift(3L, "g3", null, null, null, 1L, null, false, 3L))
+                DbGift(3L, "g3", null, null, null, 1L, null, false, 3L)
+            )
 
             giftAccessor.rankUpGift(1L, 2L)
             giftAccessor.getUserGifts(1L) shouldBe listOf(
@@ -291,7 +328,8 @@ class GiftAccessorTest : StringSpec() {
                 DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
                 DbGift(2L, "g2", null, null, null, 1L, null, true, 2L),
                 DbGift(3L, "g3", null, null, null, 1L, null, true, 3L),
-                DbGift(4L, "g4", null, null, null, 1L, null, false, 4L))
+                DbGift(4L, "g4", null, null, null, 1L, null, false, 4L)
+            )
 
             //TODO: was expected id 4 -> 1 -> 2 -> 3
             giftAccessor.rankDownGift(1L, 4L)
@@ -313,7 +351,8 @@ class GiftAccessorTest : StringSpec() {
                 DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
                 DbGift(2L, "g2", null, null, null, 1L, null, true, 2L),
                 DbGift(3L, "g3", null, null, null, 1L, null, true, 3L),
-                DbGift(4L, "g4", null, null, null, 1L, null, false, 4L))
+                DbGift(4L, "g4", null, null, null, 1L, null, false, 4L)
+            )
 
             //TODO: was expected id 2 -> 3 -> 4 -> 1. But not even sure.
             giftAccessor.rankUpGift(1L, 1L)

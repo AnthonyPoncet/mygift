@@ -2,45 +2,99 @@ package org.aponcet.mygift
 
 //TODO: remove linked to db model?
 import com.google.gson.Gson
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
-import io.ktor.client.features.ResponseException
+import io.ktor.client.*
+import io.ktor.client.engine.apache.*
+import io.ktor.client.features.*
 import io.ktor.client.features.json.*
 import io.ktor.client.request.*
-import io.ktor.client.request.post
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import org.aponcet.authserver.*
 import org.aponcet.mygift.dbmanager.*
+import org.aponcet.mygift.dbmanager.Category
+import org.aponcet.mygift.dbmanager.Gift
 import org.aponcet.mygift.model.AuthServer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.collections.set
 
 /** RETURN CLASSES **/
 data class User(val token: String, val name: String, val picture: String?)
 data class Friend(val name: String, val picture: String?)
-data class Gift(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long, val picture: String?, val rank: Long)
+data class Gift(
+    val id: Long,
+    val name: String,
+    val description: String?,
+    val price: String?,
+    val whereToBuy: String?,
+    val categoryId: Long,
+    val picture: String?,
+    val rank: Long
+)
+
 data class Category(val id: Long, val name: String, val rank: Long)
 data class CatAndGift(val category: Category, val gifts: List<Gift>)
-data class FriendGift(val gift: Gift, val interestedUser: List<String>, val buyActionUser: Map<String, BuyAction>, val secret: Boolean)
+data class FriendGift(
+    val gift: Gift,
+    val interestedUser: List<String>,
+    val buyActionUser: Map<String, BuyAction>,
+    val secret: Boolean
+)
+
 data class CatAndFriendGift(val category: Category, val gifts: List<FriendGift>)
 data class FriendRequest(val id: Long, val otherUser: Friend)
 data class PendingFriendRequest(val sent: List<FriendRequest>, val received: List<FriendRequest>)
 data class Participant(val name: String, val status: RequestStatus)
-data class Event(val id: Long, val type: EventType, val name: String, val creatorName: String, val description: String, val endDate: LocalDate, val target: String?, val participants: Set<Participant>)
+data class Event(
+    val id: Long,
+    val type: EventType,
+    val name: String,
+    val creatorName: String,
+    val description: String,
+    val endDate: LocalDate,
+    val target: String?,
+    val participants: Set<Participant>
+)
+
 data class BuyListByFriend(val friendName: String, val gifts: List<FriendGift>, val deletedGifts: List<DeletedGifts>)
-data class DeletedGifts(val id: Long, val name: String, val description: String?, val price: String?, val whereToBuy: String?, val picture: String?, val buyAction: BuyAction, val status: Status)
+data class DeletedGifts(
+    val id: Long,
+    val name: String,
+    val description: String?,
+    val price: String?,
+    val whereToBuy: String?,
+    val picture: String?,
+    val buyAction: BuyAction,
+    val status: Status
+)
+
 data class ResetPassword(val userId: Long, val uuid: String, val expiry: LocalDateTime)
 
 /** INPUT CLASSES **/
 data class UserModification(val name: String?, val picture: String?)
-data class RestGift(val name: String?, val description: String?, val price: String?, val whereToBuy: String?, val categoryId: Long?, val picture: String?, val rank: Long?)
+data class RestGift(
+    val name: String?,
+    val description: String?,
+    val price: String?,
+    val whereToBuy: String?,
+    val categoryId: Long?,
+    val picture: String?,
+    val rank: Long?
+)
+
 data class RestCategory(val name: String?, val rank: Long?, val share: List<String>?)
 data class RestCreateFriendRequest(val name: String?)
 enum class EventType { ALL_FOR_ALL, ALL_FOR_ONE }
-data class RestCreateEvent(val type: EventType?, val name: String?, val description: String?, val endDate: LocalDate?, val target: Long?) //end date being epoch
+data class RestCreateEvent(
+    val type: EventType?,
+    val name: String?,
+    val description: String?,
+    val endDate: LocalDate?,
+    val target: Long?
+) //end date being epoch
+
 enum class RankAction { DOWN, UP }
 
 /** Exceptions **/
@@ -55,7 +109,7 @@ class DummyUserCache(private val databaseManager: DatabaseManager) {
     private val cacheIds = HashMap<Long, String?>()
     private val cacheNames = HashMap<String, Long>()
 
-    fun queryName(userId: Long) : String? {
+    fun queryName(userId: Long): String? {
         val name = cacheIds[userId]
         return if (name != null) name
         else {
@@ -64,7 +118,7 @@ class DummyUserCache(private val databaseManager: DatabaseManager) {
         }
     }
 
-    fun queryId(userName: String) : Long {
+    fun queryId(userName: String): Long {
         val id = cacheNames[userName]
         return if (id != null) id
         else {
@@ -79,15 +133,15 @@ class DummyUserCache(private val databaseManager: DatabaseManager) {
 class UserManager(private val databaseManager: DatabaseManager, private val authServer: AuthServer) {
 
     companion object {
-        val LOGGER : Logger = LoggerFactory.getLogger(UserManager::class.java)
+        val LOGGER: Logger = LoggerFactory.getLogger(UserManager::class.java)
     }
 
     suspend fun connect(userJson: UserJson): User {
         if (userJson.name == null) throw BadParamException("Username could not be null")
         if (userJson.password == null) throw BadParamException("Password could not be null")
 
-        val client = HttpClient(Apache){
-            install(JsonFeature){
+        val client = HttpClient(Apache) {
+            install(JsonFeature) {
                 serializer = GsonSerializer()
             }
         }
@@ -208,7 +262,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         }
     }
 
-    fun getBuyList(userId: Long) : List<BuyListByFriend> {
+    fun getBuyList(userId: Long): List<BuyListByFriend> {
         val friendActionOnGiftsUserHasActionOn = databaseManager.getFriendActionOnGiftsUserHasActionOn(userId)
 
         val dbGifts = friendActionOnGiftsUserHasActionOn
@@ -221,14 +275,31 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
             usersFromCategory.forEach { giftsAndUser.add(Pair(it, gift)) }
         }
 
-        val gifts = giftsAndUser.groupBy( { it.first }, { it.second } )
+        val gifts = giftsAndUser.groupBy({ it.first }, { it.second })
 
         val dummyUserCache = DummyUserCache(databaseManager) //Cache only by call
 
         val deletedGiftsUserHasActionOn = databaseManager.getDeletedGiftsUserHasActionOn(userId)
-        val deletedGiftByFriend = deletedGiftsUserHasActionOn.groupBy({ it.giftUserId }, { DeletedGifts(it.giftId, it.name, it.description, it.price, it.whereToBuy, it.picture, it.friendAction, it.giftUserStatus) })
+        val deletedGiftByFriend = deletedGiftsUserHasActionOn.groupBy({ it.giftUserId },
+            {
+                DeletedGifts(
+                    it.giftId,
+                    it.name,
+                    it.description,
+                    it.price,
+                    it.whereToBuy,
+                    it.picture,
+                    it.friendAction,
+                    it.giftUserStatus
+                )
+            })
 
-        val map = (gifts.keys + deletedGiftByFriend.keys).associateWith { Pair(if (gifts[it] == null) emptyList() else gifts[it]!!, if (deletedGiftByFriend[it] == null) emptyList() else deletedGiftByFriend[it]!!) }
+        val map = (gifts.keys + deletedGiftByFriend.keys).associateWith {
+            Pair(
+                if (gifts[it] == null) emptyList() else gifts[it]!!,
+                if (deletedGiftByFriend[it] == null) emptyList() else deletedGiftByFriend[it]!!
+            )
+        }
 
         return map
             .filter { dummyUserCache.queryName(it.key) != null }
@@ -238,8 +309,10 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
                     m.value.first.map { g ->
                         val actions = databaseManager.getFriendActionOnGift(g.id)
                         FriendGift(toGift(g),
-                            actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! },
-                            actions.filter { it.buy != BuyAction.NONE || dummyUserCache.queryName(it.userId) != null }.map { dummyUserCache.queryName(it.userId)!! to it.buy }.toMap(),
+                            actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }
+                                .map { dummyUserCache.queryName(it.userId)!! },
+                            actions.filter { it.buy != BuyAction.NONE || dummyUserCache.queryName(it.userId) != null }
+                                .map { dummyUserCache.queryName(it.userId)!! to it.buy }.toMap(),
                             g.secret
                         )
                     }.sortedBy { it.gift.rank },
@@ -281,16 +354,31 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
 
     private fun toNewGift(restGift: RestGift): NewGift {
         validateRestGift(restGift, false)
-        return NewGift(restGift.name!!, restGift.description, restGift.price, restGift.whereToBuy, restGift.categoryId!!, restGift.picture)
+        return NewGift(
+            restGift.name!!,
+            restGift.description,
+            restGift.price,
+            restGift.whereToBuy,
+            restGift.categoryId!!,
+            restGift.picture
+        )
     }
 
     fun modifyGift(userId: Long, giftId: Long, gift: RestGift) {
         databaseManager.modifyGift(userId, giftId, toGift(gift))
     }
 
-    private fun toGift(restGift: RestGift) : org.aponcet.mygift.dbmanager.Gift {
+    private fun toGift(restGift: RestGift): org.aponcet.mygift.dbmanager.Gift {
         validateRestGift(restGift, true)
-        return Gift(restGift.name!!, restGift.description, restGift.price, restGift.whereToBuy, restGift.categoryId!!, restGift.picture, restGift.rank!!)
+        return Gift(
+            restGift.name!!,
+            restGift.description,
+            restGift.price,
+            restGift.whereToBuy,
+            restGift.categoryId!!,
+            restGift.picture,
+            restGift.rank!!
+        )
     }
 
     fun removeGift(userId: Long, giftId: Long, status: Status) {
@@ -336,7 +424,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         }
     }
 
-    private fun toNewCategory(category: RestCategory) : NewCategory {
+    private fun toNewCategory(category: RestCategory): NewCategory {
         validateRestCategory(category, false)
         return NewCategory(category.name!!)
     }
@@ -345,7 +433,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         databaseManager.modifyCategory(userId, categoryId, toCategory(category))
     }
 
-    private fun toCategory(category: RestCategory) : org.aponcet.mygift.dbmanager.Category {
+    private fun toCategory(category: RestCategory): org.aponcet.mygift.dbmanager.Category {
         validateRestCategory(category, true)
         return Category(category.name!!, category.rank!!)
     }
@@ -369,9 +457,11 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         databaseManager.createFriendRequest(userId, user.id)
     }
 
-    fun getFriends(userId: Long) : List<FriendRequest> {
-        val initiatedFriendRequests = databaseManager.getInitiatedFriendRequests(userId).filter { it.status == RequestStatus.ACCEPTED }
-        val receivedFriendRequests = databaseManager.getReceivedFriendRequests(userId).filter { it.status == RequestStatus.ACCEPTED }
+    fun getFriends(userId: Long): List<FriendRequest> {
+        val initiatedFriendRequests =
+            databaseManager.getInitiatedFriendRequests(userId).filter { it.status == RequestStatus.ACCEPTED }
+        val receivedFriendRequests =
+            databaseManager.getReceivedFriendRequests(userId).filter { it.status == RequestStatus.ACCEPTED }
 
         val ini = initiatedFriendRequests.map {
             FriendRequest(
@@ -393,12 +483,13 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         return mut
     }
 
-    private fun getInitiatedRequest(userId: Long, status: RequestStatus) : List<FriendRequest> {
+    private fun getInitiatedRequest(userId: Long, status: RequestStatus): List<FriendRequest> {
         return databaseManager.getInitiatedFriendRequests(userId)
             .filter { it.status == status }
             .map { FriendRequest(it.id, toFriend(it.userTwo)) }
     }
-    private fun getReceivedRequest(userId: Long, status: RequestStatus) : List<FriendRequest> {
+
+    private fun getReceivedRequest(userId: Long, status: RequestStatus): List<FriendRequest> {
         return databaseManager.getReceivedFriendRequests(userId)
             .filter { it.status == status }
             .map { FriendRequest(it.id, toFriend(it.userOne)) }
@@ -427,12 +518,12 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         databaseManager.declineFriendRequest(userId, friendRequestId, blockUser)
     }
 
-    private fun toFriend(userId: Long) : Friend {
+    private fun toFriend(userId: Long): Friend {
         val user = databaseManager.getUser(userId)!!
         return Friend(user.name, user.picture)
     }
 
-    fun getEntry(uuid: String) : ResetPassword {
+    fun getEntry(uuid: String): ResetPassword {
         val entry = databaseManager.getEntry(uuid)
         return ResetPassword(entry.userId, entry.uuid, entry.expiry)
     }
