@@ -54,7 +54,9 @@ export interface FriendWishListMessage {
     title: string,
     imInterested: string,
     iWantToBuy: string,
-    iBought: string
+    iBought: string,
+    deleteModalButtonReceived: string,
+    deleteModalButtonNotWanted: string
 }
 
 export interface Connection {

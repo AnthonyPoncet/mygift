@@ -32,15 +32,15 @@ data class CleanGift(
 )
 
 data class CleanCategory(val id: Long, val name: String, val rank: Long)
-data class CatAndGift(val cleanCategory: CleanCategory, val cleanGifts: List<CleanGift>)
+data class CatAndGift(val category: CleanCategory, val gifts: List<CleanGift>)
 data class FriendGift(
-    val cleanGift: CleanGift,
+    val gift: CleanGift,
     val interestedUser: List<String>,
     val buyActionUser: Map<String, BuyAction>,
     val secret: Boolean
 )
 
-data class CatAndFriendGift(val cleanCategory: CleanCategory, val gifts: List<FriendGift>)
+data class CatAndFriendGift(val category: CleanCategory, val gifts: List<FriendGift>)
 data class FriendRequest(val id: Long, val otherUser: Friend)
 data class PendingFriendRequest(val sent: List<FriendRequest>, val received: List<FriendRequest>)
 
@@ -282,7 +282,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
                                 .associate { dummyUserCache.queryName(it.userId)!! to it.buy },
                             g.secret
                         )
-                    }.sortedBy { it.cleanGift.rank },
+                    }.sortedBy { it.gift.rank },
                     m.value.second.sortedBy { it.name })
             }.sortedBy { it.friendName }
     }
