@@ -1,6 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val ktorVersion: String by project
+val logbackVersion: String by project
 
 plugins {
     kotlin("jvm")
@@ -24,7 +25,7 @@ dependencies {
     implementation("io.ktor:ktor-gson:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
 
-    implementation("ch.qos.logback:logback-classic:1.2.3")
+    implementation("ch.qos.logback:logback-classic:$logbackVersion")
 
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3")
 }

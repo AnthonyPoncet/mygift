@@ -7,8 +7,8 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm") version "1.4.21" apply false
-    id("com.github.johnrengelman.shadow") version "5.2.0" apply false
+    kotlin("jvm") version "1.5.10" apply false
+    id("com.github.johnrengelman.shadow") version "6.1.0" apply false
 }
 
 allprojects {
