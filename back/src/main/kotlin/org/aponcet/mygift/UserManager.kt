@@ -167,6 +167,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         if (userModification.name == null) throw BadParamException("Name could not be null")
         databaseManager.getUser(userId) ?: throw CreateUserException("User does not exists")
 
+        //TODO: care, could have several user with same name following this update
         databaseManager.modifyUser(userId, userModification.name, userModification.picture)
         return User("", userModification.name, userModification.picture)
     }
