@@ -28,6 +28,11 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
 
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3")
+
+    testImplementation("io.kotlintest:kotlintest-runner-junit5:3.1.9")
+    testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
+    testImplementation("io.mockk:mockk:1.11.0")
+    testImplementation("com.auth0:java-jwt:3.3.0")
 }
 
 tasks.withType<ShadowJar> {

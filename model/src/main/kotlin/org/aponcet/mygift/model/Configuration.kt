@@ -11,7 +11,6 @@ data class MainServer(
     val httpPort: Int,
     val httpsPort: Int,
     val debug: Boolean,
-    val resetDB: Boolean,
     val jks: Jks
 )
 
