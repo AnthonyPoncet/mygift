@@ -32,6 +32,7 @@ fun Route.files(data: Data) {
                                 file.outputStream().buffered().use { output -> input.copyTo(output) }
                             }
                         }
+                        else -> {}
                     }
 
                     part.dispose()

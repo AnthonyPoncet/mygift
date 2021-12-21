@@ -7,7 +7,7 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm") version "1.5.10" apply false
+    kotlin("jvm") version "1.6.10" apply false
     id("com.github.johnrengelman.shadow") version "6.1.0" apply false
 }
 
@@ -30,5 +30,6 @@ subprojects {
     repositories {
         jcenter()
         maven(url = "https://kotlin.bintray.com/kotlinx")
+        mavenCentral()
     }
 }

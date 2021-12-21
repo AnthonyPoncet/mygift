@@ -11,7 +11,7 @@ data class Args(val configurationFile: String, val adaptTable: AdaptTable.STEP?,
 class ArgumentParser {
     companion object {
         fun parse(args: Array<String>): Args {
-            val parser = ArgParser("reset-password")
+            val parser = ArgParser("back")
             val configurationFile by parser.option(ArgType.String, shortName = "c", description = "configuration file")
                 .default("configuration.json")
             val adaptTable by parser.option(ArgType.String, shortName = "a", description = "Adapt table step X")

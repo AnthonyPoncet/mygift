@@ -9,43 +9,35 @@ fun Route.static() {
         defaultResource("static/index.html")
     }
 
-    static("/signin") {
+    static("signin") {
         resources("static")
         defaultResource("static/index.html")
     }
-    static("/signup") {
+    static("signup") {
         resources("static")
         defaultResource("static/index.html")
     }
-    static("/mywishlist") {
+    static("mywishlist") {
         resources("static")
         defaultResource("static/index.html")
     }
-    static("/myfriends") {
+    static("myfriends") {
         resources("static")
         defaultResource("static/index.html")
     }
-    static("/friend/*") {
+    static("friend/*") {
         resources("static")
         defaultResource("static/index.html")
     }
-    static("/events") {
+    static("buy-list") {
         resources("static")
         defaultResource("static/index.html")
     }
-    static("/event/*") {
+    static("manage-account") {
         resources("static")
         defaultResource("static/index.html")
     }
-    static("/buy-list") {
-        resources("static")
-        defaultResource("static/index.html")
-    }
-    static("/manage-account") {
-        resources("static")
-        defaultResource("static/index.html")
-    }
-    static("/reset-password/*") {
+    static("reset-password/*") {
         resources("static")
         defaultResource("static/index.html")
     }

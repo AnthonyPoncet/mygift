@@ -1,5 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
+val ktorVersion: String by project
 val logbackVersion: String by project
 
 plugins {
@@ -13,9 +14,9 @@ dependencies {
 
     implementation(kotlin("stdlib-jdk8"))
 
-    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.4")
 
-    implementation("org.slf4j:slf4j-api:1.7.25")
+    implementation("org.slf4j:slf4j-api:1.7.32")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
 }
 

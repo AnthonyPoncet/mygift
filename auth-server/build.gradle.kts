@@ -19,16 +19,16 @@ dependencies {
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
     implementation("io.ktor:ktor-gson:$ktorVersion")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.4")
 
-    implementation("com.auth0:java-jwt:3.3.0")
+    implementation("com.auth0:java-jwt:3.18.2")
 
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
 
     testImplementation(kotlin("test-junit"))
-    testImplementation("io.kotlintest:kotlintest-runner-junit5:3.1.9")
+    testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
-    testRuntimeOnly("com.h2database:h2:1.4.200")
+    testRuntimeOnly("com.h2database:h2:2.0.202")
 }
 
 tasks.withType<ShadowJar> {

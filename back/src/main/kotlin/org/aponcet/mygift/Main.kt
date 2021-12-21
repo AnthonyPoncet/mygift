@@ -117,7 +117,6 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         method(HttpMethod.Put)
         method(HttpMethod.Patch)
         header("Authorization")
-        anyHost()
         allowCredentials = true
         allowNonSimpleContentTypes = true
     }
