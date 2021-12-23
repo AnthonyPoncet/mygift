@@ -1,414 +1,335 @@
-import React from 'react';
+import React, { useEffect, useState }  from 'react';
 
-import Octicon, {Checklist, Gift} from '@primer/octicons-react';
+import { useNavigate } from "react-router-dom";
+import { ChecklistIcon, GiftIcon } from '@primer/octicons-react';
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from 'reactstrap';
 
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from "reactstrap";
+import { useAppSelector, useAppDispatch } from '../redux/store';
+import { selectMessages } from '../redux/reducers/locale';
+import { addMessage, selectErrorMessage, clearMessage } from '../redux/reducers/error';
+import { selectSignIn, logout } from '../redux/reducers/signin';
 
-import { connect } from 'react-redux';
-import { ThunkDispatch } from 'redux-thunk'
-import { AppState } from '../redux/store';
-import { logout } from '../redux/actions/user';
-
-import { FriendWishListMessage, MyWishListMessage, MyBuyListMessage } from '../translation/itrans';
 import './style/card-gift.css';
 import SquareImage from './SquareImage';
 import blank_gift from './image/blank_gift.png';
 
-import { isMobile } from "react-device-detect";
+import { isMobile } from 'react-device-detect';
 
-import { history } from './history';
-
-import { getServerUrl } from "../ServerInformation";
+import { getServerUrl } from '../ServerInformation';
 let url = getServerUrl();
 
-
-interface StateProps { token: string | null, username: String | null, friendwishlist: FriendWishListMessage, mywishlist: MyWishListMessage, myBuyList: MyBuyListMessage };
-interface DispatchProps { logout: () => void };
-type Props = DispatchProps & StateProps;
-interface State {
-    friendAndGifts: any[],
-    hoverId: string,
-    showGift: boolean,
-    giftToShow: any | null,
-    showDeletedGift: boolean
-};
-
-class MyBuyList extends React.Component<Props, State> {
-    constructor(props: Props) {
-        super(props);
-        this.state = {friendAndGifts: [], hoverId: '', showGift: false, giftToShow: null, showDeletedGift: false};
-    }
-
-    componentDidMount() {
-        if (this.props.token) {
-            this.getBuyList(this.props.token);
-        }
-    }
-
-    _redirect() {
-        console.error("Unauthorized. Disconnect and redirect to connect");
-        history.push("/signin");
-        this.props.logout();
-    }
-
-    async getBuyList(token: string) {
-        const response = await fetch(url + '/buy-list', {headers: {'Authorization': `Bearer ${this.props.token}`}});
-        if (response.status === 200) {
-            const json = await response.json();
-            this.setState({ friendAndGifts: json });
-            if (this.state.showGift) {
-                const { id } = this.state.giftToShow.gift
-                let newGiftToShow: any;
-                json.forEach(function (cat: any) {
-                    cat.gifts.forEach(function (fGift: any) {
-                        if (fGift.gift.id === id) {
-                            newGiftToShow = fGift;
-                        }
-                    });
-                });
-                this.setState({giftToShow: newGiftToShow});
-            }
-        } else if (response.status === 401) {
-            this._redirect()
+function getBuyList(token: string, setBuyList: any, appDispatch: any) {
+    const request = async () => {
+        const response = await fetch(url + '/buy-list', {
+            method: "GET",
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        if (response.status === 401) {
+            appDispatch(logout());
         } else {
             const json = await response.json();
-            console.error(json.error);
+            if (response.status === 200) {
+                setBuyList(json);
+            } else {
+                console.error(json.error);
+                appDispatch(addMessage(json.error));
+            }
         }
     };
+    request();
+};
 
-    async wantToBuy(token: string | null, giftId: number, iWantToBuy: boolean, iBought: boolean, refresh: boolean) {
-        if (token === null) return; //Impossible
-
-        if (iBought) await this.bought(token, giftId, false, true, false); //Remove ibought
+function wantToBuy(giftId: number, iWantToBuy: boolean, iBought: boolean, token: string, setBuyList: any, appDispatch: any) {
+    const request = async () => {
+        if (iBought) await bought(giftId, false, true, token, setBuyList, appDispatch); //Remove ibought
 
         let response = null;
         if (iWantToBuy === true) {
-            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${this.props.token}`}});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${token}`}});
         } else {
-            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=WANT_TO_BUY', {method: "POST", headers: {'Authorization': `Bearer ${this.props.token}`}});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=WANT_TO_BUY', {method: "POST", headers: {'Authorization': `Bearer ${token}`}});
         }
+
         if (response.status === 202) {
-            if (refresh) this.getBuyList(token);
+            getBuyList(token, setBuyList, appDispatch);
         } else if (response.status === 401) {
-            this._redirect()
+            appDispatch(logout());
         } else {
             const json = await response.json();
             console.error(json.error);
+            appDispatch(addMessage(json.error));
         }
-    }
+    };
+    request();
+};
 
-    async bought(token: string | null, giftId: number, iWantToBuy: boolean, iBought: boolean, refresh: boolean) {
-        if (token === null) return; //Impossible
-
-        if (iWantToBuy) await this.wantToBuy(token, giftId, true, false, false); //Remove ibought
+function bought(giftId: number, iWantToBuy: boolean, iBought: boolean, token: string, setBuyList: any, appDispatch: any) {
+    const request = async () => {
+        if (iWantToBuy) await wantToBuy(giftId, true, false, token, setBuyList, appDispatch); //Remove ibought
 
         let response = null;
         if (iBought === true) {
-            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${this.props.token}`}});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${token}`}});
         } else {
-            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=BOUGHT', {method: "POST", headers: {'Authorization': `Bearer ${this.props.token}`}});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=BOUGHT', {method: "POST", headers: {'Authorization': `Bearer ${token}`}});
         }
+
         if (response.status === 202) {
-            if (refresh) this.getBuyList(token);
+            getBuyList(token, setBuyList, appDispatch);
         } else if (response.status === 401) {
-            this._redirect()
+            appDispatch(logout());
         } else {
             const json = await response.json();
             console.error(json.error);
+            appDispatch(addMessage(json.error));
         }
-    }
+    };
+    request();
+};
 
-    async _deleteDeletedGift(token: string | null, giftId: number) {
-        if (token === null) return; //Impossible
-
-        const response = await fetch(url + '/buy-list/deleted-gifts/' + giftId, {method: "DELETE", headers: {'Authorization': `Bearer ${this.props.token}`}});
+function deleteDeletedGift(giftId: number, token: string, setBuyList: any, setShowGift: any, appDispatch: any) {
+    const request = async () => {
+        const response = await fetch(url + '/buy-list/deleted-gifts/' + giftId, {method: "DELETE", headers: {'Authorization': `Bearer ${token}`}});
         if (response.status === 200) {
-            this.setState({ showDeletedGift: false, giftToShow: null });
-            this.getBuyList(token);
+            getBuyList(token, setBuyList, appDispatch);
+            setShowGift(false);
         } else if (response.status === 401) {
-            this._redirect()
+            appDispatch(logout());
         } else {
             const json = await response.json();
             console.error(json.error);
+            appDispatch(addMessage(json.error));
         }
+    };
+    request();
+};
+
+function openGift(fGift: any, token: string, setShowGift: any, setModalGiftTitle: any, setModalGiftBody: any, setModalGiftFooter: any, setBuyList: any, appDispatch: any, friendwishlist: any, mywishlist: any, username: string) {
+    setShowGift(true);
+    const { gift } = fGift
+    setModalGiftTitle(gift.name);
+
+    const isContainer = isMobile ? "" : "container";
+    const padding: string = isMobile ? "0px" : "10px";
+    let wtb : string[] = [];
+    if (gift.whereToBuy !== undefined) {
+        wtb = gift.whereToBuy.split(" ");
     }
 
-    handleEnter(friend: number, gift: number, type: string) {
-        this.setState({ hoverId: friend + '-' + gift + '-' + type});
+    //Duplicated
+    const { interestedUser, buyActionUser } = fGift;
+    let wantToBuys: string[] = [];
+    let boughts: string[] = [];
+    Object.keys(buyActionUser).forEach(key => {
+        if (buyActionUser[key] === "WANT_TO_BUY") wantToBuys.push(key);
+        if (buyActionUser[key] === "BOUGHT") boughts.push(key);
+    });
+    let imInterested = false;
+    let iWantToBuy = false;
+    let iBought = false;
+    if (username !== null) {
+        for (const [, value] of interestedUser.entries()) { if (value === username) imInterested = true; }
+        for (const [, value] of wantToBuys.entries()) { if (value === username) iWantToBuy = true; }
+        for (const [, value] of boughts.entries()) { if (value === username) iBought = true; }
     }
 
-    handleOut() {
-        this.setState({ hoverId: '' });
-    }
-
-    showGift(gift: any) {
-        this.setState({ showGift: true, giftToShow: gift });
-    }
-
-    showDeletedGift(gift: any) {
-        this.setState({ showDeletedGift: true, giftToShow: gift });
-    }
-
-    _renderInsideGift(fgi: number, gi: number, type: string, fGift: any, showFun: Function) {
-        const { gift } = fGift;
-        if ((fgi+'-'+gi+'-'+type === this.state.hoverId) || isMobile) {
-            return (
-                <div style={{cursor: "pointer"}} onClick={() => showFun(fGift)}>
-                    <div className="card-name">{gift.name}</div>
-                    <div className="card-description">{gift.description}</div>
-                    <div className="mycard-footer">
-                      <div className="card-wtb">{gift.whereToBuy}</div>
-                      <div className="card-price">{gift.price}</div>
-                    </div>
-                </div>);
-        } else {
-          return (<div className="card-name-only">{gift.name}</div>);
-        }
-    }
-
-    _renderFriend(fg: any, fgi: number) {
-        return (
-            <div key={'friendAndGifts'+fgi}>
-                <h5 style={{margin: "10px"}}>{fg.friendName}</h5>
-
-                <div className="mycard-row">
-                {fg.gifts.map((fGift: any, gi:any) => {
-                  const { gift, buyActionUser } = fGift;
-                  let wantToBuy: string[] = [];
-                  let bought: string[] = [];
-                  Object.keys(buyActionUser).forEach(key => {
-                      if (buyActionUser[key] === "WANT_TO_BUY") wantToBuy.push(key);
-                      if (buyActionUser[key] === "BOUGHT") bought.push(key);
-                  });
-                  let iWantToBuy = false;
-                  let iBought = false;
-                  if (this.props.username !== null) {
-                      for (const [, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
-                      for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
-                  }
-                  return (
-                    <div className="mycard" onMouseEnter={() => this.handleEnter(fgi, gi, 'valid')} onMouseLeave={() => this.handleOut()} style={{cursor: "pointer"}}>
-                        <div className="card-edit-close">
-                          <div className={iWantToBuy ? "icon-selected two-icon-first" : "two-icon-first"}>
-                            <span style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.token, gift.id, iWantToBuy, iBought, true)}><Octicon icon={Checklist}/></span>{' '}
-                            {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
-                          </div>
-                          <div className={iBought ? "icon-selected two-icon-second" : "two-icon-second"}>
-                              <span style={{cursor: "pointer"}} onClick={() => this.bought(this.props.token, gift.id, iWantToBuy, iBought, true)}><Octicon icon={Gift}/></span>{' '}
-                              {bought.length !== 0 && <><span>{bought.length}</span>{' '}</>}
-                          </div>
-                        </div>
-                        <div style={{cursor: "pointer"}} onClick={() => this.showGift(fGift)}>
-                            <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
-                        </div>
-                        {this._renderInsideGift(fgi, gi, 'valid', fGift, (gift: any) => this.showGift(gift))}
-                    </div>);
-                })}
-                {fg.deletedGifts.map((gift: any, gi:any) => {
-                    return (
-                        <div className="mycard warning-border" onMouseEnter={() => this.handleEnter(fgi, gi, 'deleted')} onMouseLeave={() => this.handleOut()} style={{cursor: "pointer"}}>
-                            <div className="card-edit-close warning-gift-delete">
-                                <div>{gift.status === "RECEIVED" ? this.props.myBuyList.received : this.props.myBuyList.not_wanted}</div>
-                            </div>
-                            <div style={{cursor: "pointer"}} onClick={() => this.showDeletedGift({gift: gift})}>
-                                <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
-                            </div>
-                            {this._renderInsideGift(fgi, gi, 'deleted', {gift: gift}, (gift: any) => this.showDeletedGift(gift))}
-                        </div>);
+    setModalGiftBody(
+    <div className={isContainer}>
+        <SquareImage token={token} className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
+        <div style={{padding: padding}}>
+            {(gift.description !== "") && <><div>{mywishlist.description}: {gift.description}</div><br/></>}
+            {(gift.price !== "") && <div>{mywishlist.price}: {gift.price}</div>}
+            {(gift.whereToBuy !== "") &&
+                <div>{mywishlist.whereToBuy}: {
+                    wtb.map((word: string) => {
+                        if (word.startsWith("http")) {
+                            let smallWord = word.length > 20 ? word.substring(0,20) + '...' : word;
+                            return <a href={word} target="_blank" rel="noopener noreferrer">{smallWord}{' '}</a>;
+                        } else {
+                            return word + " ";
+                        }
                     })
                 }
                 </div>
-            </div>);
+            }
+        </div>
+    </div>
+    );
+    setModalGiftFooter(
+        <div>
+        { (boughts.length === 0 || imInterested || iWantToBuy || iBought) &&
+            <>
+            <Button color={iWantToBuy ? "primary" : "secondary"} onClick={() => wantToBuy(gift.id, iWantToBuy, iBought, token, setBuyList, appDispatch)}><ChecklistIcon/> {friendwishlist.iWantToBuy}</Button>{' '}
+            <Button color={iBought ? "primary" : "secondary"} onClick={() => bought(gift.id, iWantToBuy, iBought, token, setBuyList, appDispatch)}><GiftIcon/> {friendwishlist.iBought}</Button>
+            </>
+        }
+        </div>
+    );
+}
+
+function openDeletedGift(gift: any, token: string, setShowGift: any, setModalGiftTitle: any, setModalGiftBody: any, setModalGiftFooter: any, setBuyList: any, appDispatch: any, myBuyList: any, mywishlist: any, username: string) {
+    setShowGift(true);
+    setModalGiftTitle(gift.name);
+
+    const isContainer = isMobile ? "" : "container";
+    const padding: string = isMobile ? "0px" : "10px";
+    let wtb : string[] = [];
+    if (gift.whereToBuy !== undefined) {
+        wtb = gift.whereToBuy.split(" ");
     }
 
-    renderGifts() {
-      if (this.state.friendAndGifts) {
+    setModalGiftBody(
+    <div className={isContainer}>
+        <SquareImage token={token} className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
+        <div style={{padding: padding}}>
+            {(gift.description !== "") && <><div>{mywishlist.description}: {gift.description}</div><br/></>}
+            {(gift.price !== "") && <div>{mywishlist.price}: {gift.price}</div>}
+            {(gift.whereToBuy !== "") &&
+                <div>{mywishlist.whereToBuy}: {
+                    wtb.map((word: string) => {
+                        if (word.startsWith("http")) {
+                            let smallWord = word.length > 20 ? word.substring(0,20) + '...' : word;
+                            return <a href={word} target="_blank" rel="noopener noreferrer">{smallWord}{' '}</a>;
+                        } else {
+                            return word + " ";
+                        }
+                    })
+                }
+                </div>
+            }
+        </div>
+    </div>
+    );
+    setModalGiftFooter(
+        <Button color="primary" onClick={() => deleteDeletedGift(gift.id, token, setBuyList, setShowGift, appDispatch)}>{myBuyList.ok}</Button>
+    );
+}
+
+function renderInsideGift(fgi: number, gi: number, type: string, fGift: any, giftHover: any, showFun: Function) {
+    const { gift } = fGift;
+    if ((fgi+'-'+gi+'-'+type === giftHover) || isMobile) {
         return (
-            <div className="mycard-row">
-                {this.state.friendAndGifts.map((fg, fgi) => { return(<div className="mycard-no-limit">{this._renderFriend(fg, fgi)}</div>) })}
+        <div style={{cursor: "pointer"}} onClick={() => showFun(fGift)}>
+            <div className="card-name">{gift.name}</div>
+            <div className="card-description">{gift.description}</div>
+            <div className="mycard-footer">
+                <div className="card-wtb">{gift.whereToBuy}</div>
+                <div className="card-price">{gift.price}</div>
             </div>
-        );
-      }
+        </div>);
+    } else {
+        return (<div className="card-name-only">{gift.name}</div>);
     }
+}
 
-    render() {
+function MyBuyList() {
+    const username = useAppSelector(selectSignIn).username;
+    const token = useAppSelector(selectSignIn).token;
+    const friendwishlist = useAppSelector(selectMessages).friendwishlist;
+    const myBuyList = useAppSelector(selectMessages).myBuyList;
+    const mywishlist = useAppSelector(selectMessages).mywishlist;
+    const errorMessage = useAppSelector(selectErrorMessage);
+
+    const appDispatch = useAppDispatch();
+    let navigate = useNavigate();
+
+    const [buyList, setBuyList] = useState([]);
+    const [giftHover, setGiftHover] = useState("");
+
+    const [showGift, setShowGift] = useState(false);
+    const handleCloseGift = () => setShowGift(false);
+    const [modalGiftTitle, setModalGiftTitle] = useState("title");
+    const [modalGiftBody, setModalGiftBody] = useState(<div></div>);
+    const [modalGiftFooter, setModalGiftFooter] = useState(<div></div>);
+
+    useEffect(() => {
+        if (token) {
+            getBuyList(token, setBuyList, appDispatch);
+        }
+    }, [token, appDispatch]);
+
+    if (token && username) {
         return (
         <div>
-            <h1 className="friend-wishlist-title">{this.props.myBuyList.title}</h1>
-            <div>{this.renderGifts()}</div>
+            <h1 className="friend-wishlist-title">{myBuyList.title}</h1>
+            <div className="mycard-row">
+                { buyList.map((fg: any, fgi: number) => { return(
+                <div className="mycard-no-limit">
+                    <div key={'friendAndGifts'+fgi}>
+                        <h5 style={{margin: "10px"}}>{fg.friendName}</h5>
+                        <div className="mycard-row">
+                            {
+                            fg.gifts.map((fGift: any, gi:any) => {
+                                const { gift, buyActionUser } = fGift;
+                                let wantToBuys: string[] = [];
+                                let boughts: string[] = [];
+                                Object.keys(buyActionUser).forEach(key => {
+                                    if (buyActionUser[key] === "WANT_TO_BUY") wantToBuys.push(key);
+                                    if (buyActionUser[key] === "BOUGHT") boughts.push(key);
+                                });
+                                let iWantToBuy = false;
+                                let iBought = false;
+                                if (username !== null) {
+                                    for (const [, value] of wantToBuys.entries()) { if (value === username) iWantToBuy = true; }
+                                    for (const [, value] of boughts.entries()) { if (value === username) iBought = true; }
+                                }
+                                return (
+                                <div className="mycard" onMouseEnter={() => setGiftHover(fgi + '-' + gi + '-' + 'valid')} onMouseLeave={() => setGiftHover("")} style={{cursor: "pointer"}}>
+                                    <div className="card-edit-close">
+                                        <div className={iWantToBuy ? "icon-selected two-icon-first" : "two-icon-first"}>
+                                            <span style={{cursor: "pointer"}} onClick={() => wantToBuy(gift.id, iWantToBuy, iBought, token, setBuyList, appDispatch)}><ChecklistIcon/></span>
+                                            {' '}
+                                            {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
+                                        </div>
+                                        <div className={iBought ? "icon-selected two-icon-second" : "two-icon-second"}>
+                                            <span style={{cursor: "pointer"}}><GiftIcon/></span>
+                                            {' '}
+                                            {boughts.length !== 0 && <><span>{boughts.length}</span>{' '}</>}
+                                        </div>
+                                    </div>
+                                    <div style={{cursor: "pointer"}} onClick={() => openGift(fGift, token, setShowGift, setModalGiftTitle, setModalGiftBody, setModalGiftFooter, setBuyList, appDispatch, friendwishlist, mywishlist, username)}>
+                                        <SquareImage token={token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                                    </div>
+                                    { renderInsideGift(fgi, gi, 'valid', fGift, giftHover, (gift: any) => openGift(gift, token, setShowGift, setModalGiftTitle, setModalGiftBody, setModalGiftFooter, setBuyList, appDispatch, friendwishlist, mywishlist, username)) }
+                                </div>
+                                )
+                            })
+                            }
+                            {
+                            fg.deletedGifts.map((gift: any, gi:any) => {
+                                return (
+                                <div className="mycard warning-border" onMouseEnter={() => setGiftHover(fgi + '-' + gi + '-' + 'deleted')} onMouseLeave={() => setGiftHover("")} style={{cursor: "pointer"}}>
+                                    <div className="card-edit-close warning-gift-delete">
+                                        <div>{gift.status === "RECEIVED" ? myBuyList.received : myBuyList.not_wanted}</div>
+                                    </div>
+                                    <div style={{cursor: "pointer"}} onClick={() => openDeletedGift(gift, token, setShowGift, setModalGiftTitle, setModalGiftBody, setModalGiftFooter, setBuyList, appDispatch, myBuyList, mywishlist, username)}>
+                                        <SquareImage token={token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                                    </div>
+                                    { renderInsideGift(fgi, gi, 'deleted', {gift: gift}, giftHover, (gift: any) => openDeletedGift(gift, token, setShowGift, setModalGiftTitle, setModalGiftBody, setModalGiftFooter, setBuyList, appDispatch, myBuyList, mywishlist, username)) }
+                                </div>);
+                                })
+                            }
+                        </div>
+                    </div>
+                </div>) }) }
+            </div>
 
-                <DisplayGift
-                    token={this.props.token}
-                    username={this.props.username}
-                    show={this.state.showGift}
-                    fGift={this.state.giftToShow}
-                    close={() => this.setState({showGift: false, giftToShow: null})}
-                    friendwishlist={this.props.friendwishlist}
-                    mywishlist={this.props.mywishlist}
-                    wantToBuy={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.wantToBuy(this.props.token, giftId, iWantToBuy, iBought, true)}
-                    bought={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.bought(this.props.token, giftId, iWantToBuy, iBought, true)}
-                    />
-                <DisplayDeletedGift
-                    token={this.props.token}
-                    username={this.props.username}
-                    show={this.state.showDeletedGift}
-                    fGift={this.state.giftToShow}
-                    close={() => this.setState({showDeletedGift: false, giftToShow: null})}
-                    myBuyList={this.props.myBuyList}
-                    mywishlist={this.props.mywishlist}
-                    ok={(id: number) => this._deleteDeletedGift(this.props.token, id)}
-                    />
+            <Modal isOpen={showGift} toggle={handleCloseGift} size="lg">
+                <ModalHeader toggle={handleCloseGift}>{modalGiftTitle}</ModalHeader>
+                <ModalBody>
+                    { errorMessage && <p className="auth-error">{errorMessage}</p> }
+                    { modalGiftBody }
+                </ModalBody>
+                <ModalFooter>
+                    { modalGiftFooter}
+                </ModalFooter>
+            </Modal>
         </div>);
+    } else {
+        console.log("Unauthorized... Redirecting...")
+        navigate('../signin')
+        return (<div></div>);
     }
 }
 
-interface DisplayGiftProps {
-    token: string | null,
-    username: String | null,
-    show: boolean
-    fGift: any | null,
-    close(): void,
-    friendwishlist: FriendWishListMessage,
-    mywishlist: MyWishListMessage,
-    wantToBuy: Function,
-    bought: Function
-};
-
-class DisplayGift extends React.Component<DisplayGiftProps> {
-    render() {
-        const { show, fGift, close, mywishlist, friendwishlist } = this.props;
-        if (show === false || fGift === null || fGift === undefined) return <div/>;
-        const { gift } = fGift;
-
-        const isContainer = isMobile ? "" : "container";
-        const padding: string = isMobile ? "0px" : "10px";
-
-        let wtb : string[] = [];
-        if (gift.whereToBuy !== undefined) {
-            wtb = gift.whereToBuy.split(" ");
-        }
-
-        //Duplicated
-        const { buyActionUser } = fGift;
-        let wantToBuy: string[] = [];
-        let bought: string[] = [];
-        Object.keys(buyActionUser).forEach(key => {
-            if (buyActionUser[key] === "WANT_TO_BUY") wantToBuy.push(key);
-            if (buyActionUser[key] === "BOUGHT") bought.push(key);
-        });
-        let iWantToBuy = false;
-        let iBought = false;
-        if (this.props.username !== null) {
-            for (const [, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
-            for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
-        }
-
-        return (
-          <Modal isOpen={show} toggle={() => close()} size="lg">
-            <ModalHeader toggle={ () => close() }>{gift.name}</ModalHeader>
-            <ModalBody>
-                <div className={isContainer}>
-                    <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
-                    <div style={{padding: padding}}>
-                        {(gift.description !== "") && <>
-                            <div>{mywishlist.description}: {gift.description}</div>
-                            <br/>
-                            </>
-                        }
-
-                        {(gift.price !== "") &&
-                            <div>{mywishlist.price}: {gift.price}</div>
-                        }
-                        {(gift.whereToBuy !== "") &&
-                            <div>{mywishlist.whereToBuy}: {wtb.map((word: string) => {
-                                if (word.startsWith("http")) {
-                                    let smallWord = word.length > 20 ? word.substring(0,20) + '...' : word;
-                                    return <a href={word} target="_blank" rel="noopener noreferrer">{smallWord}{' '}</a>;
-                                } else {
-                                    return word + " ";
-                                }
-                            })}</div>
-                        }
-                    </div>
-                </div>
-            </ModalBody>
-             { (bought.length === 0 || iWantToBuy || iBought) && <ModalFooter>
-                  <Button color={iWantToBuy ? "primary" : "secondary"} onClick={() => this.props.wantToBuy(gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/> {friendwishlist.iWantToBuy}</Button>
-                  <Button color={iBought ? "primary" : "secondary"} onClick={() => this.props.bought(gift.id, iWantToBuy, iBought)}><Octicon icon={Gift}/> {friendwishlist.iBought}</Button>
-                </ModalFooter> }
-          </Modal>);
-    }
-}
-
-interface DisplayDeletedGiftProps {
-    token: string | null,
-    username: String | null,
-    show: boolean
-    fGift: any | null,
-    close(): void,
-    mywishlist: MyWishListMessage,
-    myBuyList: MyBuyListMessage,
-    ok: Function
-};
-
-class DisplayDeletedGift extends React.Component<DisplayDeletedGiftProps> {
-    render() {
-        const { show, fGift, close, mywishlist, myBuyList } = this.props;
-        if (show === false || fGift === null || fGift === undefined) return <div/>;
-        const { gift } = fGift;
-
-        const isContainer = isMobile ? "" : "container";
-        const padding: string = isMobile ? "0px" : "10px";
-
-        let wtb : string[] = [];
-        if (gift.whereToBuy !== undefined) {
-            wtb = gift.whereToBuy.split(" ");
-        }
-
-        return (
-          <Modal isOpen={show} toggle={() => close()} size="lg">
-            <ModalHeader toggle={ () => close() }>{gift.name}</ModalHeader>
-            <ModalBody>
-                <div className={isContainer}>
-                    <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
-                    <div style={{padding: padding}}>
-                        {(gift.description !== "") && <>
-                            <div>{mywishlist.description}: {gift.description}</div>
-                            <br/>
-                            </>
-                        }
-
-                        {(gift.price !== "") &&
-                            <div>{mywishlist.price}: {gift.price}</div>
-                        }
-                        {(gift.whereToBuy !== "") &&
-                            <div>{mywishlist.whereToBuy}: {wtb.map((word: string) => {
-                                if (word.startsWith("http")) {
-                                    let smallWord = word.length > 20 ? word.substring(0,20) + '...' : word;
-                                    return <a href={word} target="_blank" rel="noopener noreferrer">{smallWord}{' '}</a>;
-                                } else {
-                                    return word + " ";
-                                }
-                            })}</div>
-                        }
-                    </div>
-                </div>
-            </ModalBody>
-            <ModalFooter>
-                <Button color="primary" onClick={() => this.props.ok(gift.id)}>{myBuyList.ok}</Button>
-            </ModalFooter>
-          </Modal>);
-    }
-}
-
-function mapStateToProps(state: AppState): StateProps {
-    return { token: state.signin.token,
-              username: state.signin.username,
-              friendwishlist: state.locale.messages.friendwishlist,
-              mywishlist: state.locale.messages.mywishlist,
-              myBuyList: state.locale.messages.myBuyList };
-}
-const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>, ownProps: Props): DispatchProps => {
-   return { logout: async () => await dispatch(logout()) }
-}
-export default connect(mapStateToProps, mapDispatchToProps)(MyBuyList);
+export default MyBuyList;

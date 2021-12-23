@@ -1,102 +1,74 @@
-import React from 'react';
-import { Button, Input, Label, Form, FormGroup, FormText } from "reactstrap";
+import React, { useState } from 'react';
+import { Button, Input, Label, Form, FormGroup, FormText } from 'reactstrap';
 
-import { connect } from 'react-redux';
-import { AppState } from '../redux/store';
-import { changeUserInfo, UserNameAndPicture } from '../redux/actions/user';
+import { useNavigate } from "react-router-dom";
 
-import { ManageAccountMessage } from '../translation/itrans';
+import { useAppSelector, useAppDispatch } from '../redux/store';
+import { selectMessages } from '../redux/reducers/locale';
+import { addMessage, selectErrorMessage, clearMessage } from '../redux/reducers/error';
+import { selectSignIn, logout } from '../redux/reducers/signin';
 
 import SquareImage from './SquareImage';
 import blank_profile_picture from './image/blank_profile_picture.png';
 
-import { history } from './history';
-
-import { getServerUrl } from "../ServerInformation";
+import { getServerUrl } from '../ServerInformation';
 let url = getServerUrl();
 
-interface DispatchProps {
-  changeUserInfo: (user: UserNameAndPicture) => void
-};
-interface StateProps {
-    token: string | null,
-    username: String | null,
-    picture: string | null,
-    manageAccount: ManageAccountMessage };
-type Props = DispatchProps & StateProps;
-interface State { image: string | null };
+function ManageAccount() {
 
-class ManageAccount extends React.Component<Props, State> {
-    constructor(props: Props) {
-        super(props);
-        this.state = { image: this.props.picture }
-    }
+    const username = useAppSelector(selectSignIn).username;
+    const token = useAppSelector(selectSignIn).token;
+    const picture =  useAppSelector(selectSignIn).picture;
+    const home = useAppSelector(selectMessages).home;
 
-    _changeImage(e: any) {
-      const formData = new FormData();
-      formData.append("0", e.target.files[0]);
-      const request = async () => {
-          const response = await fetch(url + '/files', {method: 'post', headers: {'Authorization': `Bearer ${this.props.token}`}, body: formData });
-          if (response.status === 401) {
-              console.error("Unauthorized. Disconnect and redirect to connect");
-              history.push("/signin");
-          } else if (response.status === 202) {
-              const json = await response.json();
-              this.setState({ image: json.name });
-          } else {
-              const json = await response.json();
-              console.error(json);
-          }
-      };
-      request();
-    }
+    const appDispatch = useAppDispatch();
+    let navigate = useNavigate();
 
-    _save() {
-        const {image} = this.state;
-        let imageName = (image === null) ? "" : image;
-        const request = async () => {
-            const response = await fetch(url + '/users', {
-                method: "PATCH",
-                headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${this.props.token}`},
-                body: JSON.stringify({
-                    "name": this.props.username,
-                    "picture": imageName})
-            });
-            if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
-                history.push("/signin");
-            } else if (response.status !== 202) {
-                const json = await response.json();
-                console.error(json);
-            }
+    const [serverFileName, setServerFileName] = useState(picture === null ? "" : picture);
+
+    if (token && username) {
+        let changeImage = (e: any) => {
+            const formData = new FormData();
+            formData.append("0", e.target.files[0]);
+            const request = async () => {
+                const response = await fetch(url + '/files', {method: 'post', headers: {'Authorization': `Bearer ${token}`}, body: formData });
+                if (response.status === 401) {
+                    appDispatch(logout());
+                } else if (response.status === 202) {
+                    const json = await response.json();
+                    setServerFileName(json.name);
+                } else {
+                    const json = await response.json();
+                    console.error(json);
+                    appDispatch(addMessage(json.error));
+                }
+            };
+            request();
         };
-        request();
 
-        this.props.changeUserInfo({username: (this.props.username === null ? "" : this.props.username.toString()), picture: image});
-    }
-
-    render() {
-        const { image } = this.state;
-
-        return (<div>
+        return (
+        <div>
             <Form>
                 <FormGroup>
                     <Label>Name</Label>
-                    <Input value={this.props.username !== undefined ? this.props.username!.toString() : ""} disabled/>
+                    <Input value={username} disabled/>
                     <FormText>Could not be changed</FormText>
                 </FormGroup>
                 <FormGroup>
                     <Label>Profile picture</Label>
-                    <Input type="file" onChange={(e) => this._changeImage(e)}/>
+                    <Input type="file" onChange={(e) => changeImage(e)}/>
                 </FormGroup>
-                <SquareImage token={this.props.token} className="profile-image" imageName={image} size={150} alt="Profile" alternateImage={blank_profile_picture}/>
+                <SquareImage token={token} className="profile-image" imageName={serverFileName} size={150} alt="Profile" alternateImage={blank_profile_picture}/>
                 <br/>
-                <Button className="btn btn-primary" onClick={() => this._save()}>Save</Button>
+                <Button className="btn btn-primary">Save</Button>
             </Form>
-        </div>);
+        </div>
+        );
+    } else {
+        console.log("Unauthorized... Redirecting...")
+        navigate('../signin')
+        return (<div></div>);
     }
 }
 
-
-function mapStateToProps(state: AppState): StateProps {return { token: state.signin.token, username: state.signin.username, picture: state.signin.picture, manageAccount: state.locale.messages.manageAccount };}
-export default connect(mapStateToProps, {changeUserInfo})(ManageAccount);
+export default ManageAccount;

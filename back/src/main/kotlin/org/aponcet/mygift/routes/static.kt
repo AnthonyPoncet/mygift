@@ -29,11 +29,11 @@ fun Route.static() {
         resources("static")
         defaultResource("static/index.html")
     }
-    static("buy-list") {
+    static("buylist") {
         resources("static")
         defaultResource("static/index.html")
     }
-    static("manage-account") {
+    static("manageaccount") {
         resources("static")
         defaultResource("static/index.html")
     }

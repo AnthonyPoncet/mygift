@@ -117,12 +117,15 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         method(HttpMethod.Put)
         method(HttpMethod.Patch)
         header(HttpHeaders.Authorization)
-        header(HttpHeaders.AccessControlAllowOrigin)
         header(HttpHeaders.ContentType)
         allowNonSimpleContentTypes = true
         allowCredentials = true
         if (!debug) {
+            header(HttpHeaders.AccessControlAllowOrigin)
             host("www.druponps.fr", listOf("https"))
+        } else {
+            host("localhost:3000", listOf("http"))
+            host("localhost:8080", listOf("http"))
         }
     }
     install(Compression)

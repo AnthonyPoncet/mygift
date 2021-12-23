@@ -1,161 +1,97 @@
-import React from 'react';
-import { Router, Route, Link } from 'react-router-dom';
-import { Input, FormGroup } from "reactstrap";
+import React, { useState } from 'react';
+import { Outlet, Link } from 'react-router-dom';
+import { Collapse, Dropdown, DropdownToggle, DropdownMenu, DropdownItem , Navbar, NavbarToggler, NavbarBrand, Nav, NavItem, NavLink, Form, Input, FormGroup } from 'reactstrap';
 
-import "../node_modules/bootstrap/dist/js/bootstrap.min.js";
+import { useAppSelector, useAppDispatch } from './redux/store';
+import { logout, selectSignIn } from './redux/reducers/signin';
+import { LocaleAvailable, changeLocale, selectMessages } from './redux/reducers/locale';
 
-import { connect } from 'react-redux';
-import { AppState } from './redux/store';
-import { clearError } from './redux/actions/error';
-import { changeLocale } from './redux/actions/locale';
-import { logout } from './redux/actions/user';
-
-import MyBuyList from './component/MyBuyList';
-import FriendWishListRoute from './component/FriendWishListRoute'
 import HomePage from './component/HomePage';
-import ManageAccount from './component/ManageAccount';
-import MyFriends from './component/MyFriends';
-import MyWishList from './component/MyWishList';
-import SigninPage from './component/SigninPage';
 import SignupPage from './component/SignupPage';
-import ResetPassword from './component/ResetPassword';
-import { history } from './component/history';
+import SquareImage from './component/SquareImage';
 
 import blank_profile_picture from './component/image/blank_profile_picture.png';
 
-import { AppMessage } from './translation/itrans';
+function App() {
+    //TODO: add loading image
 
-import { getServerUrl } from "./ServerInformation";
-let url = getServerUrl();
+    const username = useAppSelector(selectSignIn).username;
+    const token = useAppSelector(selectSignIn).token;
+    const picture = useAppSelector(selectSignIn).picture;
+    const app = useAppSelector(selectMessages).app;
 
-interface AppProps {
-    clearError: typeof clearError,
-    changeLocale: typeof changeLocale,
-    logout: typeof logout,
+    const dispatch = useAppDispatch();
 
-    token: string | null
-    username: String | null,
-    image: string | null,
-    app: AppMessage
-}
-interface State {
-    loaded: boolean
-}
+    const locales: string[] = ["English", "Français"];
 
-class App extends React.Component<AppProps, State> {
-    private locales: string[] = ['English', 'Français'];
-
-    constructor(props: AppProps) {
-        super(props);
-        history.listen((location, action) => {this.props.clearError()});
-        this.state = { loaded: false };
-
-        if (this.props.image !== null && this.props.token) {
-            this._loadImage(this.props.image, this.props.token);
-        }
+    //Init locale to FR if not set
+    if (localStorage.getItem("locale") === null) {
+        dispatch(changeLocale(LocaleAvailable["Francais"]));
     }
+    const locale = localStorage.getItem("locale");
 
-    //Hanle loggin, seems weird
-    componentWillReceiveProps(nextProps: AppProps, nextContext: any) {
-        if (nextProps.image && nextProps.token) {
-            this._loadImage(nextProps.image, nextProps.token);
-        }
-    }
+    const [collapsed, setCollapsed] = useState(true);
+    const toggleNavbar = () => setCollapsed(!collapsed);
 
-    _loadImage(name: string, token: string) {
-      const request = async() => {
-        const response = await fetch(url + '/files/' + name, {headers: {'Authorization': `Bearer ${token}`}});
-        if (response.status === 404) {
-            console.error("file '" + name + "' could not be found on server");
-            return;
-        }
-        if (response.status === 401) {
-            console.error("Unauthorized. Disconnect and redirect to connect");
-            history.push("/signin");
-            this.props.logout();
-            return;
-        }
-        if (response.status === 500) {
-            console.error("Internal server error: " + response)
-            return;
-        }
+    const [dropdownState, setDropdownState] = useState(false);
+    const toggleDropdown = () => setDropdownState(!dropdownState);
 
-        response.blob().then(blob => {
-          let url = window.URL.createObjectURL(blob);
-          let tag = document.querySelector('#profile');
-          if (tag instanceof HTMLImageElement) tag.src = url;
-        });
+    return (
+        <div>
+            <Navbar color="light" expand='lg' light>
+                <NavbarBrand href="/" className="me-auto">MyGift</NavbarBrand>
 
-        this.setState({ loaded: true });
-      };
-      request();
-    }
+                <NavbarToggler onClick={toggleNavbar} className="me-2"/>
 
-    render() {
-        const username = this.props.username;
-        const { app } = this.props;
-
-        let locale  = localStorage.getItem("locale");
-        if (locale === null) this.props.changeLocale('Français');
-
-        return (
-          <Router history={history}>
-              <div>
-                <nav className="navbar navbar-expand-lg navbar-light bg-light">
-                  <a className="navbar-brand" href="/">MyGift</a>
-                  <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo03" aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
-                    <span className="navbar-toggler-icon"></span>
-                  </button>
-                  <div className="collapse navbar-collapse" id="navbarTogglerDemo03">
-                  <ul className="navbar-nav mr-auto">
-                    { !username && <>
-                      <li className="nav-item"><Link to={'/signin'} className="nav-link">{app.signin}</Link></li>
-                      <li className="nav-item"><Link to={'/signup'} className="nav-link">{app.signup}</Link></li>
-                      </> }
-                    { username && <>
-                      <li className="nav-item"><Link to={'/mywishlist'} className="nav-link">{app.myList}</Link></li>
-                      <li className="nav-item"><Link to={'/myfriends'} className="nav-link">{app.myFriends}</Link></li>
-                      <li className="nav-item"><Link to={'/buy-list'} className="nav-link">{app.myBuyList}</Link></li>
-                      </>}
-                  </ul>
-                  <form className="form-inline">
-                    { username && <>
-                      <div className="dropdown">
-                        <button className="btn btn-default dropdown-toggle" type="button" id="menu1" data-toggle="dropdown">
-                          {this.state.loaded === true ? <img id="profile" height="35" width="35" alt="Profile"/>
-                                           : <img height="35" width="35" src={blank_profile_picture} alt="Nothing"/>}
-                        </button>
-                        <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                          <span className="dropdown-item"><Link to={'/manage-account'} className="nav-link">{app.manageAccount}</Link></span>
-                        </div>
-                      </div>
-                      <button className="btn" type="button" onClick={() => this.props.logout()}><Link to={'/'} className="nav-link">{app.logout}</Link></button>
-                      </>
-                    }
-                    <FormGroup>
-                      <Input type="select" name="select" id="exampleSelect" onChange={(e) => this.props.changeLocale(e.target.value)}>
-                        {this.locales.map((value) => {
-                          if (value === locale) {return (<option selected key={value}>{value}</option>);}
-                          else {return (<option key={value}>{value}</option>);}; })}
-                      </Input>
-                    </FormGroup>
-                  </form>
-                  </div>
-                </nav>
-                  {this.props.username ? <Route exact path="/" component={HomePage}/> : <Route exact path="/" component={SignupPage}/>}
-                  <Route path="/signin" component={SigninPage} />
-                  <Route path="/signup" component={SignupPage} />
-                  <Route path="/mywishlist" component={MyWishList} />
-                  <Route path="/myfriends" component={MyFriends} />
-                  <Route path="/friend/:friendName?" component={FriendWishListRoute} />
-                  <Route path="/buy-list" component={MyBuyList} />
-                  <Route path="/manage-account" component={ManageAccount} />
-                  <Route path="/reset-password/:uuid?" component={ResetPassword} />
-              </div>
-          </Router>
-        );
-    }
+                <Collapse isOpen={!collapsed} navbar>
+                    <Nav className="me-auto" navbar>
+                        { !username &&
+                            <>
+                            <NavItem><NavLink href='/signin'>{app.signin}</NavLink></NavItem>
+                            <NavItem><NavLink href='/signup'>{app.signup}</NavLink></NavItem>
+                            </>
+                        }
+                        { username &&
+                            <>
+                            <NavItem><NavLink href='/mywishlist'>{app.myList}</NavLink></NavItem>
+                            <NavItem><NavLink href='/myfriends'>{app.myFriends}</NavLink></NavItem>
+                            <NavItem><NavLink href='/buylist'>{app.myBuyList}</NavLink></NavItem>
+                            </>
+                        }
+                    </Nav>
+                    <Form inline className="d-flex" style={{alignItems: "center"}}>
+                        { username &&
+                            <>
+                            <Dropdown isOpen={dropdownState} toggle={toggleDropdown}>
+                                <DropdownToggle caret tag="span" onClick={toggleDropdown} data-toggle="dropdown" aria-expanded={dropdownState} style={{cursor: "pointer"}}>
+                                    <SquareImage token={token ? token : ""} className="card-image" imageName={picture ? picture : ""} size={35} alt="Profile Pic" alternateImage={blank_profile_picture}/>
+                                </DropdownToggle>
+                                <DropdownMenu>
+                                    <DropdownItem><Link to={'/manageaccount'} className="nav-link">{app.manageAccount}</Link></DropdownItem >
+                                </DropdownMenu>
+                            </Dropdown>
+                            <button className="btn" type="button" onClick={() => dispatch(logout())}><Link to={'/'} className="nav-link">{app.logout}</Link></button>
+                            </>
+                        }
+                        <FormGroup className="mb-2 mr-sm-2 mb-sm-0" >
+                          <Input type="select" name="select" value={locale ? locale : ""} onChange={(e) => dispatch(changeLocale(e.target.value === "English" ? LocaleAvailable["English"] : LocaleAvailable["Francais"]))}>
+                            {locales.map((value) => {
+                              if (value === locale) {return (<option key={value} value={value}>{value}</option>);}
+                              else {return (<option key={value} value={value}>{value}</option>);};
+                            })}
+                          </Input>
+                        </FormGroup>
+                    </Form>
+                </Collapse>
+            </Navbar>
+            <Outlet />
+        </div>
+    );
 }
 
-function mapStateToProps(state: AppState) { return { token: state.signin.token, username: state.signin.username, image: state.signin.picture, app: state.locale.messages.app }; }
-export default connect(mapStateToProps, {clearError, changeLocale, logout})(App);
+export function Index() {
+    const username = useAppSelector(selectSignIn).username;
+    return (username ? <HomePage/> : <SignupPage/>);
+}
+
+export default App;
