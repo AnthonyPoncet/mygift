@@ -1,69 +1,58 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import './style/style.css';
 
-import { history } from './history';
+import { useAppSelector, useAppDispatch } from '../redux/store';
+import { selectSignIn, logout } from '../redux/reducers/signin';
 
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
-interface Props { token: string | null, className: string, imageName: string | null, size: number, alt: string, alternateImage: any };
-interface State { loadedUrl: any | null };
+interface Props { token: string, className: string, imageName: string, size: number, alt: string, alternateImage: any };
 
-class SquareImage extends React.Component<Props, State> {
-    constructor(props: Props) {
-        super(props);
-        this.state = { loadedUrl: null };
-
-        const imageName = this.props.imageName === undefined ? null : this.props.imageName;
-        if (imageName !== null) this._loadImage();
+function loadImage(imageName: string, token: string, setImage: any, appDispatch: any) {
+    if (imageName === undefined ||imageName === "") {
+        return;
     }
 
-    componentDidUpdate(prevProps : Props) {
-      if (prevProps.imageName !== this.props.imageName) {
-        const imageName = this.props.imageName === undefined ? null : this.props.imageName;
-        if (imageName !== null) this._loadImage();
-        this._loadImage();
-      }
-    }
-
-    _loadImage() {
-        const request = async() => {
-            const response = await fetch(url + '/files/' + this.props.imageName, {headers: {'Authorization': `Bearer ${this.props.token}`}});
-            if (response.status === 404) {
-                console.error("file '" + this.props.imageName + "' could not be found on server");
-                return;
-            }
-            if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
-                history.push("/signin");
-                return;
-            }
-            if (response.status === 500) {
-                console.error("Internal server error: " + response)
-                return;
-            }
-
-            response.blob().then(blob => {
-                let url = window.URL.createObjectURL(blob);
-                this.setState({ loadedUrl: url });
-            });
-        };
-        request();
-    }
-
-    render() {
-        const { className, size, alt, alternateImage } = this.props;
-        const { loadedUrl } = this.state;
-
-        if (loadedUrl !== null){
-            return <img className={className} height={size} width={size} src={loadedUrl} alt={alt}/>;
-        } else {
-            return <img className={className} height={size} width={size} src={alternateImage} alt="Nothing"/>;
+    const request = async() => {
+        const response = await fetch(url + '/files/' + imageName, {headers: {'Authorization': `Bearer ${token}`}});
+        if (response.status === 404) {
+            console.error("file '" + imageName + "' could not be found on server");
+            return;
         }
-    }
+        if (response.status === 401) {
+            console.error("Unauthorized. Disconnect and redirect to connect");
+            appDispatch(logout());
+            return;
+        }
+        if (response.status === 500) {
+            console.error("Internal server error: " + response)
+            return;
+        }
+
+        response.blob().then(blob => {
+            let url = window.URL.createObjectURL(blob);
+            setImage(url);
+        });
+    };
+    request();
 }
 
+function SquareImage(props: Props) {
+    const token = useAppSelector(selectSignIn).token;
+    const appDispatch = useAppDispatch();
 
+    const [image, setImage] = useState(null);
+
+    useEffect(() => { if (token) { loadImage(props.imageName, token, setImage, appDispatch) } }, [props.imageName, token, setImage, appDispatch]);
+
+    const { className, size, alt, alternateImage } = props;
+    if (image !== null){
+        return <img className={className} height={size} width={size} src={image} alt={alt}/>;
+    } else {
+        return <img className={className} height={size} width={size} src={alternateImage} alt="Nothing"/>;
+    }
+}
 
 export default SquareImage;

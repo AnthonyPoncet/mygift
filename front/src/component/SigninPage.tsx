@@ -1,92 +1,58 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import "./style/style.css";
 
-import { connect } from 'react-redux'
-import { ThunkDispatch } from 'redux-thunk'
-import { AppState } from '../redux/store'
-import { error } from '../redux/actions/error'
-import { signin } from '../redux/actions/user'
+import { Label, Form, Input, FormGroup, Button } from 'reactstrap';
+import { useNavigate, Link } from 'react-router-dom';
 
-import { Connection } from '../translation/itrans';
+import './style/style.css';
 
-interface DispatchProps {
-  signin: (username: String, password: String) => void,
-  error: (message: String) => void
-}
-interface StateProps { errorMessage: String | null, connection: Connection }
-type Props = DispatchProps & StateProps
+import { useAppSelector, useAppDispatch } from '../redux/store';
+import { selectMessages } from '../redux/reducers/locale';
+import { addMessage, selectErrorMessage, clearMessage } from '../redux/reducers/error';
+import { selectSignIn, signIn } from '../redux/reducers/signin';
 
-interface State {
-  username: string,
-  password: string
-}
+function SignInPage() {
+    const connection = useAppSelector(selectMessages).connection;
+    const errorMessage = useAppSelector(selectErrorMessage);
 
-class SigninPage extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { username: '', password: '' };
+    const appDispatch = useAppDispatch();
 
-    this._handleChange = this._handleChange.bind(this);
-    this._handleSubmit = this._handleSubmit.bind(this);
-  }
+    let navigate = useNavigate();
 
-  _handleChange(e: any) {
-    const { name, value } = e.target;
-    if (name === "username") {
-      this.setState({username: value, password: this.state.password});
-    } else if (name === "password") {
-      this.setState({username: this.state.username, password: value});
+    let onFormSubmit = (e: any) => {
+        e.preventDefault();
+        const username = e.target.username.value;
+        const password = e.target.password.value;
+        if (username && password) {
+            appDispatch(clearMessage());
+            appDispatch(signIn({username: username, password: password}))
+                .then(() => { navigate('../') })
+        } else {
+            appDispatch(addMessage(connection.emptyErrorMessage));
+        }
     }
-  }
 
-  _handleSubmit() {
-    const { username, password } = this.state;
-    if (username && password) {
-      this.props.signin(username, password);
-    } else {
-      this.props.error(this.props.connection.emptyErrorMessage)
-    }
-  }
-
-  _onKeyDown(e: any) {
-    if (e.keyCode === 13) {
-        this._handleSubmit();
-    }
-  }
-
-  render() {
-    const { username, password } = this.state;
-    const { connection } = this.props;
     return (
-        <div className="auth-form">
-          <h1 className="auth-form-header">{connection.signInTitle}</h1>
-          { this.props.errorMessage && <p className="auth-error">{this.props.errorMessage}</p> }
-          <div className="auth-form-body">
-              <div className="form-group">
-                <label>{connection.username}</label>
-                <input type="text" name="username" placeholder={connection.username} className="form-control" value={username} onChange={this._handleChange} onKeyDown={(e) => this._onKeyDown(e)}/>
-              </div>
-              <div className="form-group">
-                <label>{connection.password}</label>
-                <input type="password" name="password" placeholder={connection.password} className="form-control" value={password} onChange={this._handleChange} onKeyDown={(e) => this._onKeyDown(e)}/>
-              </div>
-              <button className="btn btn-primary btn-large" onClick={this._handleSubmit}>{connection.signInButton}</button>
-          </div>
-          <div className="auth-bottom">
-              {connection.newToMygift}<Link to="/signup" className="btn btn-link">{connection.createAnAccount}</Link>
-          </div>
+    <div className="auth-form">
+        <h1 className="auth-form-header">{connection.signInTitle}</h1>
+        { errorMessage && <p className="auth-error">{errorMessage}</p> }
+        <div className="auth-form-body">
+            <Form onSubmit={onFormSubmit}>
+                <FormGroup>
+                    <Label>{connection.username}</Label>
+                    <Input className="form-control" type="text" name="username" id="username" placeholder={connection.username} />
+                </FormGroup>
+                <FormGroup>
+                    <Label>{connection.password}</Label>
+                    <Input className="form-control" type="password" name="password" id="password" placeholder={connection.password} />
+                </FormGroup>
+                <Button color="primary" block type="submit">{connection.signInButton}</Button>
+            </Form>
         </div>
+        <div className="auth-bottom">
+            {connection.newToMygift}<Link to="/signup" className="btn btn-link">{connection.createAnAccount}</Link>
+        </div>
+    </div>
     );
-  }
 }
 
-function mapStateToProps(state: AppState): StateProps { return { errorMessage: state.error.message, connection: state.locale.messages.connection }; }
-const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>, ownProps: Props): DispatchProps => {
-  return {
-    signin: async (username, password) => await dispatch(signin(username, password)),
-    error: (message) => dispatch(error(message))
-  }
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(SigninPage);
+export default SignInPage;

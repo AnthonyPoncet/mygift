@@ -1,530 +1,566 @@
-import React from 'react';
+import React, { useEffect, useState }  from 'react';
 
-import Octicon, {Heart, Checklist, Gift, Pencil, X} from '@primer/octicons-react';
+import { useNavigate, useParams } from "react-router-dom";
+import { HeartIcon, ChecklistIcon, GiftIcon, PencilIcon, XIcon } from '@primer/octicons-react';
+import { Form, Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label, FormGroup, FormFeedback } from 'reactstrap';
 
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label, FormGroup, FormFeedback } from "reactstrap";
 
-import { connect } from 'react-redux';
-import { ThunkDispatch } from 'redux-thunk'
-import { AppState } from '../redux/store';
-import { logout } from '../redux/actions/user';
-
-import { FriendWishListMessage, MyWishListMessage } from '../translation/itrans';
 import './style/card-gift.css';
 import SquareImage from './SquareImage';
 import blank_gift from './image/blank_gift.png';
 
-import { isMobile } from "react-device-detect";
+import { isMobile } from 'react-device-detect';
 
-import { history } from './history';
+import { useAppSelector, useAppDispatch } from '../redux/store';
+import { selectMessages } from '../redux/reducers/locale';
+import { addMessage, selectErrorMessage, clearMessage } from '../redux/reducers/error';
+import { selectSignIn, logout } from '../redux/reducers/signin';
 
-import { getServerUrl } from "../ServerInformation";
+import { getServerUrl } from '../ServerInformation';
 let url = getServerUrl();
 
-
-interface ConnectProps { token: string | null, username: String | null, friendwishlist: FriendWishListMessage, mywishlist: MyWishListMessage };
-interface StateProps extends ConnectProps { friendName: string };
-interface DispatchProps { logout: () => void };
-type Props = DispatchProps & StateProps;
-type button = { text: string, fun: any };
-interface State {
-    catAndGifts: any[],
-    hoverId: string,
-    showGift: boolean,
-    giftToShow: any | null,
-    show: boolean, title: string, bodyRender: any, buttons: button[], inputs: any, errorMessage: string //to refactor, duplicate
+function getGifts(name: string, token: string, setCategories: any, appDispatch: any) {
+    const request = async () => {
+        const response = await fetch(url + '/gifts/' + name, {
+            method: "GET",
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        if (response.status === 401) {
+            appDispatch(logout());
+        } else {
+            const json = await response.json();
+            if (response.status === 200) {
+                setCategories(json);
+            } else {
+                console.error(json.error);
+                appDispatch(addMessage(json.error));
+            }
+        }
+    };
+    request();
 };
 
-class FriendWishList extends React.Component<Props, State> {
-    constructor(props: Props) {
-        super(props);
-        this.state = {catAndGifts: [], hoverId: '', showGift: false, giftToShow: null,
-                      show: false, title: '', bodyRender: null, buttons: [], inputs: { }, errorMessage: ''};
-    }
-
-    componentDidMount() {
-        if (this.props.token) {
-            this.getGifts(this.props.token, this.props.friendName);
-        }
-    }
-
-    openAddGift() {
-        const { mywishlist } = this.props;
-        this.setState( { show: true, title: mywishlist.addGiftModalTitle, bodyRender: () => this.giftBodyRender(), buttons: [{ text: mywishlist.addModalButton, fun: () => this.addGift() }],
-            inputs: { name: '', nameValidity: true, description: null, price: null, whereToBuy: null, categoryId: this.state.catAndGifts[0].category.id }, errorMessage: '' });
-    }
-
-    openEditGift(giftId: number, name: string, description: string, price: string, whereToBuy: string, categoryId: number, image: string | null, rank: number) {
-        const { mywishlist } = this.props;
-        this.setState( { show: true, title: mywishlist.updateGiftModalTitle, bodyRender: () => this.giftBodyRender(), buttons: [{ text: mywishlist.updateModalButton, fun: () => this.updateGift(giftId) }],
-            inputs: { name: name, nameValidity: true, description: description, price: price, whereToBuy: whereToBuy, categoryId: categoryId, picture: image, rank: rank }, errorMessage: '' });
-    }
-
-    openDeleteGift(giftId: number) {
-            const { friendwishlist, mywishlist } = this.props;
-            this.setState( { show: true, title: mywishlist.deleteGiftModalTitle, bodyRender: () => this.giftDeleteBodyRender(), buttons: [
-            { text: friendwishlist.deleteModalButtonReceived, fun: () => this.deleteGift(giftId, 'RECEIVED') }, { text: friendwishlist.deleteModalButtonNotWanted, fun: () => this.deleteGift(giftId, 'NOT_WANTED') }, ], errorMessage: '' });
-        }
-
-    handleChangeGift = async (event: any) => {
-        const { inputs } = this.state;
-        const { name, value } = event.target;
-        inputs[name] = value;
-        if (name === "name") {
-            inputs["nameValidity"] = value.length > 0;
-        }
-
-        await this.setState({ inputs: inputs });
-    };
-
-    updateGiftModalCategory(id: string) {
-        const { inputs } = this.state;
-        this.setState({ inputs: { ...inputs, categoryId: id } });
-    }
-
-    changeImage(e: any) {
-        const formData = new FormData();
-        formData.append("0", e.target.files[0]);
-        const request = async () => {
-            const response = await fetch(url + '/files', {method: 'post', headers: {'Authorization': `Bearer ${this.props.token}`}, body: formData });
-            if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
-                history.push("/signin");
-            } else if (response.status === 202) {
-                const json = await response.json();
-                const { inputs } = this.state;
-                inputs["picture"] = json.name;
-                this.setState({ inputs: inputs });
-            } else {
-                const json = await response.json();
-                console.error(json);
-            }
-        };
-        request();
-    }
-
-    giftBodyRender() {
-        const options = this.state.catAndGifts && this.state.catAndGifts.map( (cag, index) => {
-          let value = cag.category;
-          if (this.state.inputs.categoryId === value.id) {
-            return <option key={index} value={value.id} selected>{value.name}</option>
-          } else {
-            return <option key={index} value={value.id}>{value.name}</option>
-          }
+function interested(giftId: number, imInterested: boolean, name: string, token: string, setCategories: any, appDispatch: any) {
+    const request = async () => {
+        const response = await fetch(url + '/gifts/' + giftId + '/interested', {
+            method: imInterested ? "DELETE" : "POST",
+            headers: {'Authorization': `Bearer ${token}`}
         });
-
-        const { mywishlist } = this.props;
-
-        return (<>
-            <FormGroup>
-                <Label>{mywishlist.name}</Label>
-                <Input name="name" placeholder={mywishlist.name} value={this.state.inputs.name} invalid={!this.state.inputs.nameValidity} onChange={(e) => this.handleChangeGift(e)}/>
-                <FormFeedback>{mywishlist.nameErrorMessage}</FormFeedback>
-            </FormGroup>
-            <FormGroup>
-                <Label>{mywishlist.description}</Label>
-                <Input type="textarea" name="description" placeholder={mywishlist.description} value={this.state.inputs.description} onChange={(e) => this.handleChangeGift(e)}/>
-            </FormGroup>
-            <FormGroup>
-                <Label>{mywishlist.price}</Label>
-                <Input name="price" placeholder="10" value={this.state.inputs.price} onChange={(e) => this.handleChangeGift(e)}/>
-            </FormGroup>
-            <FormGroup>
-                <Label>{mywishlist.whereToBuy}</Label>
-                <Input name="whereToBuy" placeholder={mywishlist.whereToBuyPlaceholder} value={this.state.inputs.whereToBuy} onChange={(e) => this.handleChangeGift(e)}/>
-            </FormGroup>
-            <FormGroup>
-                <Label>{mywishlist.category}</Label>
-                <Input type="select" name="categoryId" onChange={(e) => this.updateGiftModalCategory(e.target.value)}>
-                    {options}
-                </Input>
-            </FormGroup>
-            <FormGroup>
-              <Label>{mywishlist.image}</Label>
-              <Input type="file" onChange={(e) => this.changeImage(e)}/>
-            </FormGroup>
-            <SquareImage token={this.props.token} className="card-image" imageName={this.state.inputs.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
-            </>);
-    }
-
-    giftDeleteBodyRender() {
-        return (<div></div>);
-    }
-
-    giftRestCall(url: string, method: string) {
-        const {inputs} = this.state;
-
-        if (inputs.name === '') {
-            this.setState({ show: true, errorMessage: this.props.mywishlist.nameErrorMessage })
-            return;
-        }
-
-        let imageName = (inputs.picture === null) ? "" : inputs.picture;
-        const request = async () => {
-            const response = await fetch(url, {
-                method: method,
-                headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${this.props.token}`},
-                body: JSON.stringify({
-                    "name": inputs.name,
-                    "description" : inputs.description,
-                    "price": inputs.price,
-                    "whereToBuy": inputs.whereToBuy,
-                    "categoryId": inputs.categoryId,
-                    "picture": imageName,
-                    "rank": inputs.rank})
-            });
-            if (response.status === 200) {
-                this.setState({ show: false });
-                this.props.token !== null && this.getGifts(this.props.token, this.props.friendName);
-            } else if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
-                history.push("/signin");
-            } else {
-                const json = await response.json();
-                this.setState({ show: true, errorMessage: json.error });
-            }
-        };
-        request();
-    }
-
-    addGift() { this.giftRestCall(url + '/gifts?forUser='+this.props.friendName, 'PUT'); }
-
-    updateGift(id: number) { this.giftRestCall(url + '/gifts/' + id, 'PATCH'); }
-
-    deleteGift(id: number, status: string) {
-        const request = async () => {
-            const response = await fetch(url + '/gifts/' + id + '?status=' + status, {method: 'delete', headers: {'Authorization': `Bearer ${this.props.token}`}});
-            if (response.status === 202) {
-                this.setState({ show: false });
-                this.props.token && this.getGifts(this.props.token, this.props.friendName);
-            } else if (response.status === 401) {
-                console.error("Unauthorized. Disconnect and redirect to connect");
-                history.push("/signin");
-            } else {
-                const json = await response.json();
-                console.error(json);
-            }
-        };
-        request();
-    }
-
-    closeModal() { this.setState({ show: false }); }
-
-    async getGifts(token: string, friendName: string) {
-        const response = await fetch(url + '/gifts/' + friendName, {headers: {'Authorization': `Bearer ${this.props.token}`}});
-        if (response.status === 200) {
-            const json = await response.json();
-            this.setState({ catAndGifts: json });
-            if (this.state.showGift) {
-                const { id } = this.state.giftToShow.gift
-                let newGiftToShow: any;
-                json.forEach(function (cat: any) {
-                    cat.gifts.forEach(function (fGift: any) {
-                        if (fGift.gift.id === id) {
-                            newGiftToShow = fGift;
-                        }
-                    });
-                });
-                this.setState({giftToShow: newGiftToShow});
-            }
+        if (response.status === 202) {
+            getGifts(name, token, setCategories, appDispatch);
         } else if (response.status === 401) {
-            console.error("Unauthorized. Disconnect and redirect to connect");
-            history.push("/signin");
+            appDispatch(logout());
         } else {
             const json = await response.json();
             console.error(json.error);
+            appDispatch(addMessage(json.error));
         }
     };
+    request();
+};
 
-    async interested(token: string | null, giftId: number, imInterested: boolean) {
-        if (token === null) return; //Impossible
-
-        const response = await fetch(url + '/gifts/' + giftId + '/interested', {method: imInterested ? "DELETE" : "POST", headers: {'Authorization': `Bearer ${this.props.token}`}});
-        if (response.status === 202) {
-            this.getGifts(token, this.props.friendName);
-        } else if (response.status === 401) {
-            console.error("Unauthorized. Disconnect and redirect to connect");
-            history.push("/signin");
-        } else {
-            const json = await response.json();
-            console.error(json.error);
-        }
-    }
-
-    async wantToBuy(token: string | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
-        if (token === null) return; //Impossible
-
-        if (iBought) await this.bought(token, giftId, false, true); //Remove ibought
+function wantToBuy(giftId: number, iWantToBuy: boolean, iBought: boolean, name: string, token: string, setCategories: any, appDispatch: any) {
+    const request = async () => {
+        if (iBought) await bought(giftId, false, true, name, token, setCategories, appDispatch); //Remove ibought
 
         let response = null;
         if (iWantToBuy === true) {
-            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${this.props.token}`}});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${token}`}});
         } else {
-            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=WANT_TO_BUY', {method: "POST", headers: {'Authorization': `Bearer ${this.props.token}`}});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=WANT_TO_BUY', {method: "POST", headers: {'Authorization': `Bearer ${token}`}});
         }
+
         if (response.status === 202) {
-            this.getGifts(token, this.props.friendName);
+            getGifts(name, token, setCategories, appDispatch);
         } else if (response.status === 401) {
-            console.error("Unauthorized. Disconnect and redirect to connect");
-            history.push("/signin");
+            appDispatch(logout());
         } else {
             const json = await response.json();
             console.error(json.error);
+            appDispatch(addMessage(json.error));
         }
-    }
+    };
+    request();
+};
 
-    async bought(token: string | null, giftId: number, iWantToBuy: boolean, iBought: boolean) {
-        if (token === null) return; //Impossible
-
-        if (iWantToBuy) await this.wantToBuy(token, giftId, true, false); //Remove ibought
+function bought(giftId: number, iWantToBuy: boolean, iBought: boolean, name: string, token: string, setCategories: any, appDispatch: any) {
+    const request = async () => {
+        if (iWantToBuy) await wantToBuy(giftId, true, false, name, token, setCategories, appDispatch); //Remove ibought
 
         let response = null;
         if (iBought === true) {
-            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${this.props.token}`}});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${token}`}});
         } else {
-            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=BOUGHT', {method: "POST", headers: {'Authorization': `Bearer ${this.props.token}`}});
+            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=BOUGHT', {method: "POST", headers: {'Authorization': `Bearer ${token}`}});
         }
+
         if (response.status === 202) {
-            this.getGifts(token, this.props.friendName);
+            getGifts(name, token, setCategories, appDispatch);
         } else if (response.status === 401) {
-            console.error("Unauthorized. Disconnect and redirect to connect");
-            history.push("/signin");
+            appDispatch(logout());
         } else {
             const json = await response.json();
             console.error(json.error);
+            appDispatch(addMessage(json.error));
         }
-    }
-
-    handleEnter(cat: number, gift: number) {
-        this.setState({ hoverId: cat + "-" + gift});
-    }
-
-    handleOut() {
-        this.setState({ hoverId: '' });
-    }
-
-    showGift(gift: any) {
-        this.setState({ showGift: true, giftToShow: gift });
-    }
-
-    _renderInsideGift(cgi: number, gi: number, fGift: any) {
-        const { gift, secret } = fGift;
-        if ((cgi+'-'+gi === this.state.hoverId) || isMobile) {
-            return (<>
-                <div style={{cursor: "pointer"}} onClick={() => this.showGift(fGift)}>
-                    <div className="card-name">{gift.name}</div>
-                    <div className="card-description">{gift.description}</div>
-                    <div className="mycard-footer">
-                      <div className="card-wtb">{gift.whereToBuy}</div>
-                      <div className="card-price">{gift.price}</div>
-                    </div>
-                </div>
-            </>);
-        } else {
-          const className = (secret) ? "card-name-only-secret" : "card-name-only";
-          return (<div className={className}>{gift.name}</div>);
-        }
-    }
-
-    renderGifts() {
-      if (this.state.catAndGifts) {
-        console.log(this.state.catAndGifts)
-        return this.state.catAndGifts.map((cg, cgi) => {
-            return (
-            <div key={cgi}>
-                <h5 style={{margin: "10px"}}>{cg.category.name}</h5>
-
-                <div className="mycard-row">
-                {cg.gifts.map((fGift: any, gi:any) => {
-                  const { gift, interestedUser, buyActionUser, secret } = fGift;
-                  let wantToBuy: string[] = [];
-                  let bought: string[] = [];
-                  Object.keys(buyActionUser).forEach(key => {
-                      if (buyActionUser[key] === "WANT_TO_BUY") wantToBuy.push(key);
-                      if (buyActionUser[key] === "BOUGHT") bought.push(key);
-                  });
-                  const boughtClassName = (bought.length === 0) ? "" : " card-already-bought";
-                  let imInterested = false;
-                  let iWantToBuy = false;
-                  let iBought = false;
-                  if (this.props.username !== null) {
-                      for (const [, value] of interestedUser.entries()) { if (value === this.props.username) imInterested = true; }
-                      for (const [, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
-                      for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
-                  }
-
-                  const secretClassName = (secret) ? " secret-border" : "";
-
-                  return (
-                      <div className={"mycard" + boughtClassName + secretClassName} onMouseEnter={() => this.handleEnter(cgi, gi)} onMouseLeave={() => this.handleOut()}>
-                          {secret &&
-                            <div className="card-edit-close">
-                              <span className="three-icon-first" style={{cursor: "pointer"}} onClick={() => this.openEditGift(gift.id, gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture === undefined ? null : gift.picture, gift.rank)}><Octicon icon={Pencil}/></span>
-                              {' '}
-                              <div className="three-icon-second secret-text">Secret</div>
-                              <span className="three-icon-third" style={{cursor: "pointer"}} onClick={() => this.openDeleteGift(gift.id)}><Octicon icon={X}/></span>
-                            </div>
-                            }
-                          { (bought.length === 0 || imInterested || iWantToBuy || iWantToBuy) &&
-                          <div className="card-edit-close">
-                              <div className={imInterested ? "icon-selected three-icon-first" : "three-icon-first"}>
-                                <span style={{cursor: "pointer"}} onClick={() => this.interested(this.props.token, gift.id, imInterested)}><Octicon icon={Heart}/></span>{' '}
-                                {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
-                              </div>
-                              <div className={iWantToBuy ? "icon-selected three-icon-second" : "three-icon-second"}>
-                                  <span style={{cursor: "pointer"}} onClick={() => this.wantToBuy(this.props.token, gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/></span>{' '}
-                                  {wantToBuy.length !== 0 && <><span>{wantToBuy.length}</span>{' '}</>}
-                              </div>
-                              <div className={iBought ? "icon-selected three-icon-third" : "three-icon-third"}>
-                                  { (bought.length !== 0 && !iBought) ?
-                                  <Octicon icon={Gift}/>
-                                  :
-                                  <span
-                                      style={{cursor: "pointer"}}
-                                      onClick={() => this.bought(this.props.token, gift.id, iWantToBuy, iBought)}>
-                                          <Octicon icon={Gift}/>
-                                  </span>
-                                  }{' '}
-                                  {bought.length !== 0 && <><span>{bought.length}</span>{' '}</>}
-                              </div>
-                          </div> }
-                          <div style={{cursor: "pointer"}} onClick={() => this.showGift(fGift)}>
-                              <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
-                          </div>
-                          {this._renderInsideGift(cgi, gi, fGift)}
-                      </div>);
-                })}
-                </div>
-            </div>)
-        });
-      }
-    }
-
-    render() {
-          const { buttons } = this.state;
-          const { mywishlist } = this.props;
-          let modalBody = [];
-          if (this.state.bodyRender !== null) {
-              modalBody.push(this.state.bodyRender());
-          }
-
-        return (
-        <div>
-          <h1 className="friend-wishlist-title">{this.props.friendwishlist.title} {this.props.friendName}</h1>
-          {this.props.token && <Button color="link" onClick={() => this.openAddGift()}>{mywishlist.addGiftButton}</Button> }
-          <div>{this.renderGifts()}</div>
-
-          <DisplayGift
-            token={this.props.token}
-            username={this.props.username}
-            show={this.state.showGift}
-            fGift={this.state.giftToShow}
-            close={() => this.setState({showGift: false, giftToShow: null})}
-            friendwishlist={this.props.friendwishlist}
-            mywishlist={this.props.mywishlist}
-            interested={(giftId: number, imInterested: boolean) => this.interested(this.props.token, giftId, imInterested)}
-            wantToBuy={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.wantToBuy(this.props.token, giftId, iWantToBuy, iBought)}
-            bought={(giftId: number, iWantToBuy: boolean, iBought: boolean) => this.bought(this.props.token, giftId, iWantToBuy, iBought)}/>
-
-          <Modal isOpen={this.state.show} toggle={() => this.closeModal()}>
-              <ModalHeader toggle={() => this.closeModal()}>{this.state.title}</ModalHeader>
-              <ModalBody>
-                  { this.state.errorMessage && <p className="auth-error">{this.state.errorMessage}</p> }
-                  {modalBody}
-                  {buttons.map((button: any, id:any) => {
-                      return (<><Button key={'button'+id} color="primary" onClick={button.fun}>{button.text}</Button>{' '}</>);
-                      })
-                  }
-              </ModalBody>
-          </Modal>
-        </div>);
-    }
-}
-
-interface DisplayGiftProps {
-    token: string | null,
-    username: String | null,
-    show: boolean
-    fGift: any | null,
-    close(): void,
-    friendwishlist: FriendWishListMessage,
-    mywishlist: MyWishListMessage,
-    interested: Function,
-    wantToBuy: Function,
-    bought: Function
+    };
+    request();
 };
 
-class DisplayGift extends React.Component<DisplayGiftProps> {
-    render() {
-        const { show, fGift, close, friendwishlist, mywishlist } = this.props;
-
-        if (fGift === null) return <div/>;
-
-        const { gift } = fGift;
-
-        const isContainer = isMobile ? "" : "container";
-        const padding: string = isMobile ? "0px" : "10px";
-
-        let wtb : string[] = [];
-        if (gift.whereToBuy !== undefined) {
-            wtb = gift.whereToBuy.split(" ");
-        }
-
-        //Duplicated
-        const { interestedUser, buyActionUser } = fGift;
-        let wantToBuy: string[] = [];
-        let bought: string[] = [];
-        Object.keys(buyActionUser).forEach(key => {
-            if (buyActionUser[key] === "WANT_TO_BUY") wantToBuy.push(key);
-            if (buyActionUser[key] === "BOUGHT") bought.push(key);
-        });
-        let imInterested = false;
-        let iWantToBuy = false;
-        let iBought = false;
-        if (this.props.username !== null) {
-            for (const [, value] of interestedUser.entries()) { if (value === this.props.username) imInterested = true; }
-            for (const [, value] of wantToBuy.entries()) { if (value === this.props.username) iWantToBuy = true; }
-            for (const [, value] of bought.entries()) { if (value === this.props.username) iBought = true; }
-        }
-
-        return (
-          <Modal isOpen={show} toggle={() => close()} size="lg">
-            <ModalHeader toggle={() => close() }>{gift.name}</ModalHeader>
-            <ModalBody>
-                <div className={isContainer}>
-                    <SquareImage token={this.props.token} className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
-                    <div style={{padding: padding}}>
-                        {(gift.description !== "") && <>
-                            <div>{mywishlist.description}: {gift.description}</div>
-                            <br/>
-                            </>
-                        }
-
-                        {(gift.price !== "") &&
-                            <div>{mywishlist.price}: {gift.price}</div>
-                        }
-                        {(gift.whereToBuy !== "") &&
-                            <div>{mywishlist.whereToBuy}: {wtb.map((word: string) => {
-                                if (word.startsWith("http")) {
-                                    let smallWord = word.length > 20 ? word.substring(0,20) + '...' : word;
-                                    return <a href={word} target="_blank" rel="noopener noreferrer">{smallWord}{' '}</a>;
-                                } else {
-                                    return word + " ";
-                                }
-                            })}</div>
-                        }
-                    </div>
+function renderInsideGift(cgi: number, gi: number, fGift: any, giftHover: string) {
+    const { gift, secret } = fGift;
+    if ((cgi+'-'+gi === giftHover) || isMobile) {
+        return (<>
+            <div style={{cursor: "pointer"}}>
+                <div className="card-name">{gift.name}</div>
+                <div className="card-description">{gift.description}</div>
+                <div className="mycard-footer">
+                    <div className="card-wtb">{gift.whereToBuy}</div>
+                    <div className="card-price">{gift.price}</div>
                 </div>
-            </ModalBody>
-            { (bought.length === 0 || imInterested || iWantToBuy || iBought) && <ModalFooter>
-              <Button color={imInterested ? "primary" : "secondary"} onClick={() => this.props.interested(gift.id, imInterested)}><Octicon icon={Heart}/> {friendwishlist.imInterested}</Button>{' '}
-              <Button color={iWantToBuy ? "primary" : "secondary"} onClick={() => this.props.wantToBuy(gift.id, iWantToBuy, iBought)}><Octicon icon={Checklist}/> {friendwishlist.iWantToBuy}</Button>
-              <Button color={iBought ? "primary" : "secondary"} onClick={() => this.props.bought(gift.id, iWantToBuy, iBought)}><Octicon icon={Gift}/> {friendwishlist.iBought}</Button>
-            </ModalFooter> }
-          </Modal>);
+            </div>
+        </>);
+    } else {
+      const className = (secret) ? "card-name-only-secret" : "card-name-only";
+      return (<div className={className}>{gift.name}</div>);
     }
 }
 
-function mapStateToProps(state: AppState): ConnectProps {return {
-  token: state.signin.token, username: state.signin.username, friendwishlist: state.locale.messages.friendwishlist, mywishlist: state.locale.messages.mywishlist };}
-export default connect(mapStateToProps)(FriendWishList);
+function openGift(fGift: any, token: string, setShowGift: any, setModalGiftTitle: any, setModalGiftBody: any, setModalGiftFooter: any, setCategories: any, appDispatch: any, friendwishlist: any, mywishlist: any, username: string, friendName: string) {
+    setShowGift(true);
+    const { gift } = fGift
+    setModalGiftTitle(gift.name);
+
+    const isContainer = isMobile ? "" : "container";
+    const padding: string = isMobile ? "0px" : "10px";
+    let wtb : string[] = [];
+    if (gift.whereToBuy !== undefined) {
+        wtb = gift.whereToBuy.split(" ");
+    }
+
+    //Duplicated
+    const { interestedUser, buyActionUser } = fGift;
+    let wantToBuys: string[] = [];
+    let boughts: string[] = [];
+    Object.keys(buyActionUser).forEach(key => {
+        if (buyActionUser[key] === "WANT_TO_BUY") wantToBuys.push(key);
+        if (buyActionUser[key] === "BOUGHT") boughts.push(key);
+    });
+    let imInterested = false;
+    let iWantToBuy = false;
+    let iBought = false;
+    if (username !== null) {
+        for (const [, value] of interestedUser.entries()) { if (value === username) imInterested = true; }
+        for (const [, value] of wantToBuys.entries()) { if (value === username) iWantToBuy = true; }
+        for (const [, value] of boughts.entries()) { if (value === username) iBought = true; }
+    }
+
+    setModalGiftBody(
+    <div className={isContainer}>
+        <SquareImage token={token} className="card-image" imageName={gift.picture} size={300} alt="Gift" alternateImage={blank_gift}/>
+        <div style={{padding: padding}}>
+            {(gift.description !== "") && <><div>{mywishlist.description}: {gift.description}</div><br/></>}
+            {(gift.price !== "") && <div>{mywishlist.price}: {gift.price}</div>}
+            {(gift.whereToBuy !== "") &&
+                <div>{mywishlist.whereToBuy}: {
+                    wtb.map((word: string) => {
+                        if (word.startsWith("http")) {
+                            let smallWord = word.length > 20 ? word.substring(0,20) + '...' : word;
+                            return <a href={word} target="_blank" rel="noopener noreferrer">{smallWord}{' '}</a>;
+                        } else {
+                            return word + " ";
+                        }
+                    })
+                }
+                </div>
+            }
+        </div>
+    </div>
+    );
+    setModalGiftFooter(
+        <div>
+        { (boughts.length === 0 || imInterested || iWantToBuy || iBought) &&
+            <>
+            <Button color={imInterested ? "primary" : "secondary"} onClick={() => interested(gift.id, imInterested, friendName, token, setCategories, appDispatch)}><HeartIcon/> {friendwishlist.imInterested}</Button>{' '}
+            <Button color={iWantToBuy ? "primary" : "secondary"} onClick={() => wantToBuy(gift.id, iWantToBuy, iBought, friendName, token, setCategories, appDispatch)}><ChecklistIcon/> {friendwishlist.iWantToBuy}</Button>{' '}
+            <Button color={iBought ? "primary" : "secondary"} onClick={() => bought(gift.id, iWantToBuy, iBought, friendName, token, setCategories, appDispatch)}><GiftIcon/> {friendwishlist.iBought}</Button>
+            </>
+        }
+        </div>
+    );
+}
+
+/** START DUPLICATE FROM MYWISHLIST **/
+function addGiftModal(friendName: string, setModalTitle: any, setModalBody: any, setShow: any, mywishlist: any, token: string, appDispatch: any, categories: any, setCategories: any) {
+    appDispatch(clearMessage());
+
+    setModalTitle(mywishlist.addGiftModalTitle);
+
+    let onFormSubmit = (e: any) => {
+        e.preventDefault();
+        if (e.target.name.value === '') {
+            appDispatch(addMessage(mywishlist.nameErrorMessage));
+            return;
+        }
+        let imageName = (e.target.picture === undefined) ? "" : e.target.picture.value;
+        const request = async () => {
+            const response = await fetch(url + "/gifts?forUser=" + friendName, {
+                method: "PUT",
+                headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${token}`},
+                body: JSON.stringify({
+                    "name": e.target.name.value,
+                    "description" : e.target.description.value,
+                    "price": e.target.price.value,
+                    "whereToBuy": e.target.whereToBuy.value,
+                    "categoryId": e.target.categoryId.value,
+                    "picture": imageName})
+            });
+            if (response.status === 200) {
+                getGifts(friendName, token, setCategories, appDispatch);
+                setShow(false);
+            } else if (response.status === 401) {
+                appDispatch(logout());
+            } else {
+                const json = await response.json();
+                console.error(json);
+                appDispatch(addMessage(json.error));
+            }
+        };
+        request();
+    }
+
+    let changeImage = (e: any) => {
+        const formData = new FormData();
+        formData.append("0", e.target.files[0]);
+        const request = async () => {
+            const response = await fetch(url + '/files', {method: 'post', headers: {'Authorization': `Bearer ${token}`}, body: formData });
+            if (response.status === 401) {
+                appDispatch(logout());
+            } else if (response.status === 202) {
+                const json = await response.json();
+                e.target.form[6].value = json.name; //TODO: horrible. to replace by states
+            } else {
+                const json = await response.json();
+                console.error(json);
+                appDispatch(addMessage(json.error));
+            }
+        };
+        request();
+    };
+
+    const options = categories.map((cag: any, index: any) => {
+        let value = cag.category;
+        return <option key={index} value={value.id}>{value.name}</option>
+    });
+
+    setModalBody(
+    <Form onSubmit={onFormSubmit}>
+        <FormGroup>
+            <Label>{mywishlist.name}</Label>
+            <Input name="name" placeholder={mywishlist.name}/>
+            <FormFeedback>{mywishlist.nameErrorMessage}</FormFeedback>
+        </FormGroup>
+        <FormGroup>
+            <Label>{mywishlist.description}</Label>
+            <Input type="textarea" name="description" placeholder={mywishlist.description}/>
+        </FormGroup>
+        <FormGroup>
+            <Label>{mywishlist.price}</Label>
+            <Input name="price" placeholder="10"/>
+        </FormGroup>
+        <FormGroup>
+            <Label>{mywishlist.whereToBuy}</Label>
+            <Input name="whereToBuy" placeholder={mywishlist.whereToBuyPlaceholder}/>
+        </FormGroup>
+        <FormGroup>
+            <Label>{mywishlist.category}</Label>
+            <Input type="select" name="categoryId">
+                {options}
+            </Input>
+        </FormGroup>
+        <FormGroup>
+            <Label>{mywishlist.image}</Label>
+            <Input type="file"onChange={(e) => changeImage(e)}/>
+        </FormGroup>
+        <FormGroup>
+            <Input hidden name="picture"/>
+        </FormGroup>
+        <Button color="primary" block type="submit">{mywishlist.addModalButton}</Button>
+    </Form>);
+    setShow(true);
+}
+
+function editGiftModal(friendName: string, gift: any, setModalTitle: any, setModalBody: any, setShow: any, mywishlist: any, token: string, appDispatch: any, categories: any, setCategories: any) {
+    appDispatch(clearMessage());
+
+    setModalTitle(mywishlist.updateGiftModalTitle);
+
+    let onFormSubmit = (e: any) => {
+        e.preventDefault();
+        if (e.target.name.value === '') {
+            appDispatch(addMessage(mywishlist.nameErrorMessage));
+            return;
+        }
+        let imageName = (e.target.picture === undefined) ? "" : e.target.picture.value;
+        const request = async () => {
+            const response = await fetch(url + "/gifts/" + gift.id, {
+                method: "PATCH",
+                headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${token}`},
+                body: JSON.stringify({
+                    "name": e.target.name.value,
+                    "description" : e.target.description.value,
+                    "price": e.target.price.value,
+                    "whereToBuy": e.target.whereToBuy.value,
+                    "categoryId": e.target.categoryId.value,
+                    "picture": imageName,
+                    "rank": gift.rank})
+            });
+            if (response.status === 200) {
+                getGifts(friendName, token, setCategories, appDispatch);
+                setShow(false);
+            } else if (response.status === 401) {
+                appDispatch(logout());
+            } else {
+                const json = await response.json();
+                console.error(json);
+                appDispatch(addMessage(json.error));
+            }
+        };
+        request();
+    }
+
+    let changeImage = (e: any) => {
+        const formData = new FormData();
+        formData.append("0", e.target.files[0]);
+        const request = async () => {
+            const response = await fetch(url + '/files', {method: 'post', headers: {'Authorization': `Bearer ${token}`}, body: formData });
+            if (response.status === 401) {
+                appDispatch(logout());
+            } else if (response.status === 202) {
+                const json = await response.json();
+                e.target.form[6].value = json.name; //TODO: horrible. to replace by states
+            } else {
+                const json = await response.json();
+                console.error(json);
+                appDispatch(addMessage(json.error));
+            }
+        };
+        request();
+    };
+
+    const options = categories.map((cag: any, index: any) => {
+        let value = cag.category;
+        if (gift.categoryId === value.id) {
+            return <option key={index} value={value.id} selected>{value.name}</option>
+        } else {
+            return <option key={index} value={value.id}>{value.name}</option>
+        }
+    });
+
+    setModalBody(
+    <Form onSubmit={onFormSubmit}>
+        <FormGroup>
+            <Label>{mywishlist.name}</Label>
+            <Input name="name" defaultValue={gift.name}/>
+            <FormFeedback>{mywishlist.nameErrorMessage}</FormFeedback>
+        </FormGroup>
+        <FormGroup>
+            <Label>{mywishlist.description}</Label>
+            <Input type="textarea" name="description" defaultValue={gift.description}/>
+        </FormGroup>
+        <FormGroup>
+            <Label>{mywishlist.price}</Label>
+            <Input name="price" defaultValue={gift.price}/>
+        </FormGroup>
+        <FormGroup>
+            <Label>{mywishlist.whereToBuy}</Label>
+            <Input name="whereToBuy" defaultValue={gift.whereToBuy}/>
+        </FormGroup>
+        <FormGroup>
+            <Label>{mywishlist.category}</Label>
+            <Input type="select" name="categoryId">
+                {options}
+            </Input>
+        </FormGroup>
+        <FormGroup>
+            <Label>{mywishlist.image}</Label>
+            <Input type="file"onChange={(e) => changeImage(e)}/>
+        </FormGroup>
+        <FormGroup>
+            <Input hidden name="picture" defaultValue={gift.picture}/>
+        </FormGroup>
+        <Button color="primary" block type="submit">{mywishlist.updateModalButton}</Button>
+    </Form>);
+    setShow(true);
+}
+
+function deleteGiftModal(friendName: string, id: number, setModalTitle: any, setModalBody: any, setShow: any, friendwishlist: any, mywishlist: any, token: string, appDispatch: any, setCategories: any) {
+    appDispatch(clearMessage());
+
+    setModalTitle(mywishlist.deleteGiftModalTitle);
+
+    let onFormSubmit = (e: any) => {
+        e.preventDefault();
+        const request = async () => {
+            const response = await fetch(url + '/gifts/' + id + '?status=' + e.nativeEvent.submitter.value, {method: 'delete', headers: {'Authorization': `Bearer ${token}`}});
+            if (response.status === 202) {
+                getGifts(friendName, token, setCategories, appDispatch);
+                setShow(false);
+            } else if (response.status === 401) {
+                appDispatch(logout());
+            } else {
+                const json = await response.json();
+                console.error(json);
+                appDispatch(addMessage(json.error));
+            }
+        };
+        request();
+    }
+
+    setModalBody(
+    <Form onSubmit={onFormSubmit}>
+        <Button color="primary" type="submit" value="RECEIVED">{friendwishlist.deleteModalButtonReceived}</Button> { " " }
+        <Button color="primary" type="submit" value="NOT_WANTED">{friendwishlist.deleteModalButtonNotWanted}</Button>
+    </Form>);
+    setShow(true);
+}
+
+/** END DUPLICATE FROM MYWISHLIST **/
+
+function FriendWishList() {
+    const params: any = useParams();
+
+    const username = useAppSelector(selectSignIn).username;
+    const token = useAppSelector(selectSignIn).token;
+    const friendwishlist = useAppSelector(selectMessages).friendwishlist;
+    const mywishlist = useAppSelector(selectMessages).mywishlist;
+    const errorMessage = useAppSelector(selectErrorMessage);
+
+    const appDispatch = useAppDispatch();
+
+    let navigate = useNavigate();
+
+    const [categories, setCategories] = useState([]);
+    const [giftHover, setGiftHover] = useState("");
+
+    const [showGift, setShowGift] = useState(false);
+    const handleCloseGift = () => setShowGift(false);
+    const [modalGiftTitle, setModalGiftTitle] = useState("title");
+    const [modalGiftBody, setModalGiftBody] = useState(<div></div>);
+    const [modalGiftFooter, setModalGiftFooter] = useState(<div></div>);
+
+    const [showAddGif, setShowAddGift] = useState(false);
+    const handleCloseAddGift = () => setShowAddGift(false);
+    const [modalAddGiftTitle, setModalAddGiftTitle] = useState("title");
+    const [modalAddGiftBody, setModalAddGiftBody] = useState(<div></div>);
+
+    useEffect(() => {
+        if (token) {
+            getGifts(params.name, token, setCategories, appDispatch);
+        }
+    }, [params.name, token, appDispatch]);
+
+    if (token && username) {
+        return (
+        <div>
+            <h1 className="friend-wishlist-title">{friendwishlist.title} {params.name}</h1>
+            <Button color="link" onClick={() => addGiftModal(params.name, setModalAddGiftTitle, setModalAddGiftBody, setShowAddGift, mywishlist, token, appDispatch, categories, setCategories)}>{mywishlist.addGiftButton}</Button>
+            {
+            categories.map((cg: any, cgi: any) => {
+                return (
+                <div key={cgi}>
+                    <h5 style={{margin: "10px"}}>{cg.category.name}</h5>
+                    <div className="mycard-row">
+                    {
+                    cg.gifts.map((fGift: any, gi:any) => {
+                        const { gift, interestedUser, buyActionUser, secret } = fGift;
+                        let wantToBuys: string[] = [];
+                        let boughts: string[] = [];
+                        Object.keys(buyActionUser).forEach(key => {
+                            if (buyActionUser[key] === "WANT_TO_BUY") wantToBuys.push(key);
+                            if (buyActionUser[key] === "BOUGHT") boughts.push(key);
+                        });
+                        const boughtClassName = (boughts.length === 0) ? "" : " card-already-bought";
+                        let imInterested = false;
+                        let iWantToBuy = false;
+                        let iBought = false;
+                        for (const [, value] of interestedUser.entries()) { if (value === username) imInterested = true; }
+                        for (const [, value] of wantToBuys.entries()) { if (value === username) iWantToBuy = true; }
+                        for (const [, value] of boughts.entries()) { if (value === username) iBought = true; }
+
+                        const secretClassName = (secret) ? " secret-border" : "";
+                        return (
+                        <div className={"mycard" + boughtClassName + secretClassName} onMouseEnter={() => setGiftHover(cgi + "-" + gi)} onMouseLeave={() => setGiftHover("")}>
+                            {
+                            secret &&
+                            <div className="card-edit-close">
+                                <span className="three-icon-first" style={{cursor: "pointer"}} onClick={() => editGiftModal(params.name, gift, setModalAddGiftTitle, setModalAddGiftBody, setShowAddGift, mywishlist, token, appDispatch, categories, setCategories)}><PencilIcon/></span>
+                                {' '}
+                                <div className="three-icon-second secret-text">Secret</div>
+                                <span className="three-icon-third" style={{cursor: "pointer"}} onClick={() => deleteGiftModal(params.name, gift.id, setModalAddGiftTitle, setModalAddGiftBody, setShowAddGift, friendwishlist, mywishlist, token, appDispatch, setCategories)}><XIcon/></span>
+                            </div>
+                            }
+                            {
+                            (boughts.length === 0 || imInterested || iWantToBuy || iWantToBuy) &&
+                            <div className="card-edit-close">
+                                <div className={imInterested ? "icon-selected three-icon-first" : "three-icon-first"}>
+                                    <span style={{cursor: "pointer"}} onClick={() => interested(gift.id, imInterested, params.name, token, setCategories, appDispatch)}><HeartIcon/></span>
+                                    {' '}
+                                    {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
+                                </div>
+                                <div className={iWantToBuy ? "icon-selected three-icon-second" : "three-icon-second"}>
+                                    <span style={{cursor: "pointer"}} onClick={() => wantToBuy(gift.id, iWantToBuy, iBought, params.name, token, setCategories, appDispatch)}><ChecklistIcon/></span>
+                                    {' '}
+                                    {wantToBuys.length !== 0 && <><span>{wantToBuys.length}</span>{' '}</>}
+                                </div>
+                                <div className={iBought ? "icon-selected three-icon-third" : "three-icon-third"}>
+                                    {
+                                    (boughts.length !== 0 && !iBought) ?
+                                    <GiftIcon/> : <span style={{cursor: "pointer"}} onClick={() => bought(gift.id, iWantToBuy, iBought, params.name, token, setCategories, appDispatch)}><GiftIcon/></span>
+                                    }
+                                    {' '}
+                                    {boughts.length !== 0 && <><span>{boughts.length}</span>{' '}</>}
+                                </div>
+                            </div>
+                            }
+                            <div style={{cursor: "pointer"}} onClick={() => openGift(fGift, token, setShowGift, setModalGiftTitle, setModalGiftBody, setModalGiftFooter, setCategories, appDispatch, friendwishlist, mywishlist, username, params.name)}>
+                                <SquareImage token={token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
+                            </div>
+                            {renderInsideGift(cgi, gi, fGift, giftHover)}
+                        </div>
+                        );
+                    })
+                    }
+                    </div>
+                </div>);
+            })
+            }
+
+            <Modal isOpen={showGift} toggle={handleCloseGift} size="lg">
+                <ModalHeader toggle={handleCloseGift}>{modalGiftTitle}</ModalHeader>
+                <ModalBody>
+                    { errorMessage && <p className="auth-error">{errorMessage}</p> }
+                    { modalGiftBody }
+                </ModalBody>
+                <ModalFooter>
+                    { modalGiftFooter}
+                </ModalFooter>
+            </Modal>
+
+            <Modal isOpen={showAddGif} toggle={handleCloseAddGift}>
+                <ModalHeader toggle={handleCloseAddGift}>{modalAddGiftTitle}</ModalHeader>
+                <ModalBody>
+                    { errorMessage && <p className="auth-error">{errorMessage}</p> }
+                    { modalAddGiftBody }
+                </ModalBody>
+            </Modal>
+        </div>);
+    } else {
+        console.log("Unauthorized... Redirecting...")
+        navigate('../signin')
+        return (<div></div>);
+    }
+}
+
+
+export default FriendWishList;
