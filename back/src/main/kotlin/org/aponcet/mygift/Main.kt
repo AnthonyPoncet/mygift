@@ -116,9 +116,14 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         method(HttpMethod.Delete)
         method(HttpMethod.Put)
         method(HttpMethod.Patch)
-        header("Authorization")
-        allowCredentials = true
+        header(HttpHeaders.Authorization)
+        header(HttpHeaders.AccessControlAllowOrigin)
+        header(HttpHeaders.ContentType)
         allowNonSimpleContentTypes = true
+        allowCredentials = true
+        if (!debug) {
+            host("www.druponps.fr", listOf("https"))
+        }
     }
     install(Compression)
     install(ContentNegotiation) {
@@ -140,7 +145,10 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
             validate { JWTPrincipal(it.payload) }
         }
     }
+
     if (!debug) install(HttpsRedirect)
+
+    install(CallLogging)
 
     routing {
         users(userManager)

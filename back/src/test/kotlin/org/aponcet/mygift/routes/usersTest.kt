@@ -24,12 +24,12 @@ import org.aponcet.authserver.TokenResponse
 import org.aponcet.authserver.UserAndPictureJson
 import org.aponcet.authserver.UserJson
 import org.aponcet.mygift.*
+import org.junit.Assert.assertEquals
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
 import java.security.spec.X509EncodedKeySpec
-import kotlin.test.assertEquals
 
 
 class usersTest : StringSpec() {
