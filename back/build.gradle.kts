@@ -36,8 +36,8 @@ dependencies {
     testImplementation(kotlin("test-junit"))
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
-    testImplementation("io.mockk:mockk:1.12.1")
-    testImplementation("com.auth0:java-jwt:3.18.2")
+    testImplementation("io.mockk:mockk:1.12.4")
+    testImplementation("com.auth0:java-jwt:3.19.2")
 }
 
 tasks.withType<ShadowJar> {

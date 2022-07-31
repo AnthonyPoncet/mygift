@@ -37,11 +37,10 @@ npm_run_build {
 }
 
 // pack output of the build into JAR file
-task packageJS(type: Zip) {
+task packageJS(type: Jar) {
     dependsOn npm_run_build
-    baseName 'front'
-    extension 'jar'
-    destinationDir file("${projectDir}/build_packageJS")
+    archiveBaseName = 'front'
+    destinationDirectory = file("${projectDir}/build_packageJS")
     from('build') {
         // optional path under which output will be visible in Java classpath, e.g. static resources path
         into 'static'
@@ -55,7 +54,7 @@ configurations.default.extendsFrom(configurations.npmResources)
 
 // expose the artifact created by the packaging task
 artifacts {
-    npmResources(packageJS.archivePath) {
+    npmResources(packageJS.archiveFile) {
         builtBy packageJS
         type 'jar'
     }
