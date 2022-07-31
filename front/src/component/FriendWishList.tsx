@@ -2,7 +2,7 @@ import React, { useEffect, useState }  from 'react';
 
 import { useNavigate, useParams } from "react-router-dom";
 import { HeartIcon, ChecklistIcon, GiftIcon, PencilIcon, XIcon } from '@primer/octicons-react';
-import { Form, Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label, FormGroup, FormFeedback } from 'reactstrap';
+import { Form, Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label, FormGroup, FormFeedback, Spinner } from 'reactstrap';
 
 
 import './style/card-gift.css';
@@ -107,11 +107,11 @@ function bought(giftId: number, iWantToBuy: boolean, iBought: boolean, name: str
     request();
 };
 
-function renderInsideGift(cgi: number, gi: number, fGift: any, giftHover: string) {
+function renderInsideGift(cgi: number, gi: number, fGift: any, giftHover: string, showGiftFn: any) {
     const { gift, secret } = fGift;
     if ((cgi+'-'+gi === giftHover) || isMobile) {
         return (<>
-            <div style={{cursor: "pointer"}}>
+            <div style={{cursor: "pointer"}} onClick={() => showGiftFn()}>
                 <div className="card-name">{gift.name}</div>
                 <div className="card-description">{gift.description}</div>
                 <div className="mycard-footer">
@@ -230,6 +230,8 @@ function addGiftModal(friendName: string, setModalTitle: any, setModalBody: any,
     }
 
     let changeImage = (e: any) => {
+        e.target.form[7].disabled = true;
+        e.target.form[7].children[0].hidden = false;
         const formData = new FormData();
         formData.append("0", e.target.files[0]);
         const request = async () => {
@@ -239,6 +241,8 @@ function addGiftModal(friendName: string, setModalTitle: any, setModalBody: any,
             } else if (response.status === 202) {
                 const json = await response.json();
                 e.target.form[6].value = json.name; //TODO: horrible. to replace by states
+                e.target.form[7].disabled = false;
+                e.target.form[7].children[0].hidden = true;
             } else {
                 const json = await response.json();
                 console.error(json);
@@ -285,7 +289,7 @@ function addGiftModal(friendName: string, setModalTitle: any, setModalBody: any,
         <FormGroup>
             <Input hidden name="picture"/>
         </FormGroup>
-        <Button color="primary" block type="submit">{mywishlist.addModalButton}</Button>
+        <Button color="primary" block type="submit"><Spinner hidden size="sm"/> {mywishlist.addModalButton}</Button>
     </Form>);
     setShow(true);
 }
@@ -330,6 +334,8 @@ function editGiftModal(friendName: string, gift: any, setModalTitle: any, setMod
     }
 
     let changeImage = (e: any) => {
+        e.target.form[7].disabled = true;
+        e.target.form[7].children[0].hidden = false;
         const formData = new FormData();
         formData.append("0", e.target.files[0]);
         const request = async () => {
@@ -339,6 +345,8 @@ function editGiftModal(friendName: string, gift: any, setModalTitle: any, setMod
             } else if (response.status === 202) {
                 const json = await response.json();
                 e.target.form[6].value = json.name; //TODO: horrible. to replace by states
+                e.target.form[7].disabled = false;
+                e.target.form[7].children[0].hidden = true;
             } else {
                 const json = await response.json();
                 console.error(json);
@@ -389,7 +397,7 @@ function editGiftModal(friendName: string, gift: any, setModalTitle: any, setMod
         <FormGroup>
             <Input hidden name="picture" defaultValue={gift.picture}/>
         </FormGroup>
-        <Button color="primary" block type="submit">{mywishlist.updateModalButton}</Button>
+        <Button color="primary" block type="submit"><Spinner hidden size="sm"/> {mywishlist.updateModalButton}</Button>
     </Form>);
     setShow(true);
 }
@@ -526,7 +534,7 @@ function FriendWishList() {
                             <div style={{cursor: "pointer"}} onClick={() => openGift(fGift, token, setShowGift, setModalGiftTitle, setModalGiftBody, setModalGiftFooter, setCategories, appDispatch, friendwishlist, mywishlist, username, params.name)}>
                                 <SquareImage token={token} className="card-image" imageName={gift.picture} size={150} alt="Gift" alternateImage={blank_gift}/>
                             </div>
-                            {renderInsideGift(cgi, gi, fGift, giftHover)}
+                            {renderInsideGift(cgi, gi, fGift, giftHover, () => openGift(fGift, token, setShowGift, setModalGiftTitle, setModalGiftBody, setModalGiftFooter, setCategories, appDispatch, friendwishlist, mywishlist, username, params.name))}
                         </div>
                         );
                     })

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { Button, Form, FormGroup, Label, Input, FormFeedback, Modal, ModalHeader, ModalBody } from 'reactstrap';
+import { Button, Form, FormGroup, Label, Input, FormFeedback, Modal, ModalHeader, ModalBody, Spinner } from 'reactstrap';
 import { useNavigate } from 'react-router-dom';
 import { PencilIcon, XIcon, ArrowDownIcon, ArrowUpIcon, ArrowLeftIcon, ArrowRightIcon } from '@primer/octicons-react';
 
@@ -102,6 +102,8 @@ function addGiftModal(setModalTitle: any, setModalBody: any, setShow: any, mywis
     }
 
     let changeImage = (e: any) => {
+        e.target.form[7].disabled = true;
+        e.target.form[7].children[0].hidden = false;
         const formData = new FormData();
         formData.append("0", e.target.files[0]);
         const request = async () => {
@@ -111,6 +113,8 @@ function addGiftModal(setModalTitle: any, setModalBody: any, setShow: any, mywis
             } else if (response.status === 202) {
                 const json = await response.json();
                 e.target.form[6].value = json.name; //TODO: horrible. to replace by states
+                e.target.form[7].disabled = false;
+                e.target.form[7].children[0].hidden = true;
             } else {
                 const json = await response.json();
                 console.error(json);
@@ -157,7 +161,7 @@ function addGiftModal(setModalTitle: any, setModalBody: any, setShow: any, mywis
         <FormGroup>
             <Input hidden name="picture"/>
         </FormGroup>
-        <Button color="primary" block type="submit">{mywishlist.addModalButton}</Button>
+        <Button color="primary" block type="submit"><Spinner hidden size="sm"/> {mywishlist.addModalButton}</Button>
     </Form>);
     setShow(true);
 }
@@ -202,6 +206,8 @@ function editGiftModal(gift: any, setModalTitle: any, setModalBody: any, setShow
     }
 
     let changeImage = (e: any) => {
+        e.target.form[7].disabled = true;
+        e.target.form[7].children[0].hidden = false;
         const formData = new FormData();
         formData.append("0", e.target.files[0]);
         const request = async () => {
@@ -211,6 +217,8 @@ function editGiftModal(gift: any, setModalTitle: any, setModalBody: any, setShow
             } else if (response.status === 202) {
                 const json = await response.json();
                 e.target.form[6].value = json.name; //TODO: horrible. to replace by states
+                e.target.form[7].disabled = false;
+                e.target.form[7].children[0].hidden = true;
             } else {
                 const json = await response.json();
                 console.error(json);
@@ -261,7 +269,7 @@ function editGiftModal(gift: any, setModalTitle: any, setModalBody: any, setShow
         <FormGroup>
             <Input hidden name="picture" defaultValue={gift.picture}/>
         </FormGroup>
-        <Button color="primary" block type="submit">{mywishlist.updateModalButton}</Button>
+        <Button color="primary" block type="submit"><Spinner hidden size="sm"/> {mywishlist.updateModalButton}</Button>
     </Form>);
     setShow(true);
 }
