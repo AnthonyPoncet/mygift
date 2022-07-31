@@ -3,8 +3,9 @@ package org.aponcet.mygift
 import com.google.gson.Gson
 import io.ktor.client.*
 import io.ktor.client.engine.apache.*
-import io.ktor.client.features.*
+import io.ktor.client.plugins.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.aponcet.authserver.KeyResponse
@@ -42,9 +43,9 @@ class PublicKeyManager(private val authServer: AuthServer) {
         GlobalScope.launch {
             val r = Runnable { loop() }
             try {
-                val body = client.get<String>("http://${authServer.host}:${authServer.port}/public-key")
+                val httpResponse = client.get("http://${authServer.host}:${authServer.port}/public-key")
                 executor.schedule(r, DELAY_TOKEN, TimeUnit.SECONDS)
-                publicKey = Gson().fromJson(body, KeyResponse::class.java).key
+                publicKey = Gson().fromJson(httpResponse.bodyAsText(), KeyResponse::class.java).key
                 LOGGER.info(
                     "${
                         DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.from(ZoneOffset.UTC))

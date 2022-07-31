@@ -1,12 +1,12 @@
 package org.aponcet.mygift.routes
 
-import io.ktor.application.*
-import io.ktor.auth.*
 import io.ktor.http.*
 import io.ktor.http.content.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import org.aponcet.mygift.model.Data
 import java.awt.image.BufferedImage
 import java.io.File
@@ -32,6 +32,7 @@ fun Route.files(data: Data) {
                                 file.outputStream().buffered().use { output -> input.copyTo(output) }
                             }
                         }
+
                         else -> {}
                     }
 

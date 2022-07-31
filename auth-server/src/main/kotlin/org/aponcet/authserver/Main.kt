@@ -3,15 +3,16 @@ package org.aponcet.authserver
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.gson.Gson
-import io.ktor.application.*
-import io.ktor.features.*
-import io.ktor.gson.*
 import io.ktor.http.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.serialization.gson.*
+import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import org.aponcet.mygift.dbmanager.DbException
 import org.aponcet.mygift.model.ConfigurationLoader
 import java.security.KeyPairGenerator
@@ -78,10 +79,10 @@ fun Application.authModule(userProvider: UserProvider) {
         gson { setPrettyPrinting() }
     }
     install(StatusPages) {
-        exception<InvalidCredentialsException> { exception ->
+        exception<InvalidCredentialsException> { call, exception ->
             call.respond(HttpStatusCode.Unauthorized, ErrorResponse(exception.message ?: ""))
         }
-        exception<IllegalArgumentException> { exception ->
+        exception<IllegalArgumentException> { call, exception ->
             call.respond(HttpStatusCode.BadRequest, ErrorResponse(exception.message ?: ""))
         }
     }

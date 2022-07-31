@@ -1,10 +1,10 @@
 package org.aponcet.mygift.routes
 
-import io.ktor.application.*
-import io.ktor.auth.*
-import io.ktor.auth.jwt.*
 import io.ktor.http.*
-import io.ktor.response.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
+import io.ktor.server.response.*
 import org.aponcet.mygift.ErrorAnswer
 import java.nio.charset.StandardCharsets
 

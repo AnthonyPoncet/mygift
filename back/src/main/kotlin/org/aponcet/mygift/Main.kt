@@ -3,16 +3,21 @@ package org.aponcet.mygift
 import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
-import io.ktor.application.*
-import io.ktor.auth.*
-import io.ktor.auth.jwt.*
-import io.ktor.features.*
-import io.ktor.gson.*
 import io.ktor.http.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.serialization.gson.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.callloging.*
+import io.ktor.server.plugins.compression.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.httpsredirect.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import org.aponcet.mygift.dbmanager.DatabaseManager
 import org.aponcet.mygift.dbmanager.maintenance.AdaptTable
 import org.aponcet.mygift.dbmanager.maintenance.CleanDataNotUsed
@@ -111,21 +116,21 @@ fun main(args: Array<String>) {
 
 fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyManager, debug: Boolean, data: Data) {
     install(CORS) {
-        method(HttpMethod.Get)
-        method(HttpMethod.Post)
-        method(HttpMethod.Delete)
-        method(HttpMethod.Put)
-        method(HttpMethod.Patch)
-        header(HttpHeaders.Authorization)
-        header(HttpHeaders.ContentType)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Delete)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Patch)
+        allowHeader(HttpHeaders.Authorization)
+        allowHeader(HttpHeaders.ContentType)
         allowNonSimpleContentTypes = true
         allowCredentials = true
         if (!debug) {
-            header(HttpHeaders.AccessControlAllowOrigin)
-            host("www.druponps.fr", listOf("https"))
+            allowHeader(HttpHeaders.AccessControlAllowOrigin)
+            allowHost("www.druponps.fr", listOf("https"))
         } else {
-            host("localhost:3000", listOf("http"))
-            host("localhost:8080", listOf("http"))
+            allowHost("localhost:3000", listOf("http"))
+            allowHost("localhost:8080", listOf("http"))
         }
     }
     install(Compression)
@@ -134,7 +139,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
     }
 
     install(StatusPages) {
-        exception<NotANumberException> { e ->
+        exception<NotANumberException> { call, e ->
             call.respond(
                 HttpStatusCode.BadRequest,
                 ErrorAnswer("Provided ${e.target} must be a number.")

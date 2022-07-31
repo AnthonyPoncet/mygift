@@ -1,7 +1,7 @@
 package org.aponcet.mygift.routes
 
-import io.ktor.http.content.*
-import io.ktor.routing.*
+import io.ktor.server.http.content.*
+import io.ktor.server.routing.*
 
 fun Route.static() {
     static("/") {

@@ -4,8 +4,7 @@ package org.aponcet.mygift
 import com.google.gson.Gson
 import io.ktor.client.*
 import io.ktor.client.engine.apache.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
+import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -106,16 +105,13 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         if (userJson.name == null) throw BadParamException("Username could not be null")
         if (userJson.password == null) throw BadParamException("Password could not be null")
 
-        val client = HttpClient(Apache) {
-            install(JsonFeature) {
-                serializer = GsonSerializer()
-            }
-        }
+        val client = HttpClient(Apache)
         try {
-            val tokenResponse = client.post<TokenResponse> {
+            val httpResponse = client.post {
                 url("http://${authServer.host}:${authServer.port}/login")
-                body = Gson().toJson(userJson)
+                setBody(Gson().toJson(userJson))
             }
+            val tokenResponse = Gson().fromJson(httpResponse.bodyAsText(), TokenResponse::class.java)
 
             val name = userJson.name!!
             val user = databaseManager.getUser(name)!! //to get picture, if should come from here
@@ -124,7 +120,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
             val response = e.response
 
             if (response.status == HttpStatusCode.Unauthorized) {
-                val error = Gson().fromJson(response.readText(), ErrorResponse::class.java).error
+                val error = Gson().fromJson(response.bodyAsText(), ErrorResponse::class.java).error
                 LOGGER.error("Error while authenticate '${error}'", e)
                 throw ConnectionException(error)
             }
@@ -137,22 +133,22 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
     suspend fun addUser(userAndPictureJson: UserAndPictureJson): User {
         val client = HttpClient(Apache)
         try {
-            client.put<HttpStatement> {
+            client.put {
                 url("http://${authServer.host}:${authServer.port}/create")
-                body = Gson().toJson(userAndPictureJson)
-            }.execute()
+                setBody(Gson().toJson(userAndPictureJson))
+            }
 
             return connect(UserJson(userAndPictureJson.name, userAndPictureJson.password))
         } catch (e: ResponseException) {
             val response = e.response
 
             if (response.status == HttpStatusCode.Unauthorized) {
-                val error = Gson().fromJson(response.readText(), ErrorResponse::class.java).error
+                val error = Gson().fromJson(response.bodyAsText(), ErrorResponse::class.java).error
                 LOGGER.error("Error while creating user '${error}'", e)
                 throw ConnectionException(error)
             }
             if (response.status == HttpStatusCode.Conflict) {
-                val readText = response.readText()
+                val readText = response.bodyAsText()
                 val error = Gson().fromJson(readText, ErrorResponse::class.java).error
                 LOGGER.error("Error while creating user '${error}'", e)
                 throw CreateUserException(error)
@@ -502,7 +498,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
 
         val entry = databaseManager.getEntry(uuid)
         val user = databaseManager.getUser(userAndResetPassword.name!!)
-        if (entry.userId != user?.id ?: -1L) {
+        if (entry.userId != (user?.id ?: -1L)) {
             databaseManager.deleteEntry(entry.userId, uuid)
             throw Exception("This uuid does not belong to you. Reset password uuid have been deleted.")
         }
@@ -510,10 +506,10 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         //send modify to authserver
         val client = HttpClient(Apache)
         try {
-            client.post<HttpStatement> {
+            client.post {
                 url("http://${authServer.host}:${authServer.port}/update")
-                body = Gson().toJson(userAndResetPassword)
-            }.execute()
+                setBody(Gson().toJson(userAndResetPassword))
+            }
         } catch (e: ResponseException) {
             LOGGER.error("Error while updating user: $e")
             throw IllegalStateException(e)
