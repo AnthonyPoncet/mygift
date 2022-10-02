@@ -14,9 +14,9 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
         const val SELECT_BY_ID_AND_USER_ID =
             "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE C.id=? AND J.userId=?"
         const val SELECT_FRIEND_CATEGORY =
-            "select * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=? and c.id not in (select id FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=?)"
+            "select * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=? and c.id not in (select id FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=?) ORDER BY rank"
         const val SELECT_BY_USER_ID =
-            "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE J.userId=? ORDER BY RANK"
+            "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE J.userId=? ORDER BY rank"
         const val UPDATE = "UPDATE categories SET name=? WHERE id=?"
         const val DELETE = "DELETE FROM categories WHERE id=?"
 
