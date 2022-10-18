@@ -15,7 +15,7 @@ fun Route.users(userManager: UserManager) {
     /** Connect **/
     route("/user") {
         post("/connect") {
-            val userJson = Gson().fromJson(decode(call.receiveText()), UserJson::class.java)
+            val userJson = Gson().fromJson(call.receiveText(), UserJson::class.java)
 
             try {
                 val user = userManager.connect(userJson)
@@ -34,7 +34,7 @@ fun Route.users(userManager: UserManager) {
     /** Create user **/
     route("/users") {
         put {
-            val basicUserInformation = Gson().fromJson(decode(call.receiveText()), UserAndPictureJson::class.java)
+            val basicUserInformation = Gson().fromJson(call.receiveText(), UserAndPictureJson::class.java)
             try {
                 val user = userManager.addUser(basicUserInformation)
                 call.respond(HttpStatusCode.Created, user)
@@ -54,7 +54,7 @@ fun Route.users(userManager: UserManager) {
         route("/users") {
             patch {
                 handle(call) { id ->
-                    val info = Gson().fromJson(decode(call.receiveText()), UserModification::class.java)
+                    val info = Gson().fromJson(call.receiveText(), UserModification::class.java)
                     try {
                         val user = userManager.modifyUser(id, info)
                         call.respond(HttpStatusCode.Accepted, user)

@@ -26,7 +26,7 @@ fun Route.password(userManager: UserManager) {
             try {
                 val uuid = call.parameters["uuid"]!!
                 val userAndResetPassword =
-                    Gson().fromJson(decode(call.receiveText()), UserAndResetPassword::class.java)
+                    Gson().fromJson(call.receiveText(), UserAndResetPassword::class.java)
                 userManager.modifyPassword(userAndResetPassword, uuid)
                 call.respond(HttpStatusCode.Accepted)
             } catch (e: Exception) {

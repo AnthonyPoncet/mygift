@@ -39,7 +39,7 @@ fun Route.friendRequest(userManager: UserManager) {
             put {
                 handle(call) { id ->
                     val friendRequest =
-                        Gson().fromJson(decode(call.receiveText()), RestCreateFriendRequest::class.java)
+                        Gson().fromJson(call.receiveText(), RestCreateFriendRequest::class.java)
                     if (friendRequest.name == null) {
                         call.respond(HttpStatusCode.BadRequest, ErrorAnswer("missing name node in json"))
                     } else {

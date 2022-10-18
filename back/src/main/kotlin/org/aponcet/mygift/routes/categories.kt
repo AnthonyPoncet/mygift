@@ -15,7 +15,7 @@ fun Route.categories(userManager: UserManager) {
         route("/categories") {
             put {
                 handle(call) { id ->
-                    val category = Gson().fromJson(decode(call.receiveText()), RestCategory::class.java)
+                    val category = Gson().fromJson(call.receiveText(), RestCategory::class.java)
                     if (category.name == null || category.share == null) {
                         call.respond(HttpStatusCode.BadRequest, ErrorAnswer("Invalid category json"))
                     } else {
@@ -27,7 +27,7 @@ fun Route.categories(userManager: UserManager) {
             patch("/{cid}") {
                 val cid = call.parameters["cid"]!!.toLongOrNull() ?: throw NotANumberException("Category id")
                 handle(call) { id ->
-                    val category = Gson().fromJson(decode(call.receiveText()), RestCategory::class.java)
+                    val category = Gson().fromJson(call.receiveText(), RestCategory::class.java)
                     if (category.name == null) {
                         call.respond(HttpStatusCode.BadRequest, ErrorAnswer("Invalid category json"))
                     } else {

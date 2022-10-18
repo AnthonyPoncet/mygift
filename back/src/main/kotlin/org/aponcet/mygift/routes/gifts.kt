@@ -23,7 +23,7 @@ fun Route.gifts(userManager: UserManager) {
             }
             put {
                 handle(call) { id ->
-                    val gift = Gson().fromJson(decode(call.receiveText()), RestGift::class.java)
+                    val gift = Gson().fromJson(call.receiveText(), RestGift::class.java)
                     if (gift.name == null) {
                         call.respond(HttpStatusCode.BadRequest, ErrorAnswer("missing name node in json"))
                     } else {
@@ -41,7 +41,7 @@ fun Route.gifts(userManager: UserManager) {
             patch("/{gid}") {
                 val gid = getGiftId(call.parameters)
                 handle(call) { id ->
-                    val gift = Gson().fromJson(decode(call.receiveText()), RestGift::class.java)
+                    val gift = Gson().fromJson(call.receiveText(), RestGift::class.java)
                     if (gift.name == null) {
                         call.respond(HttpStatusCode.BadRequest, ErrorAnswer("missing name node in json"))
                     } else {
