@@ -74,6 +74,18 @@ fun Route.gifts(userManager: UserManager) {
                 }
             }
 
+            post("/{gid}/heart/{action}") {
+                val gid = getGiftId(call.parameters)
+                val action = call.parameters["action"] ?: throw IllegalStateException("Missing action")
+                if (action != "like" && action != "unlike") {
+                    throw IllegalStateException("Only allowed action are like or unlike")
+                }
+                handle(call) { id ->
+                    userManager.changeGiftHeart(id, gid, HeartAction.valueOf(action.uppercase(Locale.getDefault())))
+                    call.respond(HttpStatusCode.Accepted)
+                }
+            }
+
             get("/{friendName}") {
                 handle(call) { id ->
                     val friendName = call.parameters["friendName"]!!

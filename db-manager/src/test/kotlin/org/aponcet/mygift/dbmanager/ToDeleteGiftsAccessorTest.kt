@@ -50,14 +50,14 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
         deleteTable(listOf(UsersAccessor(conn).getTableName())) //order matter due to foreign key
     }
 
-    override fun testCaseOrder(): TestCaseOrder? {
+    override fun testCaseOrder(): TestCaseOrder {
         return TestCaseOrder.Random
     }
 
     init {
         "Add one gift." {
             toDeleteGiftsAccessor.add(
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
                 1L,
                 Status.RECEIVED,
                 DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)
@@ -81,7 +81,7 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
 
         "Delete one gift" {
             toDeleteGiftsAccessor.add(
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
                 1L,
                 Status.RECEIVED,
                 DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)
@@ -93,7 +93,7 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
 
         "Delete one gift wrong friend id" {
             toDeleteGiftsAccessor.add(
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
                 1L,
                 Status.RECEIVED,
                 DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)
@@ -106,7 +106,7 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
 
         "Delete one gift wrong gift id" {
             toDeleteGiftsAccessor.add(
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
                 1L,
                 Status.RECEIVED,
                 DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)

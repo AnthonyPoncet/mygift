@@ -1,7 +1,5 @@
 package org.aponcet.mygift.dbmanager
 
-import java.time.LocalDate
-
 data class DbUser(val id: Long, val name: String, val password: ByteArray, val salt: ByteArray, val picture: String?) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -36,6 +34,7 @@ data class DbGift(
     val categoryId: Long,
     val picture: String?,
     val secret: Boolean,
+    val heart: Boolean,
     val rank: Long
 )
 
@@ -50,16 +49,7 @@ data class DbFriendActionOnGift(
 
 enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
 data class DbFriendRequest(val id: Long, val userOne: Long, val userTwo: Long, val status: RequestStatus)
-data class DbEvent(
-    val id: Long,
-    val name: String,
-    val creatorId: Long,
-    val description: String,
-    val endDate: LocalDate,
-    val target: Long?
-) //target = -1 if ALL, userId other
 
-data class DbParticipant(val id: Long, val eventId: Long, val userId: Long, val status: RequestStatus)
 data class DbToDeleteGifts(
     val giftId: Long,
     val giftUserId: Long,
@@ -210,6 +200,12 @@ class DatabaseManager(dbPath: String) {
     fun rankUpGift(userId: Long, giftId: Long) {
         checkUpdateGiftsInputs(userId, giftId)
         giftAccessor.rankUpGift(userId, giftId)
+    }
+
+    @Synchronized
+    fun updateHeart(userId: Long, giftId: Long, heart: Boolean) {
+        checkUpdateGiftsInputs(userId, giftId)
+        giftAccessor.updateHeart(giftId, heart)
     }
 
     private fun checkUpdateGiftsInputs(userId: Long, giftId: Long) {

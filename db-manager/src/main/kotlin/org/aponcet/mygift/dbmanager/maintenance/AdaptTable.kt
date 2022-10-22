@@ -32,7 +32,7 @@ class AdaptTable(dbPath: String) {
 
     private val conn = DbConnection("sqlite", dbPath)
 
-    enum class STEP { ADD_RANK_TO_CATEGORY, ADD_RANK_TO_GIFT, ADD_SALT_TO_USER, DELETE_EVENTS, COMMON_CATEGORIES }
+    enum class STEP { ADD_RANK_TO_CATEGORY, ADD_RANK_TO_GIFT, ADD_SALT_TO_USER, DELETE_EVENTS, COMMON_CATEGORIES, ADD_HEART_TO_GIFTS }
 
     fun execute(step: STEP) {
         when (step) {
@@ -41,6 +41,7 @@ class AdaptTable(dbPath: String) {
             STEP.ADD_SALT_TO_USER -> addSaltToUser()
             STEP.DELETE_EVENTS -> deleteEvents()
             STEP.COMMON_CATEGORIES -> commonCategories()
+            STEP.ADD_HEART_TO_GIFTS -> addHeartToGifts()
         }
     }
 
@@ -352,6 +353,17 @@ class AdaptTable(dbPath: String) {
                     }
                 }, "Insert gift ${gift.name} generated an error"
             )
+        }
+    }
+
+    private fun addHeartToGifts() {
+        try {
+            conn.executeQuery("SELECT heart FROM gifts")
+            LOGGER.info("Column heart exists, stop")
+            return
+        } catch (e: Exception) {
+            LOGGER.info("Column heart does not exist, add it")
+            conn.executeUpdate("ALTER TABLE gifts ADD COLUMN 'heart' INTEGER NOT NULL DEFAULT 0")
         }
     }
 }
