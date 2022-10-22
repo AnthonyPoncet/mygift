@@ -22,8 +22,9 @@ data class Gift(
 class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     companion object {
-        const val INSERT = "INSERT INTO gifts (name,description,price,whereToBuy,categoryId,picture,secret,rank) " +
-                "VALUES (?,?,?,?,?,?,?,?)"
+        const val INSERT =
+            "INSERT INTO gifts (name,description,price,whereToBuy,categoryId,picture,secret,heart,rank) " +
+                    "VALUES (?,?,?,?,?,?,?,?,?)"
         const val SELECT_BY_ID = "SELECT * FROM gifts WHERE id=?"
         const val SELECT_SOME_BY_CATEGORIES = "SELECT * FROM gifts WHERE categoryId in (%s) ORDER BY rank ASC"
         const val SELECT_SOME_BY_CATEGORIES_NO_SECRET =
@@ -31,6 +32,8 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         const val SELECT_MAX_RANK_OF_GIVEN_CATEGORY = "SELECT MAX(rank) FROM gifts WHERE categoryId=?"
         const val UPDATE =
             "UPDATE gifts SET name=?, description=?, price=?, whereToBuy=?, categoryId=?, picture=?, rank=? WHERE id=?"
+        const val UPDATE_HEART =
+            "UPDATE gifts SET heart=? WHERE id=?"
         const val DELETE = "DELETE FROM gifts WHERE id=?"
         const val IS_SECRET = "SELECT * FROM gifts WHERE id=? AND secret=1"
 
@@ -56,6 +59,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                     "categoryId     INTEGER NOT NULL, " +
                     "picture        TEXT, " +
                     "secret         INTEGER NOT NULL, " +
+                    "heart          INTEGER NOT NULL," +
                     "rank           INTEGER NOT NULL," +
                     "FOREIGN KEY(categoryId) REFERENCES categories(id))"
         )
@@ -72,7 +76,8 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                 setLong(5, gift.categoryId)
                 setString(6, gift.picture)
                 setBoolean(7, secret)
-                setLong(8, maxId + 1)
+                setBoolean(8, false)
+                setLong(9, maxId + 1)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
             }
@@ -94,6 +99,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                         res.getLong("categoryId"),
                         res.getString("picture"),
                         res.getBoolean("secret"),
+                        res.getBoolean("heart"),
                         res.getLong("rank")
                     )
                 } else {
@@ -121,6 +127,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                             res.getLong("categoryId"),
                             res.getString("picture"),
                             res.getBoolean("secret"),
+                            res.getBoolean("heart"),
                             res.getLong("rank")
                         )
                     )
@@ -242,6 +249,17 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         switchGift(gift, otherGift)
     }
 
+    fun updateHeart(giftId: Long, heart: Boolean) {
+        conn.safeExecute(UPDATE_HEART, {
+            with(it) {
+                setBoolean(1, heart)
+                setLong(8, giftId)
+                val rowCount = executeUpdate()
+                if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
+            }
+        }, errorMessage(UPDATE_HEART, heart.toString(), giftId.toString()))
+    }
+
     private fun getOtherGift(userId: Long, gift: DbGift, query: String): DbGift? {
         return conn.safeExecute(query, {
             with(it) {
@@ -259,6 +277,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                     rs.getLong("categoryId"),
                     rs.getString("picture"),
                     rs.getBoolean("secret"),
+                    rs.getBoolean("heart"),
                     rs.getLong("rank")
                 )
             }
@@ -277,6 +296,14 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     private fun to(gift: DbGift, newRank: Long): Gift {
-        return Gift(gift.name, gift.description, gift.price, gift.whereToBuy, gift.categoryId, gift.picture, newRank)
+        return Gift(
+            gift.name,
+            gift.description,
+            gift.price,
+            gift.whereToBuy,
+            gift.categoryId,
+            gift.picture,
+            newRank
+        )
     }
 }

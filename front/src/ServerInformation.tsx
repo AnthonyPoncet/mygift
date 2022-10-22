@@ -4,5 +4,5 @@ export function getServerUrl() : string {
     let hostname = window.location.hostname;
     let port = window.location.port;
 
-    return protocol+"//"+hostname+":"+port;
+    return protocol+"//"+hostname+":8080";
 }

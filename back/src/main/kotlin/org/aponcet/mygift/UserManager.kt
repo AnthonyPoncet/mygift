@@ -27,6 +27,7 @@ data class CleanGift(
     val whereToBuy: String?,
     val categoryId: Long,
     val picture: String?,
+    val heart: Boolean,
     val rank: Long
 )
 
@@ -72,6 +73,7 @@ data class RestGift(
 data class RestCategory(val name: String?, val rank: Long?, val share: List<String>?)
 data class RestCreateFriendRequest(val name: String?)
 enum class RankAction { DOWN, UP }
+enum class HeartAction { LIKE, UNLIKE }
 
 /** Exceptions **/
 class BadParamException(val error: String) : Exception("Bad parameter $error")
@@ -177,6 +179,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
             g.whereToBuy,
             g.categoryId,
             g.picture,
+            g.heart,
             g.rank
         )
     }
@@ -354,6 +357,15 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
             RankAction.DOWN -> databaseManager.rankDownGift(userId, giftId)
             RankAction.UP -> databaseManager.rankUpGift(userId, giftId)
         }
+    }
+
+    fun changeGiftHeart(userId: Long, giftId: Long, heartAction: HeartAction) {
+        val heart = when (heartAction) {
+            HeartAction.LIKE -> true
+            HeartAction.UNLIKE -> false
+        }
+
+        databaseManager.updateHeart(userId, giftId, heart)
     }
 
     fun interested(giftId: Long, userId: Long) {

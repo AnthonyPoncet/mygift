@@ -79,7 +79,7 @@ class GiftAccessorTest : StringSpec() {
         ) //order matter due to foreign key
     }
 
-    override fun testCaseOrder(): TestCaseOrder? {
+    override fun testCaseOrder(): TestCaseOrder {
         return TestCaseOrder.Random
     }
 
@@ -87,7 +87,7 @@ class GiftAccessorTest : StringSpec() {
         "Add one gift with name only ranked one." {
             giftAccessor.addGift(NewGift(name = "g1", categoryId = 1L), false)
 
-            val expected = DbGift(1L, "g1", null, null, null, 1L, null, false, 1L)
+            val expected = DbGift(1L, "g1", null, null, null, 1L, null, secret = false, heart = false, rank = 1L)
             giftAccessor.getGift(1L) shouldBe expected
             giftAccessor.getUserGifts(1L) shouldBe listOf(expected)
             giftAccessor.getUserGifts(2L) shouldBe emptyList()
@@ -98,7 +98,7 @@ class GiftAccessorTest : StringSpec() {
         "Add secret one gift with name only not returned to user." {
             giftAccessor.addGift(NewGift(name = "g1", categoryId = 1L), true)
 
-            val expected = DbGift(1L, "g1", null, null, null, 1L, null, true, 1L)
+            val expected = DbGift(1L, "g1", null, null, null, 1L, null, secret = true, heart = false, rank = 1L)
             giftAccessor.getGift(1L) shouldBe expected
             giftAccessor.getUserGifts(1L) shouldBe emptyList()
             giftAccessor.getUserGifts(2L) shouldBe emptyList()
@@ -109,7 +109,9 @@ class GiftAccessorTest : StringSpec() {
         "Add one gift with all fields ranked one." {
             giftAccessor.addGift(NewGift("g1", "desc", "1€", "Here", 3L, "nice_pic.jpg"), false)
 
-            val expected = DbGift(1L, "g1", "desc", "1€", "Here", 3L, "nice_pic.jpg", false, 1L)
+            val expected = DbGift(
+                1L, "g1", "desc", "1€", "Here", 3L, "nice_pic.jpg", secret = false, heart = false, rank = 1L
+            )
             giftAccessor.getGift(1L) shouldBe expected
             giftAccessor.getUserGifts(1L) shouldBe emptyList()
             giftAccessor.getUserGifts(2L) shouldBe listOf(expected)
@@ -127,8 +129,8 @@ class GiftAccessorTest : StringSpec() {
             giftAccessor.addGift(NewGift(name = "g1", categoryId = 1L), false)
             giftAccessor.addGift(NewGift(name = "g2", categoryId = 1L), true)
 
-            val expected1 = DbGift(1L, "g1", null, null, null, 1L, null, false, 1L)
-            val expected2 = DbGift(2L, "g2", null, null, null, 1L, null, true, 2L)
+            val expected1 = DbGift(1L, "g1", null, null, null, 1L, null, secret = false, heart = false, rank = 1L)
+            val expected2 = DbGift(2L, "g2", null, null, null, 1L, null, secret = true, heart = false, rank = 2L)
             giftAccessor.getGift(1L) shouldBe expected1
             giftAccessor.getGift(2L) shouldBe expected2
             giftAccessor.getUserGifts(1L) shouldBe listOf(expected1)
@@ -150,7 +152,9 @@ class GiftAccessorTest : StringSpec() {
             giftAccessor.addGift(NewGift(name = "g1", categoryId = 1L), false)
             giftAccessor.modifyGift(1L, Gift("modified", "desc", "1€", "here", 2L, "pic.jpg", 1L))
 
-            val expected = DbGift(1L, "modified", "desc", "1€", "here", 2L, "pic.jpg", false, 1L)
+            val expected = DbGift(
+                1L, "modified", "desc", "1€", "here", 2L, "pic.jpg", secret = false, heart = false, rank = 1L
+            )
             giftAccessor.getGift(1L) shouldBe expected
             giftAccessor.getUserGifts(1L) shouldBe listOf(expected)
             giftAccessor.getUserGifts(2L) shouldBe emptyList()
@@ -162,7 +166,7 @@ class GiftAccessorTest : StringSpec() {
             giftAccessor.addGift(NewGift("g1", "desc", "1€", "Here", 1L, "nice_pic.jpg"), false)
             giftAccessor.modifyGift(1L, Gift(name = "modified", categoryId = 2L, rank = 1L))
 
-            val expected = DbGift(1L, "modified", null, null, null, 2L, null, false, 1L)
+            val expected = DbGift(1L, "modified", null, null, null, 2L, null, secret = false, heart = false, rank = 1L)
             giftAccessor.getGift(1L) shouldBe expected
             giftAccessor.getUserGifts(1L) shouldBe listOf(expected)
             giftAccessor.getUserGifts(2L) shouldBe emptyList()
@@ -250,30 +254,30 @@ class GiftAccessorTest : StringSpec() {
             giftAccessor.addGift(NewGift(name = "g3", categoryId = 1L), false)
 
             giftAccessor.getUserGifts(1L) shouldBe listOf(
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
-                DbGift(2L, "g2", null, null, null, 1L, null, false, 2L),
-                DbGift(3L, "g3", null, null, null, 1L, null, false, 3L)
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
+                DbGift(2L, "g2", null, null, null, 1L, null, false, heart = false, rank = 2L),
+                DbGift(3L, "g3", null, null, null, 1L, null, false, heart = false, rank = 3L)
             )
 
             giftAccessor.rankDownGift(1L, 2L)
             giftAccessor.getUserGifts(1L) shouldBe listOf(
-                DbGift(2L, "g2", null, null, null, 1L, null, false, 1L),
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 2L),
-                DbGift(3L, "g3", null, null, null, 1L, null, false, 3L)
+                DbGift(2L, "g2", null, null, null, 1L, null, false, heart = false, rank = 1L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 2L),
+                DbGift(3L, "g3", null, null, null, 1L, null, false, heart = false, rank = 3L)
             )
 
             giftAccessor.rankDownGift(1L, 3L)
             giftAccessor.getUserGifts(1L) shouldBe listOf(
-                DbGift(2L, "g2", null, null, null, 1L, null, false, 1L),
-                DbGift(3L, "g3", null, null, null, 1L, null, false, 2L),
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 3L)
+                DbGift(2L, "g2", null, null, null, 1L, null, false, heart = false, rank = 1L),
+                DbGift(3L, "g3", null, null, null, 1L, null, false, heart = false, rank = 2L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 3L)
             )
 
             giftAccessor.rankDownGift(1L, 3L)
             giftAccessor.getUserGifts(1L) shouldBe listOf(
-                DbGift(3L, "g3", null, null, null, 1L, null, false, 1L),
-                DbGift(2L, "g2", null, null, null, 1L, null, false, 2L),
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 3L)
+                DbGift(3L, "g3", null, null, null, 1L, null, false, heart = false, rank = 1L),
+                DbGift(2L, "g2", null, null, null, 1L, null, false, heart = false, rank = 2L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 3L)
             )
 
             assertFailsWith(Exception::class) {
@@ -287,30 +291,30 @@ class GiftAccessorTest : StringSpec() {
             giftAccessor.addGift(NewGift(name = "g3", categoryId = 1L), false)
 
             giftAccessor.getUserGifts(1L) shouldBe listOf(
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
-                DbGift(2L, "g2", null, null, null, 1L, null, false, 2L),
-                DbGift(3L, "g3", null, null, null, 1L, null, false, 3L)
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
+                DbGift(2L, "g2", null, null, null, 1L, null, false, heart = false, rank = 2L),
+                DbGift(3L, "g3", null, null, null, 1L, null, false, heart = false, rank = 3L)
             )
 
             giftAccessor.rankUpGift(1L, 2L)
             giftAccessor.getUserGifts(1L) shouldBe listOf(
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
-                DbGift(3L, "g3", null, null, null, 1L, null, false, 2L),
-                DbGift(2L, "g2", null, null, null, 1L, null, false, 3L)
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
+                DbGift(3L, "g3", null, null, null, 1L, null, false, heart = false, rank = 2L),
+                DbGift(2L, "g2", null, null, null, 1L, null, false, heart = false, rank = 3L)
             )
 
             giftAccessor.rankUpGift(1L, 1L)
             giftAccessor.getUserGifts(1L) shouldBe listOf(
-                DbGift(3L, "g3", null, null, null, 1L, null, false, 1L),
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 2L),
-                DbGift(2L, "g2", null, null, null, 1L, null, false, 3L)
+                DbGift(3L, "g3", null, null, null, 1L, null, false, heart = false, rank = 1L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 2L),
+                DbGift(2L, "g2", null, null, null, 1L, null, false, heart = false, rank = 3L)
             )
 
             giftAccessor.rankUpGift(1L, 1L)
             giftAccessor.getUserGifts(1L) shouldBe listOf(
-                DbGift(3L, "g3", null, null, null, 1L, null, false, 1L),
-                DbGift(2L, "g2", null, null, null, 1L, null, false, 2L),
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 3L)
+                DbGift(3L, "g3", null, null, null, 1L, null, false, heart = false, rank = 1L),
+                DbGift(2L, "g2", null, null, null, 1L, null, false, heart = false, rank = 2L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 3L)
             )
 
             assertFailsWith(Exception::class) {
@@ -325,19 +329,19 @@ class GiftAccessorTest : StringSpec() {
             giftAccessor.addGift(NewGift(name = "g4", categoryId = 1L), false)
 
             giftAccessor.getFriendGifts(1L) shouldBe listOf(
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
-                DbGift(2L, "g2", null, null, null, 1L, null, true, 2L),
-                DbGift(3L, "g3", null, null, null, 1L, null, true, 3L),
-                DbGift(4L, "g4", null, null, null, 1L, null, false, 4L)
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
+                DbGift(2L, "g2", null, null, null, 1L, null, true, heart = false, rank = 2L),
+                DbGift(3L, "g3", null, null, null, 1L, null, true, heart = false, rank = 3L),
+                DbGift(4L, "g4", null, null, null, 1L, null, false, heart = false, rank = 4L)
             )
 
             //TODO: was expected id 4 -> 1 -> 2 -> 3
             giftAccessor.rankDownGift(1L, 4L)
             giftAccessor.getFriendGifts(1L) shouldBe listOf(
-                DbGift(4L, "g4", null, null, null, 1L, null, false, 1L),
-                DbGift(2L, "g2", null, null, null, 1L, null, true, 2L),
-                DbGift(3L, "g3", null, null, null, 1L, null, true, 3L),
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 4L)
+                DbGift(4L, "g4", null, null, null, 1L, null, false, heart = false, rank = 1L),
+                DbGift(2L, "g2", null, null, null, 1L, null, true, heart = false, rank = 2L),
+                DbGift(3L, "g3", null, null, null, 1L, null, true, heart = false, rank = 3L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 4L)
             )
         }
 
@@ -348,19 +352,19 @@ class GiftAccessorTest : StringSpec() {
             giftAccessor.addGift(NewGift(name = "g4", categoryId = 1L), false)
 
             giftAccessor.getFriendGifts(1L) shouldBe listOf(
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 1L),
-                DbGift(2L, "g2", null, null, null, 1L, null, true, 2L),
-                DbGift(3L, "g3", null, null, null, 1L, null, true, 3L),
-                DbGift(4L, "g4", null, null, null, 1L, null, false, 4L)
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
+                DbGift(2L, "g2", null, null, null, 1L, null, true, heart = false, rank = 2L),
+                DbGift(3L, "g3", null, null, null, 1L, null, true, heart = false, rank = 3L),
+                DbGift(4L, "g4", null, null, null, 1L, null, false, heart = false, rank = 4L)
             )
 
             //TODO: was expected id 2 -> 3 -> 4 -> 1. But not even sure.
             giftAccessor.rankUpGift(1L, 1L)
             giftAccessor.getFriendGifts(1L) shouldBe listOf(
-                DbGift(4L, "g4", null, null, null, 1L, null, false, 1L),
-                DbGift(2L, "g2", null, null, null, 1L, null, true, 2L),
-                DbGift(3L, "g3", null, null, null, 1L, null, true, 3L),
-                DbGift(1L, "g1", null, null, null, 1L, null, false, 4L)
+                DbGift(4L, "g4", null, null, null, 1L, null, false, heart = false, rank = 1L),
+                DbGift(2L, "g2", null, null, null, 1L, null, true, heart = false, rank = 2L),
+                DbGift(3L, "g3", null, null, null, 1L, null, true, heart = false, rank = 3L),
+                DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 4L)
             )
         }
     }

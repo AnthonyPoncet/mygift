@@ -34,7 +34,7 @@ class UsersAccessorTest : StringSpec() {
         deleteTable(listOf(usersAccessor.getTableName())) //order matter due to foreign key
     }
 
-    override fun testCaseOrder(): TestCaseOrder? {
+    override fun testCaseOrder(): TestCaseOrder {
         return TestCaseOrder.Random
     }
 
