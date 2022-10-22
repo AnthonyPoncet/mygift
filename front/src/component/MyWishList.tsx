@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { Button, Form, FormGroup, Label, Input, FormFeedback, Modal, ModalHeader, ModalBody, Spinner } from 'reactstrap';
 import { useNavigate } from 'react-router-dom';
-import { PencilIcon, XIcon, ArrowDownIcon, ArrowUpIcon, ArrowLeftIcon, ArrowRightIcon } from '@primer/octicons-react';
+import { HeartIcon, PencilIcon, XIcon, ArrowDownIcon, ArrowUpIcon, ArrowLeftIcon, ArrowRightIcon } from '@primer/octicons-react';
 
 import { useAppSelector, useAppDispatch } from '../redux/store';
 import { selectMessages } from '../redux/reducers/locale';
@@ -450,6 +450,23 @@ function deleteCat(id: number, token: string, appDispatch: any, setCategories: a
     request();
 }
 
+function heartGift(id: number, heart: boolean, token: string, appDispatch: any, setCategories: any) {
+    const request = async () => {
+        let req_heart = heart ? 'unlike' : 'like';
+        const response = await fetch(url + '/gifts/' + id + '/heart/' + req_heart, {method: 'post', headers: {'Authorization': `Bearer ${token}`}});
+        if (response.status === 202) {
+            getGifts(token, setCategories, appDispatch);
+        } else if (response.status === 401) {
+            appDispatch(logout());
+        } else {
+            const json = await response.json();
+            console.error(json);
+            appDispatch(addMessage(json.error));
+        }
+    };
+    request();
+}
+
 function rankCategory(id: number, downUp: number, token: string, appDispatch: any, setCategories: any) { //0 = down , other = up
     const val = (downUp === 0) ? "down" : "up";
     const request = async () => {
@@ -500,7 +517,10 @@ function renderGifts(categories: any, token: string, appDispatch: any, setCatego
                     {cg.gifts.map((gift: any, gi:any) => {
                         return (
                         <div className="mycard" onMouseEnter={() => setGiftHover(cgi + "-" + gi)} onMouseLeave={() => setGiftHover("")} key={gi}>
-                            <div className="card-edit-close one-icon">
+                            <div className={gift.heart ? "heart-selected two-icon-first" : "two-icon-first"}>
+                                <span style={{cursor: "pointer"}} onClick={() => heartGift(gift.id, gift.heart, token, appDispatch, setCategories)}><HeartIcon /></span>
+                            </div>
+                            <div className="card-edit-close two-icon-second">
                                 <span style={{cursor: "pointer"}} onClick={() => deleteGiftModal(gift.id, setModalTitle, setModalBody, setShow, mywishlist, token, appDispatch, setCategories)}><XIcon/></span>
                             </div>
                             <div style={{cursor: "pointer"}} onClick={() => editGiftModal(gift, setModalTitle, setModalBody, setShow, mywishlist, token, appDispatch, categories, setCategories)}>

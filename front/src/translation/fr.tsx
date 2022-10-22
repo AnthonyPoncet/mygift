@@ -66,9 +66,7 @@ class Fr implements Itrans {
           },
           friendwishlist: {
             title: "Liste de ",
-            imInterested: "J'aime",
-            iWantToBuy: "Je veux acheter",
-            iBought: "J'ai acheté",
+            reservedByMe: "Je réserve",
             deleteModalButtonReceived: "Cadeau reçu",
             deleteModalButtonNotWanted: "Cadeau à supprimer"
           },

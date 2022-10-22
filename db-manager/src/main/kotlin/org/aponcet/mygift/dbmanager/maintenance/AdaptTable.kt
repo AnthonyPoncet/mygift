@@ -24,6 +24,14 @@ data class GiftBeforeMigration(
     val rank: Long
 )
 
+data class FriendActionOnGiftBeforeMigration(
+    val id: Long,
+    val giftId: Long,
+    val userId: Long,
+    val interested: Boolean,
+    val buy: String
+)
+
 /** Adapt table used only ad-hoc when needed **/
 class AdaptTable(dbPath: String) {
     companion object {
@@ -359,11 +367,97 @@ class AdaptTable(dbPath: String) {
     private fun addHeartToGifts() {
         try {
             conn.executeQuery("SELECT heart FROM gifts")
-            LOGGER.info("Column heart exists, stop")
-            return
+            LOGGER.info("Column heart exists, skip")
         } catch (e: Exception) {
             LOGGER.info("Column heart does not exist, add it")
             conn.executeUpdate("ALTER TABLE gifts ADD COLUMN 'heart' INTEGER NOT NULL DEFAULT 0")
+        }
+
+        try {
+            conn.executeQuery("SELECT interested FROM friendActionOnGift")
+            LOGGER.info("Column interested exists, run maintenance")
+        } catch (e: Exception) {
+            LOGGER.info("Column interested does not exist, skip")
+        }
+
+        //Get friend actions
+        val faogs = HashSet<FriendActionOnGiftBeforeMigration>()
+        val rs = conn.executeQuery("SELECT id,giftId,userId,interested,buy FROM friendActionOnGift")
+        while (rs.next()) {
+            faogs.add(
+                FriendActionOnGiftBeforeMigration(
+                    rs.getLong("id"),
+                    rs.getLong("giftId"),
+                    rs.getLong("userId"),
+                    rs.getBoolean("interested"),
+                    rs.getString("buy")
+                )
+            )
+        }
+        faogs.removeIf { faog -> faog.buy == "NONE" }
+        conn.execute("ALTER TABLE friendActionOnGift RENAME TO faog_to_delete")
+
+        FriendActionOnGiftAccessor(conn).createIfNotExists()
+        val insert = "INSERT INTO friendActionOnGift (id,giftId,userId) VALUES (?,?,?)"
+        for (faog in faogs) {
+            conn.safeExecute(
+                insert, {
+                    with(it) {
+                        setLong(1, faog.id)
+                        setLong(2, faog.giftId)
+                        setLong(3, faog.userId)
+                        val rowCount = executeUpdate()
+                        if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
+                    }
+                }, "Insert friendActionOnGift ${faog.giftId} ${faog.userId} generated an error"
+            )
+        }
+
+        // to delete gifts --> remove friendAction
+        val tdgs = conn.safeExecute("SELECT * FROM toDeleteGifts", {
+            val toDeleteGifts = arrayListOf<DbToDeleteGifts>()
+            with(it) {
+                val res = executeQuery()
+                while (res.next()) {
+                    toDeleteGifts.add(
+                        DbToDeleteGifts(
+                            res.getLong("giftId"),
+                            res.getLong("giftUserId"),
+                            res.getString("name"),
+                            res.getString("description"),
+                            res.getString("price"),
+                            res.getString("whereToBuy"),
+                            res.getString("picture"),
+                            Status.valueOf(res.getString("giftUserStatus")),
+                            res.getLong("friendId")
+                        )
+                    )
+                }
+                return@with toDeleteGifts
+            }
+        }, "toDeleteGifts generated an error")
+
+        conn.execute("ALTER TABLE toDeleteGifts RENAME TO tdg_to_delete")
+        ToDeleteGiftsAccessor(conn).createIfNotExists()
+        val insert_tdg = "INSERT INTO toDeleteGifts (giftId,giftUserId,name,description,price,whereToBuy,picture,giftUserStatus,friendId) VALUES (?,?,?,?,?,?,?,?,?)"
+        for (tdg in tdgs) {
+            conn.safeExecute(
+                insert_tdg, {
+                    with(it) {
+                        setLong(1, tdg.giftId)
+                        setLong(2, tdg.giftUserId)
+                        setString(3, tdg.name)
+                        setString(4, tdg.description)
+                        setString(5, tdg.price)
+                        setString(6, tdg.whereToBuy)
+                        setString(7, tdg.picture)
+                        setString(8, tdg.giftUserStatus.name)
+                        setLong(9, tdg.friendId)
+                        val rowCount = executeUpdate()
+                        if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
+                    }
+                }, "Insert toDeleteGifts generated an error"
+            )
         }
     }
 }

@@ -35,8 +35,7 @@ data class CleanCategory(val id: Long, val name: String, val rank: Long)
 data class CatAndGift(val category: CleanCategory, val gifts: List<CleanGift>)
 data class FriendGift(
     val gift: CleanGift,
-    val interestedUser: List<String>,
-    val buyActionUser: Map<String, BuyAction>,
+    val reservedBy: List<String>,
     val secret: Boolean
 )
 
@@ -52,7 +51,6 @@ data class DeletedGifts(
     val price: String?,
     val whereToBuy: String?,
     val picture: String?,
-    val buyAction: BuyAction,
     val status: Status
 )
 
@@ -212,17 +210,9 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
                 ), gifts.filter { g -> g.categoryId == c.id }.map { g ->
                     val actions = databaseManager.getFriendActionOnGift(g.id)
                     FriendGift(toGift(g),
-                        actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }.map {
-                            dummyUserCache.queryName(
-                                it.userId
-                            )!!
+                        actions.filter { dummyUserCache.queryName(it.userId) != null }.map {
+                            dummyUserCache.queryName(it.userId)!!
                         },
-                        actions.filter { it.buy != BuyAction.NONE || dummyUserCache.queryName(it.userId) != null }
-                            .associate {
-                                dummyUserCache.queryName(
-                                    it.userId
-                                )!! to it.buy
-                            },
                         g.secret
                     )
                 })
@@ -232,9 +222,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
     fun getBuyList(userId: Long): List<BuyListByFriend> {
         val friendActionOnGiftsUserHasActionOn = databaseManager.getFriendActionOnGiftsUserHasActionOn(userId)
 
-        val dbGifts = friendActionOnGiftsUserHasActionOn
-            .filter { g -> g.buy != BuyAction.NONE }
-            .mapNotNull { g -> databaseManager.getGift(g.giftId) }
+        val dbGifts = friendActionOnGiftsUserHasActionOn.mapNotNull { g -> databaseManager.getGift(g.giftId) }
 
         val giftsAndUser = ArrayList<Pair<Long, DbGift>>()
         for (gift in dbGifts) {
@@ -256,7 +244,6 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
                     it.price,
                     it.whereToBuy,
                     it.picture,
-                    it.friendAction,
                     it.giftUserStatus
                 )
             })
@@ -276,10 +263,8 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
                     m.value.first.map { g ->
                         val actions = databaseManager.getFriendActionOnGift(g.id)
                         FriendGift(toGift(g),
-                            actions.filter { it.interested || dummyUserCache.queryName(it.userId) != null }
+                            actions.filter { dummyUserCache.queryName(it.userId) != null }
                                 .map { dummyUserCache.queryName(it.userId)!! },
-                            actions.filter { it.buy != BuyAction.NONE || dummyUserCache.queryName(it.userId) != null }
-                                .associate { dummyUserCache.queryName(it.userId)!! to it.buy },
                             g.secret
                         )
                     }.sortedBy { it.gift.rank },
@@ -368,20 +353,8 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         databaseManager.updateHeart(userId, giftId, heart)
     }
 
-    fun interested(giftId: Long, userId: Long) {
-        databaseManager.interested(giftId, userId, true)
-    }
-
-    fun notInterested(giftId: Long, userId: Long) {
-        databaseManager.interested(giftId, userId, false)
-    }
-
-    fun buy(giftId: Long, userId: Long, buy: BuyAction) {
-        databaseManager.buyAction(giftId, userId, buy)
-    }
-
-    fun stopBuy(giftId: Long, userId: Long) {
-        databaseManager.buyAction(giftId, userId, BuyAction.NONE)
+    fun changeReserve(giftId: Long, userId: Long, reserve: Boolean) {
+        databaseManager.changeReserve(giftId, userId, reserve)
     }
 
     fun addCategory(category: RestCategory, userId: Long, userNames: List<String>) {
