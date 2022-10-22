@@ -1,7 +1,7 @@
 import React, { useEffect, useState }  from 'react';
 
 import { useNavigate, useParams } from "react-router-dom";
-import { HeartIcon, ChecklistIcon, GiftIcon, PencilIcon, XIcon } from '@primer/octicons-react';
+import { HeartIcon, GiftIcon, PencilIcon, XIcon } from '@primer/octicons-react';
 import { Form, Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label, FormGroup, FormFeedback, Spinner } from 'reactstrap';
 
 
@@ -40,60 +40,12 @@ function getGifts(name: string, token: string, setCategories: any, appDispatch: 
     request();
 };
 
-function interested(giftId: number, imInterested: boolean, name: string, token: string, setCategories: any, appDispatch: any) {
+function reserve(giftId: number, reserve: boolean, name: string, token: string, setCategories: any, appDispatch: any) {
     const request = async () => {
-        const response = await fetch(url + '/gifts/' + giftId + '/interested', {
-            method: imInterested ? "DELETE" : "POST",
+        const response = await fetch(url + '/gifts/' + giftId + '/reserve', {
+            method: reserve ? "DELETE" : "POST",
             headers: {'Authorization': `Bearer ${token}`}
         });
-        if (response.status === 202) {
-            getGifts(name, token, setCategories, appDispatch);
-        } else if (response.status === 401) {
-            appDispatch(logout());
-        } else {
-            const json = await response.json();
-            console.error(json.error);
-            appDispatch(addMessage(json.error));
-        }
-    };
-    request();
-};
-
-function wantToBuy(giftId: number, iWantToBuy: boolean, iBought: boolean, name: string, token: string, setCategories: any, appDispatch: any) {
-    const request = async () => {
-        if (iBought) await bought(giftId, false, true, name, token, setCategories, appDispatch); //Remove ibought
-
-        let response = null;
-        if (iWantToBuy === true) {
-            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${token}`}});
-        } else {
-            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=WANT_TO_BUY', {method: "POST", headers: {'Authorization': `Bearer ${token}`}});
-        }
-
-        if (response.status === 202) {
-            getGifts(name, token, setCategories, appDispatch);
-        } else if (response.status === 401) {
-            appDispatch(logout());
-        } else {
-            const json = await response.json();
-            console.error(json.error);
-            appDispatch(addMessage(json.error));
-        }
-    };
-    request();
-};
-
-function bought(giftId: number, iWantToBuy: boolean, iBought: boolean, name: string, token: string, setCategories: any, appDispatch: any) {
-    const request = async () => {
-        if (iWantToBuy) await wantToBuy(giftId, true, false, name, token, setCategories, appDispatch); //Remove ibought
-
-        let response = null;
-        if (iBought === true) {
-            response = await fetch(url + '/gifts/' + giftId + '/buy-action', {method: "DELETE", headers: {'Authorization': `Bearer ${token}`}});
-        } else {
-            response = await fetch(url + '/gifts/' + giftId + '/buy-action?action=BOUGHT', {method: "POST", headers: {'Authorization': `Bearer ${token}`}});
-        }
-
         if (response.status === 202) {
             getGifts(name, token, setCategories, appDispatch);
         } else if (response.status === 401) {
@@ -139,20 +91,10 @@ function openGift(fGift: any, token: string, setShowGift: any, setModalGiftTitle
     }
 
     //Duplicated
-    const { interestedUser, buyActionUser } = fGift;
-    let wantToBuys: string[] = [];
-    let boughts: string[] = [];
-    Object.keys(buyActionUser).forEach(key => {
-        if (buyActionUser[key] === "WANT_TO_BUY") wantToBuys.push(key);
-        if (buyActionUser[key] === "BOUGHT") boughts.push(key);
-    });
-    let imInterested = false;
-    let iWantToBuy = false;
-    let iBought = false;
+    const { reservedBy } = fGift;
+    let reservedByMe = false;
     if (username !== null) {
-        for (const [, value] of interestedUser.entries()) { if (value === username) imInterested = true; }
-        for (const [, value] of wantToBuys.entries()) { if (value === username) iWantToBuy = true; }
-        for (const [, value] of boughts.entries()) { if (value === username) iBought = true; }
+        for (const [, value] of reservedBy.entries()) { if (value === username) reservedByMe = true; }
     }
 
     setModalGiftBody(
@@ -179,11 +121,9 @@ function openGift(fGift: any, token: string, setShowGift: any, setModalGiftTitle
     );
     setModalGiftFooter(
         <div>
-        { (boughts.length === 0 || imInterested || iWantToBuy || iBought) &&
+        { (reservedBy.length === 0 || reservedByMe) &&
             <>
-            <Button color={imInterested ? "primary" : "secondary"} onClick={() => interested(gift.id, imInterested, friendName, token, setCategories, appDispatch)}><HeartIcon/> {friendwishlist.imInterested}</Button>{' '}
-            <Button color={iWantToBuy ? "primary" : "secondary"} onClick={() => wantToBuy(gift.id, iWantToBuy, iBought, friendName, token, setCategories, appDispatch)}><ChecklistIcon/> {friendwishlist.iWantToBuy}</Button>{' '}
-            <Button color={iBought ? "primary" : "secondary"} onClick={() => bought(gift.id, iWantToBuy, iBought, friendName, token, setCategories, appDispatch)}><GiftIcon/> {friendwishlist.iBought}</Button>
+            <Button color={reservedByMe ? "primary" : "secondary"} onClick={() => reserve(gift.id, reservedByMe, friendName, token, setCategories, appDispatch)}><GiftIcon/> {friendwishlist.reservedByMe}</Button>{' '}
             </>
         }
         </div>
@@ -481,54 +421,36 @@ function FriendWishList() {
                     <div className="mycard-row">
                     {
                     cg.gifts.map((fGift: any, gi:any) => {
-                        const { gift, interestedUser, buyActionUser, secret } = fGift;
-                        let wantToBuys: string[] = [];
-                        let boughts: string[] = [];
-                        Object.keys(buyActionUser).forEach(key => {
-                            if (buyActionUser[key] === "WANT_TO_BUY") wantToBuys.push(key);
-                            if (buyActionUser[key] === "BOUGHT") boughts.push(key);
-                        });
-                        const boughtClassName = (boughts.length === 0) ? "" : " card-already-bought";
-                        let imInterested = false;
-                        let iWantToBuy = false;
-                        let iBought = false;
-                        for (const [, value] of interestedUser.entries()) { if (value === username) imInterested = true; }
-                        for (const [, value] of wantToBuys.entries()) { if (value === username) iWantToBuy = true; }
-                        for (const [, value] of boughts.entries()) { if (value === username) iBought = true; }
+                        const { gift, reservedBy, secret } = fGift;
+                        let reservedByMe = false;
+                        for (const [, value] of reservedBy.entries()) { if (value === username) reservedByMe = true; }
 
+                        const boughtClassName = (reservedBy.length === 0) ? "" : " card-already-bought";
                         const secretClassName = (secret) ? " secret-border" : "";
                         return (
                         <div className={"mycard" + boughtClassName + secretClassName} onMouseEnter={() => setGiftHover(cgi + "-" + gi)} onMouseLeave={() => setGiftHover("")}>
                             {
-                            secret &&
+                            (reservedBy.length === 0 || reservedByMe) &&
                             <div className="card-edit-close">
-                                <span className="three-icon-first" style={{cursor: "pointer"}} onClick={() => editGiftModal(params.name, gift, setModalAddGiftTitle, setModalAddGiftBody, setShowAddGift, mywishlist, token, appDispatch, categories, setCategories)}><PencilIcon/></span>
-                                {' '}
-                                <div className="three-icon-second secret-text">Secret</div>
-                                <span className="three-icon-third" style={{cursor: "pointer"}} onClick={() => deleteGiftModal(params.name, gift.id, setModalAddGiftTitle, setModalAddGiftBody, setShowAddGift, friendwishlist, mywishlist, token, appDispatch, setCategories)}><XIcon/></span>
-                            </div>
-                            }
-                            {
-                            (boughts.length === 0 || imInterested || iWantToBuy || iWantToBuy) &&
-                            <div className="card-edit-close">
-                                <div className={imInterested ? "icon-selected three-icon-first" : "three-icon-first"}>
-                                    <span style={{cursor: "pointer"}} onClick={() => interested(gift.id, imInterested, params.name, token, setCategories, appDispatch)}><HeartIcon/></span>
-                                    {' '}
-                                    {interestedUser.length !== 0 && <><span>{interestedUser.length}</span>{' '}</>}
+                                {!secret &&
+                                    <div className={gift.heart ? "heart-selected three-icon-first" : "three-icon-first"}>
+                                        { gift.heart && <span><HeartIcon /></span>  }
+                                    </div>
+                                }
+                                {secret &&
+                                    <div className="three-icon-first">
+                                        <span style={{cursor: "pointer"}} onClick={() => editGiftModal(params.name, gift, setModalAddGiftTitle, setModalAddGiftBody, setShowAddGift, mywishlist, token, appDispatch, categories, setCategories)}><PencilIcon/></span>
+                                    </div>
+                                }
+                                <div className="three-icon-second secret-text">{secret && <>Secret</>}</div>
+                                <div className={reservedByMe ? "icon-selected three-icon-third" : "three-icon-third"}>
+                                    <span style={{cursor: "pointer"}} onClick={() => reserve(gift.id, reservedByMe, params.name, token, setCategories, appDispatch)}><GiftIcon/></span>
                                 </div>
-                                <div className={iWantToBuy ? "icon-selected three-icon-second" : "three-icon-second"}>
-                                    <span style={{cursor: "pointer"}} onClick={() => wantToBuy(gift.id, iWantToBuy, iBought, params.name, token, setCategories, appDispatch)}><ChecklistIcon/></span>
-                                    {' '}
-                                    {wantToBuys.length !== 0 && <><span>{wantToBuys.length}</span>{' '}</>}
-                                </div>
-                                <div className={iBought ? "icon-selected three-icon-third" : "three-icon-third"}>
-                                    {
-                                    (boughts.length !== 0 && !iBought) ?
-                                    <GiftIcon/> : <span style={{cursor: "pointer"}} onClick={() => bought(gift.id, iWantToBuy, iBought, params.name, token, setCategories, appDispatch)}><GiftIcon/></span>
-                                    }
-                                    {' '}
-                                    {boughts.length !== 0 && <><span>{boughts.length}</span>{' '}</>}
-                                </div>
+                                {secret &&
+                                    <div className="three-icon-first">
+                                        <span style={{cursor: "pointer"}} onClick={() => deleteGiftModal(params.name, gift.id, setModalAddGiftTitle, setModalAddGiftBody, setShowAddGift, friendwishlist, mywishlist, token, appDispatch, setCategories)}><XIcon/></span>
+                                    </div>
+                                }
                             </div>
                             }
                             <div style={{cursor: "pointer"}} onClick={() => openGift(fGift, token, setShowGift, setModalGiftTitle, setModalGiftBody, setModalGiftFooter, setCategories, appDispatch, friendwishlist, mywishlist, username, params.name)}>

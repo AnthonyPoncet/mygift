@@ -60,7 +60,7 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
                 DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
                 1L,
                 Status.RECEIVED,
-                DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)
+                DbFriendActionOnGift(1L, 1L, 2L)
             )
 
             toDeleteGiftsAccessor.getDeletedGiftsWhereUserHasActionOn(2L) shouldBe listOf(
@@ -73,8 +73,7 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
                     null,
                     null,
                     Status.RECEIVED,
-                    2L,
-                    BuyAction.WANT_TO_BUY
+                    2L
                 )
             )
         }
@@ -84,7 +83,7 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
                 DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
                 1L,
                 Status.RECEIVED,
-                DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)
+                DbFriendActionOnGift(1L, 1L, 2L)
             )
 
             toDeleteGiftsAccessor.deleteDeletedGift(1L, 2L)
@@ -96,7 +95,7 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
                 DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
                 1L,
                 Status.RECEIVED,
-                DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)
+                DbFriendActionOnGift(1L, 1L, 2L)
             )
 
             assertFailsWith(DbException::class) {
@@ -109,7 +108,7 @@ class ToDeleteGiftsAccessorTest : StringSpec() {
                 DbGift(1L, "g1", null, null, null, 1L, null, false, heart = false, rank = 1L),
                 1L,
                 Status.RECEIVED,
-                DbFriendActionOnGift(1L, 1L, 2L, false, BuyAction.WANT_TO_BUY)
+                DbFriendActionOnGift(1L, 1L, 2L)
             )
 
             assertFailsWith(DbException::class) {

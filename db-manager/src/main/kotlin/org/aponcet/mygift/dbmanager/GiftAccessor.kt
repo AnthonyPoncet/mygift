@@ -167,14 +167,13 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
     fun removeGift(giftId: Long, status: Status) {
         val friendActionOnGiftAccessor = FriendActionOnGiftAccessor(conn)
         val friendActionOnGift = friendActionOnGiftAccessor.getFriendActionOnGift(giftId)
-        val actions = friendActionOnGift.filter { it.buy != BuyAction.NONE }
-        if (actions.isNotEmpty()) {
+        if (friendActionOnGift.isNotEmpty()) {
             val gift = getGift(giftId)!!
             val giftUserIds =
                 JoinUserAndCategoryAccessor(conn).getUsers(gift.categoryId) //all users that have this gift
             val toDeleteGiftsAccessor = ToDeleteGiftsAccessor(conn)
             for (giftUserId in giftUserIds) {
-                actions.forEach {
+                friendActionOnGift.forEach {
                     toDeleteGiftsAccessor.add(gift, giftUserId, status, it)
                     friendActionOnGiftAccessor.delete(it.giftId, it.userId)
                 }
@@ -253,7 +252,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         conn.safeExecute(UPDATE_HEART, {
             with(it) {
                 setBoolean(1, heart)
-                setLong(8, giftId)
+                setLong(2, giftId)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
             }

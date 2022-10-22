@@ -38,13 +38,10 @@ data class DbGift(
     val rank: Long
 )
 
-enum class BuyAction { NONE, WANT_TO_BUY, BOUGHT }
 data class DbFriendActionOnGift(
     val id: Long,
     val giftId: Long,
-    val userId: Long,
-    val interested: Boolean,
-    val buy: BuyAction
+    val userId: Long
 )
 
 enum class RequestStatus { ACCEPTED, PENDING, REJECTED }
@@ -59,8 +56,7 @@ data class DbToDeleteGifts(
     val whereToBuy: String?,
     val picture: String?,
     val giftUserStatus: Status,
-    val friendId: Long,
-    val friendAction: BuyAction
+    val friendId: Long
 )
 
 data class NakedUser(val name: String, val picture: String?)
@@ -222,20 +218,7 @@ class DatabaseManager(dbPath: String) {
      * Gift Actions
      */
     @Synchronized
-    fun interested(giftId: Long, userId: Long, interested: Boolean) {
-        if (!giftAccessor.giftExists(giftId)) throw Exception("Unknown gift $giftId")
-        if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
-        if (giftAccessor.giftBelongToUser(
-                userId,
-                giftId
-            )
-        ) throw Exception("Gift $giftId belong to you. I hope you are interested in.")
-
-        friendActionOnGiftAccessor.interested(giftId, userId, interested)
-    }
-
-    @Synchronized
-    fun buyAction(giftId: Long, userId: Long, buy: BuyAction) {
+    fun changeReserve(giftId: Long, userId: Long, reserve: Boolean) {
         if (!giftAccessor.giftExists(giftId)) throw Exception("Unknown gift $giftId")
         if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
         if (giftAccessor.giftBelongToUser(
@@ -244,7 +227,11 @@ class DatabaseManager(dbPath: String) {
             )
         ) throw Exception("Gift $giftId belong to you. You cannot buy something at yourself.")
 
-        friendActionOnGiftAccessor.buyAction(giftId, userId, buy)
+        if (reserve) {
+            friendActionOnGiftAccessor.insert(giftId, userId)
+        } else {
+            friendActionOnGiftAccessor.delete(giftId, userId)
+        }
     }
 
     @Synchronized

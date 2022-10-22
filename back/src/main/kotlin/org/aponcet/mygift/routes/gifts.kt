@@ -8,7 +8,6 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.aponcet.mygift.*
-import org.aponcet.mygift.dbmanager.BuyAction
 import org.aponcet.mygift.dbmanager.Status
 import java.util.*
 
@@ -94,36 +93,17 @@ fun Route.gifts(userManager: UserManager) {
                 }
             }
 
-            post("/{gid}/interested") {
+            post("/{gid}/reserve") {
                 val gid = getGiftId(call.parameters)
                 handle(call) { id ->
-                    userManager.interested(gid, id)
+                    userManager.changeReserve(gid, id, true)
                     call.respond(HttpStatusCode.Accepted)
                 }
             }
-            delete("/{gid}/interested") {
+            delete("/{gid}/reserve") {
                 val gid = getGiftId(call.parameters)
                 handle(call) { id ->
-                    userManager.notInterested(gid, id)
-                    call.respond(HttpStatusCode.Accepted)
-                }
-            }
-
-            post("/{gid}/buy-action") {
-                val gid = getGiftId(call.parameters)
-                handle(call) { id ->
-                    val action = BuyAction.valueOf(
-                        call.request.queryParameters["action"]
-                            ?: throw Exception("action query parameter is mandatory")
-                    )
-                    userManager.buy(gid, id, action)
-                    call.respond(HttpStatusCode.Accepted)
-                }
-            }
-            delete("/{gid}/buy-action") {
-                val gid = getGiftId(call.parameters)
-                handle(call) { id ->
-                    userManager.stopBuy(gid, id)
+                    userManager.changeReserve(gid, id, false)
                     call.respond(HttpStatusCode.Accepted)
                 }
             }

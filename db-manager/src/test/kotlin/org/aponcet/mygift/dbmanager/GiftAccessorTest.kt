@@ -193,7 +193,7 @@ class GiftAccessorTest : StringSpec() {
 
         "Delete gift with action." {
             giftAccessor.addGift(NewGift(name = "g1", categoryId = 1L), false)
-            FriendActionOnGiftAccessor(conn).buyAction(1L, 2L, BuyAction.WANT_TO_BUY)
+            FriendActionOnGiftAccessor(conn).insert(1L, 2L)
             giftAccessor.removeGift(1L, Status.RECEIVED)
 
             giftAccessor.getGift(1L) shouldBe null
@@ -214,8 +214,7 @@ class GiftAccessorTest : StringSpec() {
                     null,
                     null,
                     Status.RECEIVED,
-                    2L,
-                    BuyAction.WANT_TO_BUY
+                    2L
                 )
             )
         }

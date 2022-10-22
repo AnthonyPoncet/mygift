@@ -52,9 +52,7 @@ export interface MyFriendsMessage {
 
 export interface FriendWishListMessage {
     title: string,
-    imInterested: string,
-    iWantToBuy: string,
-    iBought: string,
+    reservedByMe: string,
     deleteModalButtonReceived: string,
     deleteModalButtonNotWanted: string
 }

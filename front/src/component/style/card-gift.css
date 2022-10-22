@@ -32,6 +32,10 @@
   color: #007bff;
 }
 
+.heart-selected {
+  color: #FF0000;
+}
+
 .one-icon {
   width: 100%;
   display: inline-block;
@@ -41,26 +45,27 @@
 .two-icon-first {
   width: 48%;
   display: inline-block;
-  text-align: center;
+  text-align: left;
+  padding-left: 8px;
 }
 .two-icon-second {
   width: 49%;
   display: inline-block;
-  text-align: center;
+  text-align: right;
 }
 
 .three-icon-first {
-  width: 32%;
+  width: 20%;
   display: inline-block;
   text-aline: left;
 }
 .three-icon-second {
-  width: 33%;
+  width: 60%;
   display: inline-block;
   text-align: center;
 }
 .three-icon-third {
-  width: 32%;
+  width: 20%;
   display: inline-block;
   text-align: right;
 }
@@ -68,7 +73,8 @@
 .secret-text {
   color: red;
   font-style: italic;
-  font-weight: lighter;
+  font-weight: 500;
+  font-size: 20px;
 }
 
 .secret-border {

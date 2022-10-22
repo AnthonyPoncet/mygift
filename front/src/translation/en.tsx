@@ -66,9 +66,7 @@ class En implements Itrans {
           },
           friendwishlist: {
             title: "Wish list of ",
-            imInterested: "Like",
-            iWantToBuy: "Add to my buy list",
-            iBought: "I bought",
+            reservedByMe: "I want to reserve",
             deleteModalButtonReceived: "Gift received",
             deleteModalButtonNotWanted: "Gift to delete"
           },

@@ -5,8 +5,8 @@ enum class Status { RECEIVED, NOT_WANTED }
 class ToDeleteGiftsAccessor(private val conn: DbConnection) : DaoAccessor() {
     companion object {
         const val INSERT =
-            "INSERT INTO toDeleteGifts (giftId,giftUserId,name,description,price,whereToBuy,picture,giftUserStatus,friendId,friendAction) " +
-                    "VALUES (?,?,?,?,?,?,?,?,?,?)"
+            "INSERT INTO toDeleteGifts (giftId,giftUserId,name,description,price,whereToBuy,picture,giftUserStatus,friendId) " +
+                    "VALUES (?,?,?,?,?,?,?,?,?)"
         const val SELECT_SOME_BY_FRIEND_ID = "SELECT * FROM toDeleteGifts WHERE friendId=?"
         const val DELETE = "DELETE FROM toDeleteGifts WHERE giftId=? AND friendId=?"
     }
@@ -27,7 +27,6 @@ class ToDeleteGiftsAccessor(private val conn: DbConnection) : DaoAccessor() {
                     "picture        TEXT, " +
                     "giftUserStatus TEXT NOT NULL, " + //why the gift owner deleted the gift
                     "friendId       INTEGER NOT NULL, " + //friend user id that had an action on the gift
-                    "friendAction   TEXT NOT NULL, " + //friend action that user had on the gift
                     "FOREIGN KEY(giftUserId) REFERENCES users(id), FOREIGN KEY(friendId) REFERENCES users(id))"
         )
     }
@@ -44,7 +43,6 @@ class ToDeleteGiftsAccessor(private val conn: DbConnection) : DaoAccessor() {
                 setString(7, gift.picture)
                 setString(8, status.name)
                 setLong(9, friendActionOnGift.userId)
-                setString(10, friendActionOnGift.buy.name)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
             }
@@ -68,8 +66,7 @@ class ToDeleteGiftsAccessor(private val conn: DbConnection) : DaoAccessor() {
                             res.getString("whereToBuy"),
                             res.getString("picture"),
                             Status.valueOf(res.getString("giftUserStatus")),
-                            res.getLong("friendId"),
-                            BuyAction.valueOf(res.getString("friendAction"))
+                            res.getLong("friendId")
                         )
                     )
                 }
