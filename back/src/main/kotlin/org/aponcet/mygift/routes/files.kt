@@ -51,9 +51,8 @@ fun Route.files(data: Data) {
 
                 val file = File("${data.uploads}/$filename")
                 if (file.exists()) {
-                    val resized = resize(file, 300.toDouble())
                     val output = File("${data.tmp}/$filename")
-                    ImageIO.write(resized, tmpFile.extension, output)
+                    resize(file, 300.toDouble(), output)
                     call.respondFile(output)
                 } else call.respond(HttpStatusCode.NotFound)
             }
@@ -62,23 +61,28 @@ fun Route.files(data: Data) {
 }
 
 //will be squared resize, size being a side
-private fun resize(file: File, size: Double): BufferedImage {
+private fun resize(file: File, size: Double, output: File) {
     val img = ImageIO.read(file)
 
-    /** Keep proportion **/
-    val oHeight = img.height.toDouble()
-    val oWidth = img.width.toDouble()
-    val scale: Double = if (oHeight < oWidth) oHeight / size else oWidth / size
-    val width = (oWidth / scale).toInt()
-    val height = (oHeight / scale).toInt()
+    if (img == null) {
+        file.copyTo(output, overwrite = true)
+    } else {
+        /** Keep proportion **/
+        val oHeight = img.height.toDouble()
+        val oWidth = img.width.toDouble()
+        val scale: Double = if (oHeight < oWidth) oHeight / size else oWidth / size
+        val width = (oWidth / scale).toInt()
+        val height = (oHeight / scale).toInt()
 
-    val resized = BufferedImage(
-        width,
-        height,
-        if (img.colorModel.hasAlpha()) BufferedImage.TYPE_INT_ARGB else BufferedImage.TYPE_INT_RGB
-    )
-    val g2d = resized.createGraphics()
-    g2d.drawImage(img, 0, 0, width, height, null)
-    g2d.dispose()
-    return resized
+        val resized = BufferedImage(
+            width,
+            height,
+            if (img.colorModel.hasAlpha()) BufferedImage.TYPE_INT_ARGB else BufferedImage.TYPE_INT_RGB
+        )
+        val g2d = resized.createGraphics()
+        g2d.drawImage(img, 0, 0, width, height, null)
+        g2d.dispose()
+
+        ImageIO.write(resized, file.extension, output)
+    }
 }
