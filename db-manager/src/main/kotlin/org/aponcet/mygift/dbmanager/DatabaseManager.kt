@@ -79,6 +79,7 @@ class DatabaseManager(dbPath: String) {
     private val friendRequestAccessor = FriendRequestAccessor(conn)
     private val resetPasswordAccessor = ResetPasswordAccessor(conn)
     private val joinUserAndCategoryAccessor = JoinUserAndCategoryAccessor(conn)
+    private val sessionAccessor = SessionAccessor(conn)
 
     init {
         createDataModelIfNeeded()
@@ -421,5 +422,22 @@ class DatabaseManager(dbPath: String) {
     @Synchronized
     fun deleteEntry(userId: Long, uuid: String) {
         resetPasswordAccessor.delete(userId, uuid)
+    }
+
+    /**
+     * Sessions
+     */
+    @Synchronized
+    fun deleteSession(session: String, userId: Long) {
+        if (!usersAccessor.userExists(userId)) throw Exception("Unknown user $userId")
+        return sessionAccessor.deleteSession(session, userId)
+    }
+
+    @Synchronized
+    fun getUsersOfSession(currentUserId: Long, session: String): List<Long> {
+        val users = sessionAccessor.getUsersOfSession(session)
+        if (!users.contains(currentUserId)) throw Exception("Session does not belongs to you")
+
+        return users.filter { it != currentUserId }
     }
 }

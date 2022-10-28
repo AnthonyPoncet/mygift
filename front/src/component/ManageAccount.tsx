@@ -4,12 +4,7 @@ import { Button, Input, Label, Form, FormGroup, FormText } from "reactstrap";
 import { useNavigate } from "react-router-dom";
 
 import { useAppSelector, useAppDispatch } from "../redux/store";
-import { selectMessages } from "../redux/reducers/locale";
-import {
-  addMessage,
-  selectErrorMessage,
-  clearMessage,
-} from "../redux/reducers/error";
+import { addMessage } from "../redux/reducers/error";
 import { selectSignIn, logout } from "../redux/reducers/signin";
 
 import SquareImage from "./SquareImage";
@@ -22,7 +17,6 @@ function ManageAccount() {
   const username = useAppSelector(selectSignIn).username;
   const token = useAppSelector(selectSignIn).token;
   const picture = useAppSelector(selectSignIn).picture;
-  const home = useAppSelector(selectMessages).home;
 
   const appDispatch = useAppDispatch();
   let navigate = useNavigate();

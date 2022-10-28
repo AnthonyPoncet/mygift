@@ -8,6 +8,7 @@ import java.sql.*
 class DbConnection(driver: String, dbPath: String) {
     private val conn: Connection
     val autoIncrement: String
+    val conflict_ignore: String
 
     init {
         val url = "jdbc:$driver:$dbPath"
@@ -15,6 +16,11 @@ class DbConnection(driver: String, dbPath: String) {
         autoIncrement = when (driver) {
             "sqlite" -> "AUTOINCREMENT"
             "h2" -> "AUTO_INCREMENT"
+            else -> throw IllegalArgumentException("Not supported driver: $driver")
+        }
+        conflict_ignore = when (driver) {
+            "sqlite" -> "ON CONFLICT IGNORE"
+            "h2" -> ""
             else -> throw IllegalArgumentException("Not supported driver: $driver")
         }
     }

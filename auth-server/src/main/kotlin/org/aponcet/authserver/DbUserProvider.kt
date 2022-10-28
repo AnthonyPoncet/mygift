@@ -1,14 +1,18 @@
 package org.aponcet.authserver
 
 import org.aponcet.mygift.dbmanager.DbConnection
+import org.aponcet.mygift.dbmanager.NewSession
+import org.aponcet.mygift.dbmanager.SessionAccessor
 import org.aponcet.mygift.dbmanager.UsersAccessor
 
 class DbUserProvider(dbPath: String) : UserProvider {
     private val conn = DbConnection("sqlite", dbPath)
     private val usersAccessor = UsersAccessor(conn)
+    private val sessionAccessor = SessionAccessor(conn)
 
     init {
         usersAccessor.createIfNotExists()
+        sessionAccessor.createIfNotExists()
     }
 
     override fun addUser(name: String, password: ByteArray, salt: ByteArray, picture: String) {
@@ -22,5 +26,9 @@ class DbUserProvider(dbPath: String) : UserProvider {
 
     override fun modifyUser(name: String, password: ByteArray, salt: ByteArray) {
         usersAccessor.modifyPassword(name, password, salt)
+    }
+
+    override fun addSession(session: String, userId: Long) {
+        sessionAccessor.addSession(NewSession(session, userId))
     }
 }

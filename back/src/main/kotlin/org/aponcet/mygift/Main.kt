@@ -18,6 +18,7 @@ import io.ktor.server.plugins.httpsredirect.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.sessions.*
 import org.aponcet.mygift.dbmanager.DatabaseManager
 import org.aponcet.mygift.dbmanager.maintenance.AdaptTable
 import org.aponcet.mygift.dbmanager.maintenance.CleanDataNotUsed
@@ -45,6 +46,8 @@ fun makeVerifier(publicKeyManager: PublicKeyManager): JWTVerifier {
         .require(Algorithm.RSA256(key, null))
         .build()
 }
+
+data class Session(val session: String)
 
 fun main(args: Array<String>) {
     val parse = ArgumentParser.parse(args)
@@ -129,6 +132,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
             allowHeader(HttpHeaders.AccessControlAllowOrigin)
             allowHost("www.druponps.fr", listOf("https"))
         } else {
+            allowHost("0.0.0.0:3000", listOf("http"))
             allowHost("localhost:3000", listOf("http"))
             allowHost("localhost:8080", listOf("http"))
         }
@@ -147,10 +151,34 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         }
     }
 
+    install(Sessions) {
+        cookie<Session>("token_session") {
+            cookie.httpOnly = true
+            if (!debug) {
+                cookie.extensions["SameSite"] = "Strict"
+            }
+        }
+    }
+
     install(Authentication) {
         jwt {
             verifier { makeVerifier(publicKeyManager) }
-            validate { JWTPrincipal(it.payload) }
+            validate {
+                val session = this.sessions.get<Session>() ?: return@validate null
+
+                if (session.session != it.payload.getClaim("session").asString()) {
+                    this.application.environment.log.error(
+                        "Session does not match. Got in cookie ${session.session} against ${
+                            it.payload.getClaim(
+                                "session"
+                            )
+                        }"
+                    )
+                    return@validate null
+                }
+
+                JWTPrincipal(it.payload)
+            }
         }
     }
 

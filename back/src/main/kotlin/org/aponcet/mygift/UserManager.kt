@@ -17,7 +17,7 @@ import java.time.LocalDateTime
 import kotlin.collections.set
 
 /** RETURN CLASSES **/
-data class User(val token: String, val name: String, val picture: String?)
+data class User(val token: String, val session: String, val name: String, val picture: String?)
 data class Friend(val name: String, val picture: String?)
 data class CleanGift(
     val id: Long,
@@ -111,11 +111,17 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
                 url("http://${authServer.host}:${authServer.port}/login")
                 setBody(Gson().toJson(userJson))
             }
+            if (httpResponse.status == HttpStatusCode.Unauthorized) {
+                val error = Gson().fromJson(httpResponse.bodyAsText(), ErrorResponse::class.java).error
+                LOGGER.error("Error while authenticate '${error}'")
+                throw ConnectionException(error)
+            }
+
             val tokenResponse = Gson().fromJson(httpResponse.bodyAsText(), TokenResponse::class.java)
 
             val name = userJson.name!!
-            val user = databaseManager.getUser(name)!! //to get picture, if should come from here
-            return User(tokenResponse.token, user.name, user.picture)
+            val user = databaseManager.getUser(name)!! //to get picture
+            return User(tokenResponse.jwt, tokenResponse.session, user.name, user.picture)
         } catch (e: ResponseException) {
             val response = e.response
 
@@ -138,7 +144,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
                 setBody(Gson().toJson(userAndPictureJson))
             }
 
-            return connect(UserJson(userAndPictureJson.name, userAndPictureJson.password))
+            return connect(UserJson(userAndPictureJson.name, userAndPictureJson.password, null))
         } catch (e: ResponseException) {
             val response = e.response
 
@@ -165,7 +171,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
 
         //TODO: care, could have several user with same name following this update
         databaseManager.modifyUser(userId, userModification.name, userModification.picture)
-        return User("", userModification.name, userModification.picture)
+        return User("", "", userModification.name, userModification.picture)
     }
 
     private fun toGift(g: DbGift): CleanGift {
@@ -501,5 +507,13 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         }
 
         databaseManager.deleteEntry(entry.userId, uuid)
+    }
+
+    fun deleteSession(session: String, userId: Long) {
+        return databaseManager.deleteSession(session, userId)
+    }
+
+    fun getUsersOfSession(currentUserId: Long, session: String): List<Long> {
+        return databaseManager.getUsersOfSession(currentUserId, session)
     }
 }

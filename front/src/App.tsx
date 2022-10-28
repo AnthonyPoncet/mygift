@@ -18,7 +18,7 @@ import {
 } from "reactstrap";
 
 import { useAppSelector, useAppDispatch } from "./redux/store";
-import { logout, selectSignIn } from "./redux/reducers/signin";
+import { logout, changeUser, selectSignIn } from "./redux/reducers/signin";
 import {
   LocaleAvailable,
   changeLocale,
@@ -31,12 +31,16 @@ import SquareImage from "./component/SquareImage";
 
 import blank_profile_picture from "./component/image/blank_profile_picture.png";
 
+import { getServerUrl } from "./ServerInformation";
+let url = getServerUrl();
+
 function App() {
   //TODO: add loading image
 
   const username = useAppSelector(selectSignIn).username;
   const token = useAppSelector(selectSignIn).token;
   const picture = useAppSelector(selectSignIn).picture;
+  const otherUsers = useAppSelector(selectSignIn).otherUsers;
   const app = useAppSelector(selectMessages).app;
 
   const dispatch = useAppDispatch();
@@ -115,6 +119,34 @@ function App() {
                     <DropdownItem>
                       <Link to={"/manageaccount"} className="nav-link">
                         {app.manageAccount}
+                      </Link>
+                    </DropdownItem>
+                    {otherUsers !== undefined && otherUsers.length > 0 && (
+                      <>
+                        <hr />
+                        {otherUsers.map((user: any) => {
+                          return (
+                            <DropdownItem
+                              onClick={(e) => dispatch(changeUser(user))}
+                            >
+                              <SquareImage
+                                token={token ? token : ""}
+                                className="card-image"
+                                imageName={user.picture ? user.picture : ""}
+                                size={35}
+                                alt="Profile Pic"
+                                alternateImage={blank_profile_picture}
+                              />
+                              {" " + user.username}
+                            </DropdownItem>
+                          );
+                        })}
+                      </>
+                    )}
+                    <hr />
+                    <DropdownItem>
+                      <Link to={"/changeaccount"} className="nav-link">
+                        {app.changeAccount}
                       </Link>
                     </DropdownItem>
                   </DropdownMenu>

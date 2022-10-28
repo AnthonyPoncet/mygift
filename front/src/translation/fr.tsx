@@ -13,6 +13,7 @@ class Fr implements Itrans {
         myBuyList: "Ma Liste D'achat",
         logout: "Se déconnecter",
         manageAccount: "Modifier le compte",
+        changeAccount: "Changer de compte",
       },
       connection: {
         signUpTitle: "S'inscrire à MyGift",

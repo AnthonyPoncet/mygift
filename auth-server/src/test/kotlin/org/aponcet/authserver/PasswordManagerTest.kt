@@ -1,9 +1,6 @@
 package org.aponcet.authserver
 
-import io.kotlintest.Description
-import io.kotlintest.TestCaseOrder
-import io.kotlintest.TestResult
-import io.kotlintest.shouldBe
+import io.kotlintest.*
 import io.kotlintest.specs.StringSpec
 import org.aponcet.mygift.dbmanager.DbConnection
 import org.aponcet.mygift.dbmanager.DbUser
@@ -13,8 +10,8 @@ class PasswordManagerTest : StringSpec() {
     private val conn = DbConnection("h2", "mem:test")
     private val usersAccessor = UsersAccessor(conn)
 
-    override fun isInstancePerTest(): Boolean {
-        return true
+    override fun isolationMode(): IsolationMode {
+        return IsolationMode.InstancePerTest
     }
 
     private fun deleteTable(tables: List<String>) {
@@ -28,16 +25,16 @@ class PasswordManagerTest : StringSpec() {
         }
     }
 
-    override fun beforeTest(description: Description) {
+    override fun beforeTest(testCase: TestCase) {
         usersAccessor.createIfNotExists()
         deleteTable(listOf(usersAccessor.getTableName()))
     }
 
-    override fun afterTest(description: Description, result: TestResult) {
+    override fun afterTest(testCase: TestCase, result: TestResult) {
         deleteTable(listOf(usersAccessor.getTableName())) //order matter due to foreign key
     }
 
-    override fun testCaseOrder(): TestCaseOrder? {
+    override fun testCaseOrder(): TestCaseOrder {
         return TestCaseOrder.Random
     }
 
@@ -73,8 +70,8 @@ class PasswordManagerTest : StringSpec() {
         "Compare password to saved one work" {
             val encodedPassword = PasswordManager.generateEncodedPassword("Toto")
             usersAccessor.addUser("name", encodedPassword.encodedPassword, encodedPassword.salt, "")
-            val user = usersAccessor.getUser("name")
-            assert(PasswordManager.isPasswordOk("Toto", encodedPassword.salt, encodedPassword.encodedPassword))
+            val user = usersAccessor.getUser("name")!!
+            assert(PasswordManager.isPasswordOk("Toto", user.salt, user.password))
         }
     }
 }
