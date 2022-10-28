@@ -8,6 +8,7 @@ import App from "./App";
 import { Index } from "./App";
 import FriendWishList from "./component/FriendWishList";
 import ManageAccount from "./component/ManageAccount";
+import ChangeAccount from "./component/ChangeAccount";
 import MyBuyList from "./component/MyBuyList";
 import MyFriends from "./component/MyFriends";
 import MyWishList from "./component/MyWishList";
@@ -29,10 +30,10 @@ ReactDOM.render(
             <Route index element={<Index />} />
             <Route path="/friend/:name" element={<FriendWishList />} />
             <Route path="/manageaccount" element={<ManageAccount />} />
+            <Route path="/changeaccount" element={<ChangeAccount />} />
             <Route path="/buylist" element={<MyBuyList />} />
             <Route path="/myfriends" element={<MyFriends />} />
             <Route path="/mywishlist" element={<MyWishList />} />
-            ManageAccount
             <Route path="/signin" element={<SignInPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/reset-password/:uuid" element={<ResetPassword />} />

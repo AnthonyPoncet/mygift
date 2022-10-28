@@ -694,7 +694,6 @@ function renderInsideGift(
   categories: any,
   setCategories: any
 ) {
-  console.log(isMobile);
   if (cgi + "-" + gi === giftHover || isMobile) {
     return (
       <div

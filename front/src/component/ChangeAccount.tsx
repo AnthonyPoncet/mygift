@@ -29,7 +29,7 @@ function SignInPage() {
     if (username && password) {
       appDispatch(clearMessage());
       appDispatch(
-        signIn({ username: username, password: password, changeAccount: false })
+        signIn({ username: username, password: password, changeAccount: true })
       ).then(() => {
         navigate("../");
       });
@@ -68,12 +68,6 @@ function SignInPage() {
             {connection.signInButton}
           </Button>
         </Form>
-      </div>
-      <div className="auth-bottom">
-        {connection.newToMygift}
-        <Link to="/signup" className="btn btn-link">
-          {connection.createAnAccount}
-        </Link>
       </div>
     </div>
   );

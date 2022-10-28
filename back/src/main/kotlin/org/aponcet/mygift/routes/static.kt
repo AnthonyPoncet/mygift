@@ -41,8 +41,11 @@ fun Route.static() {
         resources("static")
         defaultResource("static/index.html")
     }
-
     static("static") {
         resources("static/static")
+    }
+    static("changeaccount") {
+        resources("static")
+        defaultResource("static/index.html")
     }
 }

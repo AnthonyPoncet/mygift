@@ -17,6 +17,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.routing.*
+import io.ktor.server.sessions.*
 import io.ktor.server.testing.*
 import io.mockk.coEvery
 import io.mockk.every
@@ -41,10 +42,10 @@ class UsersTest : StringSpec() {
     companion object {
         val USER_MANAGER = mockk<UserManager>()
         val USER_AND_PICTURE_JSON = UserAndPictureJson("test", "test", "picture")
-        val USER_JSON = UserJson("test", "test")
-        val USER_ANSWER = User("token", "test", "picture")
+        val USER_JSON = UserJson("test", "test", null)
+        val USER_ANSWER = User("token", "session", "test", "picture")
         val USER_MODIFICATION = UserModification("test2", "other picture")
-        val MODIFIED_USER_ANSWER = User("token", "test2", "other picture")
+        val MODIFIED_USER_ANSWER = User("token", "session", "test2", "other picture")
 
         val DECODED_JWT = mockk<DecodedJWT>()
         val JWT_VERIFIER = mockk<JWTVerifier>()
@@ -61,7 +62,7 @@ class UsersTest : StringSpec() {
             generateKeyPair.private as RSAPrivateKey
         )
 
-        tokenResponse = TokenResponse(simpleJwt.sign(1, "test"))
+        tokenResponse = TokenResponse(simpleJwt.sign(1, "session"), "session")
 
         val publicKey = simpleJwt.publicKey.encoded
 
@@ -159,7 +160,7 @@ class UsersTest : StringSpec() {
             testApplication {
                 this.application { userModule() }
                 val response = client.patch("/users") {
-                    header(HttpHeaders.Authorization, "Bearer ${tokenResponse.token}")
+                    header(HttpHeaders.Authorization, "Bearer ${tokenResponse.jwt}")
                     header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                     setBody(Gson().toJson(USER_MODIFICATION))
                 }
@@ -176,7 +177,7 @@ class UsersTest : StringSpec() {
             testApplication {
                 this.application { userModule() }
                 val response = client.patch("/users") {
-                    header(HttpHeaders.Authorization, "Bearer ${tokenResponse.token}")
+                    header(HttpHeaders.Authorization, "Bearer ${tokenResponse.jwt}")
                     header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
                     setBody(Gson().toJson(USER_MODIFICATION))
                 }
@@ -198,6 +199,11 @@ class UsersTest : StringSpec() {
             jwt {
                 verifier { jwtVerifier }
                 validate { JWTPrincipal(it.payload) }
+            }
+        }
+
+        install(Sessions) {
+            cookie<Session>("token_session") {
             }
         }
 

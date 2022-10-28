@@ -7,6 +7,7 @@ export interface AppMessage {
   myBuyList: string;
   logout: string;
   manageAccount: string;
+  changeAccount: string;
 }
 
 export interface HomeMessage {

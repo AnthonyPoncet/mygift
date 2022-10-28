@@ -21,7 +21,7 @@ class FriendActionOnGiftAccessor(private val conn: DbConnection) : DaoAccessor()
                     "id             INTEGER PRIMARY KEY ${conn.autoIncrement}, " +
                     "giftId         INTEGER NOT NULL, " +
                     "userId         INTEGER NOT NULL, " +
-                    "UNIQUE(giftId, userId) ON CONFLICT IGNORE," +
+                    "UNIQUE(giftId, userId) ${conn.conflict_ignore}," +
                     "FOREIGN KEY(userId) REFERENCES users(id), " +
                     "FOREIGN KEY(giftId) REFERENCES gifts(id))"
         )

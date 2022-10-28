@@ -24,4 +24,9 @@ interface UserProvider {
      * Modify password for an existing user
      */
     fun modifyUser(name: String, password: ByteArray, salt: ByteArray)
+
+    /**
+     * Add a session for a user
+     */
+    fun addSession(session: String, userId: Long)
 }

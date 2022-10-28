@@ -46,11 +46,11 @@ class ApplicationTest : StringSpec({
             //connect with valid credential and verify token
             val responsePost = client.post("/login") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                setBody(Gson().toJson(UserJson("test", "test")))
+                setBody(Gson().toJson(UserJson("test", "test", null)))
             }
             assertEquals(HttpStatusCode.OK, responsePost.status)
             val tokenResponse = Gson().fromJson(responsePost.bodyAsText(), TokenResponse::class.java)
-            val token = tokenResponse.token
+            val token = tokenResponse.jwt
 
             val algorithm = Algorithm.RSA256(currentKey, null)
             val verifier = JWT.require(algorithm).build()
@@ -59,12 +59,11 @@ class ApplicationTest : StringSpec({
             assertEquals("RS256", verify.algorithm)
             val claims = verify.claims
             assertEquals(2, claims.size)
-            val name = claims["name"]
-            assertNotNull(name)
-            assertEquals("test", name.asString())
             val id = claims["id"]
             assertNotNull(id)
             assertEquals(1, id.asLong())
+            val session = claims["session"]
+            assertNotNull(session)
         }
     }
 
@@ -73,7 +72,7 @@ class ApplicationTest : StringSpec({
             this.application { authModule(TestUserProvider()) }
             val response = client.post("/login") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                setBody(Gson().toJson(UserJson("toto", "test")))
+                setBody(Gson().toJson(UserJson("toto", "test", null)))
             }
             assertEquals(HttpStatusCode.Unauthorized, response.status)
             assertEquals(
@@ -102,7 +101,7 @@ class ApplicationTest : StringSpec({
             this.application { authModule(TestUserProvider()) }
             val response = client.post("/login") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                setBody(Gson().toJson(UserJson(null, "test")))
+                setBody(Gson().toJson(UserJson(null, "test", null)))
             }
             assertEquals(HttpStatusCode.BadRequest, response.status)
             assertEquals(
@@ -117,7 +116,7 @@ class ApplicationTest : StringSpec({
             this.application { authModule(TestUserProvider()) }
             val response = client.post("/login") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                setBody(Gson().toJson(UserJson("toto", null)))
+                setBody(Gson().toJson(UserJson("toto", null, null)))
             }
             assertEquals(HttpStatusCode.BadRequest, response.status)
             assertEquals(
@@ -189,5 +188,8 @@ class TestUserProvider : UserProvider {
 
     override fun getUser(name: String): User? {
         return users[name]
+    }
+
+    override fun addSession(session: String, userId: Long) {
     }
 }

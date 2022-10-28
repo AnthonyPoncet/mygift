@@ -13,6 +13,7 @@ class En implements Itrans {
         myBuyList: "My Buy List",
         logout: "Log Out",
         manageAccount: "Manage account",
+        changeAccount: "Change account",
       },
       connection: {
         signUpTitle: "Sign up to MyGift",

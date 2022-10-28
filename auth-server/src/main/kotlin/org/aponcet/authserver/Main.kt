@@ -8,6 +8,7 @@ import io.ktor.serialization.gson.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
@@ -21,11 +22,11 @@ import java.security.interfaces.RSAPublicKey
 
 class InvalidCredentialsException(message: String) : RuntimeException(message)
 
-data class UserJson(val name: String?, val password: String?)
+data class UserJson(val name: String?, val password: String?, val session: String?)
 data class UserAndPictureJson(val name: String?, val password: String?, val picture: String?)
 data class UserAndResetPassword(val name: String?, val password: String?)
 data class ErrorResponse(val error: String)
-data class TokenResponse(val token: String)
+data class TokenResponse(val jwt: String, val session: String)
 data class KeyResponse(val key: ByteArray) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -41,11 +42,11 @@ data class KeyResponse(val key: ByteArray) {
     }
 }
 
-open class SimpleJWT(val publicKey: RSAPublicKey, secretKey: RSAPrivateKey) {
-    private val algorithm = Algorithm.RSA256(publicKey, secretKey)
-    fun sign(id: Long, name: String): String = JWT.create()
+open class SimpleJWT(val publicKey: RSAPublicKey, privateKey: RSAPrivateKey) {
+    private val algorithm = Algorithm.RSA256(publicKey, privateKey)
+    fun sign(id: Long, session: String): String = JWT.create()
         .withClaim("id", id)
-        .withClaim("name", name)
+        .withClaim("session", session)
         .sign(algorithm)
 }
 
@@ -86,6 +87,8 @@ fun Application.authModule(userProvider: UserProvider) {
             call.respond(HttpStatusCode.BadRequest, ErrorResponse(exception.message ?: ""))
         }
     }
+
+    install(CallLogging)
 
     routing {
         put("/create") {
@@ -160,7 +163,12 @@ fun Application.authModule(userProvider: UserProvider) {
                 throw InvalidCredentialsException("Wrong password")
             }
 
-            val message = TokenResponse(simpleJwt.sign(user.id, user.name))
+            val charset = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789"
+            val session = jsonUser.session ?: (1..128).map { charset.random() }.joinToString("")
+
+            userProvider.addSession(session, user.id)
+
+            val message = TokenResponse(simpleJwt.sign(user.id, session), session)
             call.respond(HttpStatusCode.OK, message)
         }
 
