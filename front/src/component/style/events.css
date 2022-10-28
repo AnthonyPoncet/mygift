@@ -6,7 +6,7 @@
 
 .events-card {
   position: relative;
-  background-color: #DFDFDF;
+  background-color: #dfdfdf;
   border-radius: 5px;
   height: 250px;
   width: 150px;
@@ -47,7 +47,8 @@
   top: 220px;
   overflow: hidden;
 }
-.events-card-wtb { /*want to buy*/
+.events-card-wtb {
+  /*want to buy*/
   float: left;
   width: 66%;
 

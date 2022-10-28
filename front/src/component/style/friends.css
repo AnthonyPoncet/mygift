@@ -21,7 +21,7 @@
 }
 
 .friend-no-image {
-  background-color: #DFDFDF;
+  background-color: #dfdfdf;
   height: 150px;
   width: 150px;
   text-align: center;
@@ -41,6 +41,6 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  textDecoration: inherit;
+  textdecoration: inherit;
   color: inherit;
 }
