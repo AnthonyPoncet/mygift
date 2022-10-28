@@ -6,7 +6,7 @@
 
 .mycard {
   position: relative;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   border-radius: 5px;
   border: 0.5px solid;
   z-index: 10;
@@ -16,7 +16,7 @@
 }
 .mycard-no-limit {
   position: relative;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   z-index: 11;
   margin: 10px;
 }
@@ -33,7 +33,7 @@
 }
 
 .heart-selected {
-  color: #FF0000;
+  color: #ff0000;
 }
 
 .one-icon {
@@ -109,7 +109,8 @@
   top: 245px;
   overflow: hidden;
 }
-.card-wtb { /*want to buy*/
+.card-wtb {
+  /*want to buy*/
   float: left;
   width: 66%;
 
@@ -144,11 +145,11 @@
 }
 
 .card-already-bought {
-  background-color: #C0C0C0;
+  background-color: #c0c0c0;
   opacity: 0.5;
 }
 
 .warning-gift-delete {
-    text-align: center;
-    font-weight: bold;
+  text-align: center;
+  font-weight: bold;
 }
