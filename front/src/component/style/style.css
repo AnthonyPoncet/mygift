@@ -109,3 +109,9 @@
   flex-direction: row;
   align-items: center;
 }
+
+@media only screen and (min-width: 768px) {
+  .scrap {
+    margin-top: 2rem;
+  }
+}

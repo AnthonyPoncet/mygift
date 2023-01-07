@@ -34,6 +34,8 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.4")
 
+    implementation("it.skrape:skrapeit:1.2.2")
+
     testImplementation(kotlin("test-junit"))
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")

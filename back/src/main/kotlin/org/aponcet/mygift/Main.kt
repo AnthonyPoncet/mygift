@@ -164,17 +164,19 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         jwt {
             verifier { makeVerifier(publicKeyManager) }
             validate {
-                val session = this.sessions.get<Session>() ?: return@validate null
+                if (!debug) {
+                    val session = this.sessions.get<Session>() ?: return@validate null
 
-                if (session.session != it.payload.getClaim("session").asString()) {
-                    this.application.environment.log.error(
-                        "Session does not match. Got in cookie ${session.session} against ${
-                            it.payload.getClaim(
-                                "session"
-                            )
-                        }"
-                    )
-                    return@validate null
+                    if (session.session != it.payload.getClaim("session").asString()) {
+                        this.application.environment.log.error(
+                            "Session does not match. Got in cookie ${session.session} against ${
+                                it.payload.getClaim(
+                                    "session"
+                                )
+                            }"
+                        )
+                        return@validate null
+                    }
                 }
 
                 JWTPrincipal(it.payload)
@@ -188,7 +190,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
 
     routing {
         users(userManager)
-        gifts(userManager)
+        gifts(userManager, data)
         buyList(userManager)
         categories(userManager)
         friendRequest(userManager)
