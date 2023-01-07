@@ -31,9 +31,6 @@ import SquareImage from "./component/SquareImage";
 
 import blank_profile_picture from "./component/image/blank_profile_picture.png";
 
-import { getServerUrl } from "./ServerInformation";
-let url = getServerUrl();
-
 function App() {
   //TODO: add loading image
 

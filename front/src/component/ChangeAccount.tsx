@@ -1,7 +1,7 @@
 import React from "react";
 
 import { Label, Form, Input, FormGroup, Button } from "reactstrap";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import "./style/style.css";
 

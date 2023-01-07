@@ -11,6 +11,8 @@ import {
   ModalHeader,
   ModalBody,
   Spinner,
+  Col,
+  Row,
 } from "reactstrap";
 import { useNavigate } from "react-router-dom";
 import {
@@ -137,8 +139,9 @@ function addGiftModal(
   };
 
   let changeImage = (e: any) => {
-    e.target.form[7].disabled = true;
-    e.target.form[7].children[0].hidden = false;
+    console.log(e);
+    e.target.form[8].disabled = true;
+    e.target.form[8].children[0].hidden = false;
     const formData = new FormData();
     formData.append("0", e.target.files[0]);
     const request = async () => {
@@ -151,9 +154,52 @@ function addGiftModal(
         appDispatch(logout());
       } else if (response.status === 202) {
         const json = await response.json();
-        e.target.form[6].value = json.name; //TODO: horrible. to replace by states
-        e.target.form[7].disabled = false;
-        e.target.form[7].children[0].hidden = true;
+        e.target.form[7].value = json.name; //TODO: horrible. to replace by states
+        e.target.form[8].disabled = false;
+        e.target.form[8].children[0].hidden = true;
+      } else {
+        const json = await response.json();
+        console.error(json);
+        appDispatch(addMessage(json.error));
+      }
+    };
+    request();
+  };
+
+  let scrapUrl = (e: any) => {
+    e.target.form[4].disabled = true;
+    e.target.form[4].children[0].hidden = false;
+    e.target.form[8].disabled = true;
+    const scrap_url = e.target.form[3].value;
+    const request = async () => {
+      const response = await fetch(url + "/gifts/scrap", {
+        method: "post",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          source: "Amazon",
+          url: scrap_url,
+        }),
+      });
+      if (response.status === 401) {
+        appDispatch(logout());
+      } else if (response.status === 200) {
+        const json = await response.json();
+        e.target.form[0].value = json.title;
+        e.target.form[1].value = json.description;
+        e.target.form[2].value = json.price;
+        e.target.form[7].value = json.image;
+        e.target.form[4].disabled = false;
+        e.target.form[4].children[0].hidden = true;
+        e.target.form[8].disabled = false;
+      } else if (response.status === 501) {
+        console.error("Supports only Amazon");
+        appDispatch(addMessage("Supports only Amazon"));
+        e.target.form[4].disabled = false;
+        e.target.form[4].children[0].hidden = true;
+        e.target.form[8].disabled = false;
       } else {
         const json = await response.json();
         console.error(json);
@@ -191,13 +237,29 @@ function addGiftModal(
         <Label>{mywishlist.price}</Label>
         <Input name="price" placeholder="10" />
       </FormGroup>
-      <FormGroup>
-        <Label>{mywishlist.whereToBuy}</Label>
-        <Input
-          name="whereToBuy"
-          placeholder={mywishlist.whereToBuyPlaceholder}
-        />
-      </FormGroup>
+      <Row>
+        <Col md={8}>
+          <FormGroup>
+            <Label>{mywishlist.whereToBuy}</Label>
+            <Input
+              name="whereToBuy"
+              placeholder={mywishlist.whereToBuyPlaceholder}
+            />
+          </FormGroup>
+        </Col>
+        <Col md={4}>
+          <FormGroup>
+            <Button
+              className="scrap"
+              color="primary"
+              block
+              onClick={(e) => scrapUrl(e)}
+            >
+              <Spinner hidden size="sm" /> Scrap
+            </Button>
+          </FormGroup>
+        </Col>
+      </Row>
       <FormGroup>
         <Label>{mywishlist.category}</Label>
         <Input type="select" name="categoryId">

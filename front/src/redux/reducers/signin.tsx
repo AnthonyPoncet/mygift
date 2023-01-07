@@ -181,7 +181,7 @@ export const changeUser = createAsyncThunk(
     };
 
     let newOtherUsers = otherUsers.filter(
-      (u: OtherUser) => u.username != otherUser.username
+      (u: OtherUser) => u.username !== otherUser.username
     );
     newOtherUsers.push(currentUser);
 
