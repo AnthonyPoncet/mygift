@@ -60,6 +60,7 @@ class En implements Itrans {
         deleteGiftModalTitle: "Delete gift",
         deleteModalButtonReceived: "I have received it",
         deleteModalButtonNotWanted: "I don't want it anymore",
+        downloadPdf: "Download as PDF"
       },
       myfriends: {
         addFriendButton: "Add friend",

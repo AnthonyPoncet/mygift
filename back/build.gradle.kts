@@ -39,10 +39,15 @@ dependencies {
 
     implementation("it.skrape:skrapeit:1.2.2")
 
+    //implementation("com.github.librepdf:openpdf:1.4.2")
+    //implementation("org.sejda.imageio:webp-imageio:0.1.6")
+    runtimeOnly("com.twelvemonkeys.imageio:imageio-webp:3.12.0")
+    implementation("org.apache.pdfbox:pdfbox:3.0.3")
+
     testImplementation(kotlin("test-junit"))
     testImplementation("io.kotlintest:kotlintest-runner-junit5:$kotlintestRunner")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
-    testImplementation("io.mockk:mockk:1.12.4")
+    testImplementation("io.mockk:mockk:1.13.10")
     testImplementation("com.auth0:java-jwt:$auth0")
 }
 
