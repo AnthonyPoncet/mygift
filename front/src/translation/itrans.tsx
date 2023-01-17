@@ -41,6 +41,7 @@ export interface MyWishListMessage {
   deleteGiftModalTitle: string;
   deleteModalButtonReceived: string;
   deleteModalButtonNotWanted: string;
+  downloadPdf: string;
 }
 
 export interface MyFriendsMessage {
