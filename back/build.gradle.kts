@@ -36,6 +36,8 @@ dependencies {
 
     implementation("it.skrape:skrapeit:1.2.2")
 
+    implementation("com.github.librepdf:openpdf:1.3.30")
+
     testImplementation(kotlin("test-junit"))
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
