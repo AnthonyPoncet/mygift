@@ -1,6 +1,5 @@
 package org.aponcet.mygift.routes
 
-import amazon
 import com.google.gson.Gson
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -11,12 +10,7 @@ import io.ktor.server.routing.*
 import org.aponcet.mygift.*
 import org.aponcet.mygift.dbmanager.Status
 import org.aponcet.mygift.model.Data
-import java.io.File
-import java.net.URL
 import java.util.*
-
-enum class Source { Amazon }
-data class RestScrap(val source: Source?, val url: String?)
 
 fun Route.gifts(userManager: UserManager, data: Data) {
     authenticate {
@@ -25,6 +19,16 @@ fun Route.gifts(userManager: UserManager, data: Data) {
                 handle(call) { id ->
                     val userGifts = userManager.getUserGifts(id)
                     call.respond(HttpStatusCode.OK, userGifts)
+                }
+            }
+            get("pdf") {
+                handle(call) { id ->
+                    val userGifts = userManager.getUserGifts(id)
+                    call.respondOutputStream(ContentType.Application.Pdf, HttpStatusCode.OK) {
+                        val pdfGenerator = PdfGenerator(data.uploads)
+                        pdfGenerator.generateDoc(userGifts, this)
+                        this.flush()
+                    }
                 }
             }
             put {
@@ -44,6 +48,7 @@ fun Route.gifts(userManager: UserManager, data: Data) {
                     call.respond(HttpStatusCode.OK)
                 }
             }
+
             patch("/{gid}") {
                 val gid = getGiftId(call.parameters)
                 handle(call) { id ->
@@ -113,33 +118,6 @@ fun Route.gifts(userManager: UserManager, data: Data) {
                     userManager.changeReserve(gid, id, false)
                     call.respond(HttpStatusCode.Accepted)
                 }
-            }
-
-            post("/scrap") {
-                val json = call.receiveText()
-
-                val scrap = Gson().fromJson(json, RestScrap::class.java)
-                if (scrap.url == null || scrap.source == null) {
-                    call.respond(HttpStatusCode.BadRequest)
-                    return@post
-                }
-
-                if (!scrap.url.contains("amazon")) {
-                    call.respond(HttpStatusCode.NotImplemented)
-                    return@post
-                }
-                
-                val gift = amazon(scrap.url)
-
-                val url = URL(gift.image)
-                val ext = gift.image.split(".").last()
-                val fileName = "upload-${System.currentTimeMillis()}-${gift.image.hashCode()}.$ext"
-                val file = File(data.uploads, fileName)
-                url.openStream().use { input -> file.outputStream().buffered().use { output -> input.copyTo(output) } }
-
-                gift.image = fileName
-
-                call.respond(HttpStatusCode.OK, gift)
             }
         }
     }

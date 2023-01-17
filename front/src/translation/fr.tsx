@@ -60,6 +60,7 @@ class Fr implements Itrans {
         deleteGiftModalTitle: "Supprimer ce cadeau",
         deleteModalButtonReceived: "Je l'ai reçu",
         deleteModalButtonNotWanted: "Je n'en veux plus",
+        downloadPdf: "Télécharger en PDF"
       },
       myfriends: {
         addFriendButton: "Ajouter un ami",

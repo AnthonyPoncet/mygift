@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import { Button } from "reactstrap";
+import { Button, Spinner } from "reactstrap";
 import { useNavigate } from "react-router-dom";
 import {
   HeartIcon,
@@ -33,6 +33,7 @@ import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
 function MyWishList() {
+  const username = useAppSelector(selectSignIn).username;
   const token = useAppSelector(selectSignIn).token;
   const mywishlist = useAppSelector(selectMessages).mywishlist;
 
@@ -43,6 +44,7 @@ function MyWishList() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const [editMode, setEditMode] = useState(false);
+  const [pdfRunning, setPdfRunning] = useState(false);
 
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
 
@@ -225,6 +227,46 @@ function MyWishList() {
         }
       };
       request();
+    };
+
+    const getPdf = async () => {
+      setPdfRunning(true);
+      const request = async () => {
+        try {
+          const response = await fetch(
+            url + "/gifts/pdf",
+            { method: "get", headers: { Authorization: `Bearer ${token}` } },
+          )
+          console.log("oh")
+          if (response.status === 200) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(new Blob([blob]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `mygift_${username}.pdf`);
+
+            // Append to html link element page
+            document.body.appendChild(link);
+
+            // Start download
+            link.click();
+
+            // Clean up and remove the link
+            link.parentNode!!.removeChild(link);
+            setPdfRunning(false);
+          } else if (response.status === 401) {
+            appDispatch(logout());
+          } else {
+            setPdfRunning(false);
+            const json = await response.json();
+            setErrorMessage(json.error);
+          }
+        } catch (e: any) {
+            setPdfRunning(false);
+            setErrorMessage("Cannot get PDF");
+        }
+      };
+      await request();
     };
 
     const editGiftModalOpen = (gift: any) => {
@@ -418,20 +460,23 @@ function MyWishList() {
         {errorMessage && <p className="auth-error">{errorMessage}</p>}
         <Button
           color="link"
-          disabled={editMode || categories.length === 0}
+          disabled={editMode || categories.length === 0 || pdfRunning}
           onClick={() => setShowAddGiftModal(true)}
         >
           {mywishlist.addGiftButton}
         </Button>
         <Button
           color="link"
-          disabled={editMode}
+          disabled={editMode || pdfRunning}
           onClick={() => setShowAddCategoryModal(true)}
         >
           {mywishlist.addCategoryButton}
         </Button>
-        <Button color="link" onClick={() => setEditMode(!editMode)}>
+        <Button color="link" disabled={pdfRunning} onClick={() => setEditMode(!editMode)}>
           {mywishlist.reorderButtonTitle}
+        </Button>
+        <Button color="link" disabled={pdfRunning} onClick={() => getPdf()}>
+          <Spinner hidden={!pdfRunning} size="sm" />{" "}{mywishlist.downloadPdf}
         </Button>
 
         {editMode ? renderGiftsEditMode() : renderGifts()}
