@@ -26,7 +26,7 @@ import {
 } from "./redux/reducers/locale";
 
 import HomePage from "./component/HomePage";
-import SignupPage from "./component/SignupPage";
+import SigninPage from "./component/SigninPage";
 import SquareImage from "./component/SquareImage";
 
 import blank_profile_picture from "./component/image/blank_profile_picture.png";
@@ -201,7 +201,7 @@ function App() {
 
 export function Index() {
   const username = useAppSelector(selectSignIn).username;
-  return username ? <HomePage /> : <SignupPage />;
+  return username ? <HomePage /> : <SigninPage />;
 }
 
 export default App;
