@@ -105,7 +105,12 @@ class En implements Itrans {
         not_wanted: "Deleted",
         ok: "Delete from my list",
       },
-      manageAccount: {},
+      manageAccount: {
+        username: "Username",
+        can_not_be_changed: "Can not be changed",
+        profile_picture: "Profile picture",
+        save: "Save"
+      },
     };
   }
 }

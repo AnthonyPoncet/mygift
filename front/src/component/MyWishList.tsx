@@ -139,7 +139,6 @@ function addGiftModal(
   };
 
   let changeImage = (e: any) => {
-    console.log(e);
     e.target.form[8].disabled = true;
     e.target.form[8].children[0].hidden = false;
     const formData = new FormData();
@@ -735,7 +734,6 @@ function rankCategory(
       appDispatch(logout());
     } else {
       const json = await response.json();
-      console.log(json);
       appDispatch(addMessage(json.error));
     }
   };

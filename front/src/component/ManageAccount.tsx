@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { Button, Input, Label, Form, FormGroup, FormText } from "reactstrap";
+import { Button, Input, Label, Form, FormGroup, FormText, Spinner } from "reactstrap";
 
 import { useNavigate } from "react-router-dom";
 
 import { useAppSelector, useAppDispatch } from "../redux/store";
-import { addMessage } from "../redux/reducers/error";
-import { selectSignIn, logout } from "../redux/reducers/signin";
+import { addMessage, clearMessage } from "../redux/reducers/error";
+import { selectSignIn, logout, accountUpdated } from "../redux/reducers/signin";
+import { selectMessages } from "../redux/reducers/locale";
 
 import SquareImage from "./SquareImage";
 import blank_profile_picture from "./image/blank_profile_picture.png";
@@ -18,6 +19,8 @@ function ManageAccount() {
   const token = useAppSelector(selectSignIn).token;
   const picture = useAppSelector(selectSignIn).picture;
 
+  const manageAccount = useAppSelector(selectMessages).manageAccount;
+
   const appDispatch = useAppDispatch();
   let navigate = useNavigate();
 
@@ -27,6 +30,8 @@ function ManageAccount() {
 
   if (token && username) {
     let changeImage = (e: any) => {
+      e.target.form[2].disabled = true;
+      e.target.form[2].children[0].hidden = false;
       const formData = new FormData();
       formData.append("0", e.target.files[0]);
       const request = async () => {
@@ -40,6 +45,32 @@ function ManageAccount() {
         } else if (response.status === 202) {
           const json = await response.json();
           setServerFileName(json.name);
+          e.target.form[2].disabled = false;
+          e.target.form[2].children[0].hidden = true;
+        } else {
+          const json = await response.json();
+          console.error(json);
+          appDispatch(addMessage(json.error));
+        }
+      };
+      request();
+    };
+
+    let onFormSubmit = (e: any) => {
+      e.preventDefault();
+      console.log(serverFileName);
+      const request = async () => {
+        const response = await fetch(url + "/users", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, },
+          body: JSON.stringify({ name: username, picture: serverFileName, }),
+        });
+        if (response.status === 202) {
+            appDispatch(clearMessage());
+            appDispatch(accountUpdated({ picture: serverFileName }))
+              .then(() => { navigate("../"); });
+        } else if (response.status === 401) {
+          appDispatch(logout());
         } else {
           const json = await response.json();
           console.error(json);
@@ -50,15 +81,15 @@ function ManageAccount() {
     };
 
     return (
-      <div>
-        <Form>
+      <div style={{margin: "10px"}}>
+        <Form onSubmit={onFormSubmit}>
           <FormGroup>
-            <Label>Name</Label>
+            <Label>{manageAccount.username}</Label>
             <Input value={username} disabled />
-            <FormText>Could not be changed</FormText>
+            <FormText>{manageAccount.can_not_be_changed}</FormText>
           </FormGroup>
           <FormGroup>
-            <Label>Profile picture</Label>
+            <Label>{manageAccount.profile_picture}</Label>
             <Input type="file" onChange={(e) => changeImage(e)} />
           </FormGroup>
           <SquareImage
@@ -70,7 +101,8 @@ function ManageAccount() {
             alternateImage={blank_profile_picture}
           />
           <br />
-          <Button className="btn btn-primary">Save</Button>
+          <br />
+          <Button color="primary" type="submit"><Spinner hidden size="sm" /> {manageAccount.save}</Button>
         </Form>
       </div>
     );

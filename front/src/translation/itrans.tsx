@@ -109,7 +109,12 @@ export interface MyBuyListMessage {
   ok: string;
 }
 
-export interface ManageAccountMessage {}
+export interface ManageAccountMessage {
+    username: string;
+    can_not_be_changed: string;
+    profile_picture: string;
+    save: string;
+}
 
 export interface Translations {
   app: AppMessage;

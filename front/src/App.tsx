@@ -91,7 +91,7 @@ function App() {
               </>
             )}
           </Nav>
-          <Form inline className="d-flex" style={{ alignItems: "center" }}>
+          <Form inline="true" className="d-flex" style={{ alignItems: "center" }}>
             {username && (
               <>
                 <Dropdown isOpen={dropdownState} toggle={toggleDropdown}>

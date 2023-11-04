@@ -37,6 +37,10 @@ interface UserSignIn {
   changeAccount: boolean;
 }
 
+interface UserAccountUpdated {
+  picture: string;
+}
+
 export const signUp = createAsyncThunk(
   "users/signUp",
   async (userSignUp: UserSignUp, thunkAPI: any) => {
@@ -199,6 +203,14 @@ export const changeUser = createAsyncThunk(
   }
 );
 
+export const accountUpdated = createAsyncThunk(
+  "users/accountUpdated",
+  async (userAccountUpdated: UserAccountUpdated) => {
+    localStorage.setItem("picture", userAccountUpdated.picture);
+    return userAccountUpdated.picture;
+  }
+);
+
 export const signInSlice = createSlice({
   name: "signIn",
   initialState: defaultState,
@@ -231,6 +243,10 @@ export const signInSlice = createSlice({
         state.username = json.username;
         state.picture = json.picture;
         state.otherUsers = json.otherUsers;
+      })
+      .addCase(accountUpdated.fulfilled, (state: SignInState, action) => {
+        const picture = action.payload;
+        state.picture = picture;
       });
   },
 });

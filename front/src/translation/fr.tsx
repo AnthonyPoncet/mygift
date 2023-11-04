@@ -106,7 +106,12 @@ class Fr implements Itrans {
         not_wanted: "Supprimé",
         ok: "Supprimer de ma liste",
       },
-      manageAccount: {},
+      manageAccount: {
+        username: "Pseudo",
+        can_not_be_changed: "Ne peut pas être changé",
+        profile_picture: "Photo de profil",
+        save: "Sauvegarder"
+      },
     };
   }
 }
