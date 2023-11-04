@@ -77,6 +77,7 @@ enum class HeartAction { LIKE, UNLIKE }
 class BadParamException(val error: String) : Exception("Bad parameter $error")
 class ConnectionException(val error: String) : Exception("Unable to connect. Cause: $error")
 class CreateUserException(val error: String) : Exception("Unable to create user. Cause: $error")
+class UpdateUserException(val error: String) : Exception("Unable to update user. Cause: $error")
 
 /**
  * No cleaning notion, take care of its validity
@@ -167,9 +168,10 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
 
     fun modifyUser(userId: Long, userModification: UserModification): User {
         if (userModification.name == null) throw BadParamException("Name could not be null")
-        databaseManager.getUser(userId) ?: throw CreateUserException("User does not exists")
+        if (userModification.name.isEmpty()) throw BadParamException("Name could not be empty")
+        val user = databaseManager.getUser(userId) ?: throw BadParamException("User does not exists")
+        if (user.name != userModification.name && databaseManager.getUser(userModification.name) != null) throw UpdateUserException("User with this name already exist")
 
-        //TODO: care, could have several user with same name following this update
         databaseManager.modifyUser(userId, userModification.name, userModification.picture)
         return User("", "", userModification.name, userModification.picture)
     }

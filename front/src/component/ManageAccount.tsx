@@ -4,9 +4,11 @@ import { Button, Input, Label, Form, FormGroup, FormText, Spinner } from "reacts
 import { useNavigate } from "react-router-dom";
 
 import { useAppSelector, useAppDispatch } from "../redux/store";
-import { addMessage, clearMessage } from "../redux/reducers/error";
+import { addMessage, selectErrorMessage, clearMessage } from "../redux/reducers/error";
 import { selectSignIn, logout, accountUpdated } from "../redux/reducers/signin";
 import { selectMessages } from "../redux/reducers/locale";
+
+import { isMobile } from "react-device-detect";
 
 import SquareImage from "./SquareImage";
 import blank_profile_picture from "./image/blank_profile_picture.png";
@@ -20,6 +22,8 @@ function ManageAccount() {
   const picture = useAppSelector(selectSignIn).picture;
 
   const manageAccount = useAppSelector(selectMessages).manageAccount;
+
+  const errorMessage = useAppSelector(selectErrorMessage);
 
   const appDispatch = useAppDispatch();
   let navigate = useNavigate();
@@ -63,11 +67,11 @@ function ManageAccount() {
         const response = await fetch(url + "/users", {
           method: "PATCH",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, },
-          body: JSON.stringify({ name: username, picture: serverFileName, }),
+          body: JSON.stringify({ name: e.target.name.value, picture: serverFileName, }),
         });
         if (response.status === 202) {
             appDispatch(clearMessage());
-            appDispatch(accountUpdated({ picture: serverFileName }))
+            appDispatch(accountUpdated({ username: e.target.name.value, picture: serverFileName }))
               .then(() => { navigate("../"); });
         } else if (response.status === 401) {
           appDispatch(logout());
@@ -81,12 +85,13 @@ function ManageAccount() {
     };
 
     return (
-      <div style={{margin: "10px"}}>
+      <div style={{margin: "10px", width: isMobile ? "100%" : "25%"}}>
+        {errorMessage && <p className="auth-error">{errorMessage}</p>}
         <Form onSubmit={onFormSubmit}>
           <FormGroup>
             <Label>{manageAccount.username}</Label>
-            <Input value={username} disabled />
-            <FormText>{manageAccount.can_not_be_changed}</FormText>
+            <Input name="name" defaultValue={username}/>
+
           </FormGroup>
           <FormGroup>
             <Label>{manageAccount.profile_picture}</Label>

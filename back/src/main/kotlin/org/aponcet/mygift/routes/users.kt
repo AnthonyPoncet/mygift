@@ -98,7 +98,7 @@ fun Route.users(userManager: UserManager) {
                         call.respond(HttpStatusCode.Accepted, user)
                     } catch (e: BadParamException) {
                         call.respond(HttpStatusCode.BadRequest, ErrorAnswer(e.error))
-                    } catch (e: CreateUserException) {
+                    } catch (e: UpdateUserException) {
                         call.respond(HttpStatusCode.Conflict, ErrorAnswer(e.error))
                     }
                 }

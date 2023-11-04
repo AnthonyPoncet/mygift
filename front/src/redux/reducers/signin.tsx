@@ -38,6 +38,7 @@ interface UserSignIn {
 }
 
 interface UserAccountUpdated {
+  username: string;
   picture: string;
 }
 
@@ -206,8 +207,9 @@ export const changeUser = createAsyncThunk(
 export const accountUpdated = createAsyncThunk(
   "users/accountUpdated",
   async (userAccountUpdated: UserAccountUpdated) => {
+    localStorage.setItem("username", userAccountUpdated.username);
     localStorage.setItem("picture", userAccountUpdated.picture);
-    return userAccountUpdated.picture;
+    return userAccountUpdated;
   }
 );
 
@@ -245,8 +247,9 @@ export const signInSlice = createSlice({
         state.otherUsers = json.otherUsers;
       })
       .addCase(accountUpdated.fulfilled, (state: SignInState, action) => {
-        const picture = action.payload;
-        state.picture = picture;
+        const userAccountUpdated = action.payload;
+        state.username = userAccountUpdated.username;
+        state.picture = userAccountUpdated.picture;
       });
   },
 });
