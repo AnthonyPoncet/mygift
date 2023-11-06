@@ -6,9 +6,9 @@
 
 .mycard {
   position: relative;
-  background-color: #ffffff;
+  background-color: white;
   border-radius: 5px;
-  border: 0.5px solid;
+  border: 2px solid #095228;
   z-index: 10;
   height: 275px;
   width: 152px;
@@ -101,6 +101,7 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+  min-height: 3em;
 }
 .mycard-footer {
   width: 151px;

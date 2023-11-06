@@ -228,10 +228,12 @@ export const signInSlice = createSlice({
       })
       .addCase(signIn.fulfilled, (state: SignInState, action) => {
         const json = action.payload;
-        state.token = json.token;
-        state.username = json.name;
-        state.picture = json.picture;
-        state.otherUsers = json.otherUsers;
+        if (json !== undefined) {
+          state.token = json.token;
+          state.username = json.name;
+          state.picture = json.picture;
+          state.otherUsers = json.otherUsers;
+        }
       })
       .addCase(logout.fulfilled, (state: SignInState) => {
         state.token = null;

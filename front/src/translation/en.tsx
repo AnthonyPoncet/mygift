@@ -30,7 +30,11 @@ class En implements Itrans {
         friendsDesc: "Find what your friends want and bought the right gift",
         eventsDesc: "Create birthday, christmas or other events",
       },
-      home: { hello: "Hello" },
+      home: {
+        hello: "Hello",
+        days_before_christmas: "days before Christmas",
+        day_before_christmas: "day before Christmas"
+      },
       mywishlist: {
         addGiftButton: "Add Gift",
         addGiftModalTitle: "Add a new gift",

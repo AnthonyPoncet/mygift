@@ -12,6 +12,8 @@ export interface AppMessage {
 
 export interface HomeMessage {
   hello: string;
+  days_before_christmas: string;
+  day_before_christmas: string;
 }
 
 export interface MyWishListMessage {

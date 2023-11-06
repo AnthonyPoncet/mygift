@@ -16,7 +16,6 @@ import {
 } from "reactstrap";
 import { useNavigate } from "react-router-dom";
 import {
-  HeartIcon,
   PencilIcon,
   XIcon,
   ArrowDownIcon,
@@ -35,7 +34,9 @@ import {
 import { selectSignIn, logout } from "../redux/reducers/signin";
 
 import SquareImage from "./SquareImage";
-import blank_gift from "./image/blank_gift.png";
+import blank_gift from "./image/christmas-easter/blank_gift.png";
+import tree from "./image/christmas-easter/christmas-tree.png";
+import selected_tree from "./image/christmas-easter/christmas-tree-selected.png";
 
 import { isMobile } from "react-device-detect";
 
@@ -843,13 +844,7 @@ function renderGifts(
                   onMouseLeave={() => setGiftHover("")}
                   key={gi}
                 >
-                  <div
-                    className={
-                      gift.heart
-                        ? "heart-selected two-icon-first"
-                        : "two-icon-first"
-                    }
-                  >
+                  <div className="two-icon-first">
                     <span
                       style={{ cursor: "pointer" }}
                       onClick={() =>
@@ -862,7 +857,7 @@ function renderGifts(
                         )
                       }
                     >
-                      <HeartIcon />
+                      <img className="christmas-icon" src={gift.heart ? selected_tree : tree}/>
                     </span>
                   </div>
                   <div className="card-edit-close two-icon-second">

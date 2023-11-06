@@ -11,7 +11,7 @@ import { selectSignIn, logout } from "../redux/reducers/signin";
 
 import "./style/card-gift.css";
 import SquareImage from "./SquareImage";
-import blank_gift from "./image/blank_gift.png";
+import blank_gift from "./image/christmas-easter/blank_gift.png";
 
 import { isMobile } from "react-device-detect";
 

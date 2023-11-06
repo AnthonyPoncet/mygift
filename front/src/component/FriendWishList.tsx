@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 import { useNavigate, useParams } from "react-router-dom";
-import { HeartIcon, GiftIcon, PencilIcon, XIcon } from "@primer/octicons-react";
+import { GiftIcon, PencilIcon, XIcon } from "@primer/octicons-react";
 import {
   Form,
   Modal,
@@ -18,7 +18,11 @@ import {
 
 import "./style/card-gift.css";
 import SquareImage from "./SquareImage";
-import blank_gift from "./image/blank_gift.png";
+import blank_gift from "./image/christmas-easter/blank_gift.png";
+import knot from "./image/christmas-easter/knot.png";
+import selected_tree from "./image/christmas-easter/christmas-tree-selected.png";
+import sled from "./image/christmas-easter/sled.svg";
+import selected_sled from "./image/christmas-easter/sled-selected.png";
 
 import { isMobile } from "react-device-detect";
 
@@ -33,6 +37,8 @@ import { selectSignIn, logout } from "../redux/reducers/signin";
 
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
+
+//const isMobile = true;
 
 function getGifts(
   name: string,
@@ -95,11 +101,15 @@ function renderInsideGift(
 ) {
   const { gift, secret } = fGift;
   if (cgi + "-" + gi === giftHover || isMobile) {
+    if (gift.name === "qqq") {
+        console.log(gift.whereToBuy)
+    }
+    let description = (gift.description === "") ? "" : gift.description;
     return (
       <>
         <div style={{ cursor: "pointer" }} onClick={() => showGiftFn()}>
           <div className="card-name">{gift.name}</div>
-          <div className="card-description">{gift.description}</div>
+          <div className="card-description">{description}</div>
           <div className="mycard-footer">
             <div className="card-wtb">{gift.whereToBuy}</div>
             <div className="card-price">{gift.price}</div>
@@ -639,7 +649,7 @@ function FriendWishList() {
                             >
                               {gift.heart && (
                                 <span>
-                                  <HeartIcon />
+                                  <img className="christmas-icon" src={selected_tree}/>
                                 </span>
                               )}
                             </div>
@@ -670,13 +680,7 @@ function FriendWishList() {
                           <div className="three-icon-second secret-text">
                             {secret && <>Secret</>}
                           </div>
-                          <div
-                            className={
-                              reservedByMe
-                                ? "icon-selected three-icon-third"
-                                : "three-icon-third"
-                            }
-                          >
+                          <div className="three-icon-third">
                             <span
                               style={{ cursor: "pointer" }}
                               onClick={() =>
@@ -690,7 +694,7 @@ function FriendWishList() {
                                 )
                               }
                             >
-                              <GiftIcon />
+                              <img className="christmas-icon" src={reservedByMe ? selected_sled : sled}/>
                             </span>
                           </div>
                           {secret && (
@@ -762,6 +766,11 @@ function FriendWishList() {
                           params.name
                         )
                       )}
+                      {reservedBy.length !== 0 && <div>
+                        <img className={(cgi + "-" + gi === giftHover || isMobile)
+                            ? (secret ? (reservedByMe ? "knot-hover-secret" : "knot-reserved-other-hover-secret")  : (reservedByMe ? "knot-hover" : "knot-reserved-other-hover"))
+                            : (secret ? (reservedByMe ? "knot" : "knot-reserved-other-secret") : (reservedByMe ? "knot" : "knot-reserved-other"))} src={knot}/>
+                      </div> }
                     </div>
                   );
                 })}

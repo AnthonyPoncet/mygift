@@ -10,7 +10,7 @@ class Fr implements Itrans {
         myList: "Ma Liste",
         myFriends: "Mes Amis",
         myEvents: "Mes Evenements",
-        myBuyList: "Ma Liste D'achat",
+        myBuyList: "Ma Hotte",
         logout: "Se déconnecter",
         manageAccount: "Modifier le compte",
         changeAccount: "Changer de compte",
@@ -30,7 +30,11 @@ class Fr implements Itrans {
         friendsDesc: "Trouver ce que veulent vos amis et acheter le bon cadeau",
         eventsDesc: "Créer des events anniversaire, noël et autre",
       },
-      home: { hello: "Bonjour" },
+      home: {
+        hello: "Bonjour",
+        days_before_christmas: "jours avant Noël",
+        day_before_christmas: "jour avant Noël"
+      },
       mywishlist: {
         addGiftButton: "Ajouter un cadeau",
         addGiftModalTitle: "Ajouter un nouveau cadeau",
