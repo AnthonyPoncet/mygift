@@ -15,9 +15,11 @@ import { useNavigate } from "react-router-dom";
 import { CheckIcon, TrashIcon, CircleSlashIcon } from "@primer/octicons-react";
 
 import "./style/friends.css";
+import "./style/christmas.css";
 
 import SquareImage from "./SquareImage";
-import blank_profile_picture from "./image/blank_profile_picture.png";
+import blank_profile_picture from "./image/christmas-easter/blank_profile_picture.png";
+import santa_hat from "./image/christmas-easter/Santa-Hat.webp";
 
 import { isMobile } from "react-device-detect";
 
@@ -355,6 +357,9 @@ function MyFriends() {
                   >
                     <div className="friend-name">{user.name}</div>
                   </div>
+                  { user.picture !== undefined && <div>
+                    <img className="santa_hat" src={santa_hat}/>
+                  </div> }
                 </div>
               );
             })}

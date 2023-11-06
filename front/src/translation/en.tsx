@@ -37,6 +37,9 @@ class En implements Itrans {
         fatherDay: "Fathers day",
         in: "In",
         day: "day",
+        hello: "Hello",
+        days_before_christmas: "days before Christmas",
+        day_before_christmas: "day before Christmas"
       },
       mywishlist: {
         addGiftButton: "Add Gift",

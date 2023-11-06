@@ -1,0 +1,66 @@
+.santa_hat {
+    position: relative;
+    width: 75px;
+    height: 75px;
+    transform: translate(100px, -205px) rotate(30deg);
+    z-index: 1000;
+}
+
+.knot {
+    position: relative;
+    transform: translate(-2px, -278.5px);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.knot-reserved-other {
+    position: relative;
+    transform: translate(-2px, -249.5px);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.knot-reserved-other-secret {
+    position: relative;
+    transform: translate(-2px, -221.5px);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.knot-hover {
+    position: relative;
+    transform: translate(-2px, -246.5px);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.knot-hover-secret {
+    position: relative;
+    transform: translate(-2px, -274.5px);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.knot-reserved-other-hover {
+    position: relative;
+    transform: translate(-2px, -217.5px);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.knot-reserved-other-hover-secret {
+    position: relative;
+    transform: translate(-2px, -217.5px);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.christmas-icon {
+    width: 16px;
+}
+
+.christmas-text {
+    font-weight: bold;
+    font-size: xx-large;
+    color: black;
+}

@@ -9,7 +9,11 @@ import { selectSignIn, logout } from "../redux/reducers/signin";
 import "./style/card-gift.css";
 import "./style/home.css";
 import SquareImage from "./SquareImage";
-import blank_profile_picture from "./image/blank_profile_picture.png";
+import blank_profile_picture from "./image/christmas-easter/blank_profile_picture.png";
+import tree_green from "./image/christmas-easter/christmas-tree-green.png";
+import selected_tree from "./image/christmas-easter/christmas-tree-selected.png";
+
+import { isMobile } from "react-device-detect"
 
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
@@ -84,7 +88,7 @@ function HomePage() {
                       imageName=""
                       size={150}
                       alt="Gift"
-                      alternateImage={blank_profile_picture}
+                      alternateImage={tree_green}
                     />
                     <div className="home-card-center-bold">
                       {home.christmas}

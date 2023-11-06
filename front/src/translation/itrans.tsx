@@ -17,6 +17,9 @@ export interface HomeMessage {
   fatherDay: string;
   in: string;
   day: string;
+  hello: string;
+  days_before_christmas: string;
+  day_before_christmas: string;
 }
 
 export interface MyWishListMessage {

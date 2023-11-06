@@ -31,6 +31,8 @@ import SquareImage from "./component/SquareImage";
 
 import blank_profile_picture from "./component/image/blank_profile_picture.png";
 
+import "./component/style/christmas.css";
+
 function App() {
   //TODO: add loading image
 

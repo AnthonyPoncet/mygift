@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  HeartIcon,
   GiftIcon,
   PencilIcon,
   TrashIcon,
@@ -11,7 +10,11 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from "reactstrap";
 
 import "./style/card-gift.css";
 import SquareImage from "./SquareImage";
-import blank_gift from "./image/blank_gift.png";
+import blank_gift from "./image/christmas-easter/blank_gift.png";
+import knot from "./image/christmas-easter/knot.png";
+import selected_tree from "./image/christmas-easter/christmas-tree-selected.png";
+import sled from "./image/christmas-easter/sled.svg";
+import selected_sled from "./image/christmas-easter/sled-selected.png";
 
 import { isMobile } from "react-device-detect";
 
@@ -288,7 +291,7 @@ function FriendWishList() {
                             >
                               {gift.heart && (
                                 <span>
-                                  <HeartIcon />
+                                  <img className="christmas-icon" src={selected_tree}/>
                                 </span>
                               )}
                             </div>
@@ -306,18 +309,12 @@ function FriendWishList() {
                           <div className="three-icon-second secret-text">
                             {secret && <>Secret</>}
                           </div>
-                          <div
-                            className={
-                              reservedByMe
-                                ? "icon-selected three-icon-third"
-                                : "three-icon-third"
-                            }
-                          >
+                          <div className="three-icon-third">
                             <span
                               style={{ cursor: "pointer" }}
                               onClick={() => reserve(gift.id, reservedByMe)}
                             >
-                              <GiftIcon />
+                              <img className="christmas-icon" src={reservedByMe ? selected_sled : sled}/>
                             </span>
                           </div>
                           {secret && (
@@ -346,6 +343,11 @@ function FriendWishList() {
                         />
                       </div>
                       {renderInsideGift(cgi, gi, fGift)}
+                      {reservedBy.length !== 0 && <div>
+                                              <img className={(cgi + "-" + gi === giftHover || isMobile)
+                                                  ? (secret ? (reservedByMe ? "knot-hover-secret" : "knot-reserved-other-hover-secret")  : (reservedByMe ? "knot-hover" : "knot-reserved-other-hover"))
+                                                  : (secret ? (reservedByMe ? "knot" : "knot-reserved-other-secret") : (reservedByMe ? "knot" : "knot-reserved-other"))} src={knot}/>
+                                            </div> }
                     </div>
                   );
                 })}

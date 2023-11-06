@@ -9,7 +9,7 @@ class Fr implements Itrans {
         signup: "S'inscrire",
         myList: "Ma liste",
         myFriends: "Mes amis",
-        myBuyList: "Ma liste d'achat",
+        myBuyList: "Ma hotte",
         logout: "Se déconnecter",
         manageAccount: "Modifier le compte",
         changeAccount: "Changer de compte",
@@ -37,6 +37,9 @@ class Fr implements Itrans {
         fatherDay: "Fête des pères",
         in: "Dans",
         day: "jour",
+        hello: "Bonjour",
+        days_before_christmas: "jours avant Noël",
+        day_before_christmas: "jour avant Noël"
       },
       mywishlist: {
         addGiftButton: "Ajouter un cadeau",

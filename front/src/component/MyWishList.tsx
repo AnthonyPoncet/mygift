@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { Button, Spinner } from "reactstrap";
 import { useNavigate } from "react-router-dom";
 import {
-  HeartIcon,
   PencilIcon,
   TrashIcon,
   ArrowDownIcon,
@@ -23,7 +22,9 @@ import { selectMessages } from "../redux/reducers/locale";
 import { selectSignIn, logout } from "../redux/reducers/signin";
 
 import SquareImage from "./SquareImage";
-import blank_gift from "./image/blank_gift.png";
+import blank_gift from "./image/christmas-easter/blank_gift.png";
+import tree from "./image/christmas-easter/christmas-tree.png";
+import selected_tree from "./image/christmas-easter/christmas-tree-selected.png";
 
 import { isMobile } from "react-device-detect";
 
@@ -327,7 +328,7 @@ function MyWishList() {
                           style={{ cursor: "pointer" }}
                           onClick={() => heartGift(gift.id, gift.heart)}
                         >
-                          <HeartIcon />
+                        <img className="christmas-icon" src={gift.heart ? selected_tree : tree}/>
                         </span>
                       </div>
                       <div className="card-edit-close two-icon-second">
