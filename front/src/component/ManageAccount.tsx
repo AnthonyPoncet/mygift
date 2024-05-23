@@ -40,7 +40,7 @@ function ManageAccount() {
   useEffect(() => {
     if (token && picture) {
       const request = async () => {
-        const response = await fetch(url + "/files/" + picture, {
+        const response = await fetch(url + "/files/" + picture + "/not_compressed", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.status === 404) {

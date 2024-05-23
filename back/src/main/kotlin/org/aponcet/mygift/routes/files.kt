@@ -56,6 +56,14 @@ fun Route.files(data: Data) {
                     call.respondFile(output)
                 } else call.respond(HttpStatusCode.NotFound)
             }
+            get("/{name}/not_compressed") {
+                //All the conversion part should be moved somewhere else
+                val filename = call.parameters["name"]!!
+                val file = File("${data.uploads}/$filename")
+
+                if (file.exists()) call.respondFile(file)
+                else call.respond(HttpStatusCode.NotFound)
+            }
         }
     }
 }
