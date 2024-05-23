@@ -9,7 +9,7 @@ import { selectMessages } from "../redux/reducers/locale";
 
 import { isMobile } from "react-device-detect";
 
-import ReactCrop, {Crop, PixelCrop} from "react-image-crop";
+import ReactCrop, { Crop, PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 
 import { TO_RADIANS, SCALE, ASPECT, centerAspectCrop } from "./helpers/image";

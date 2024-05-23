@@ -40,7 +40,7 @@ function renderSignUp(connection: any, errorMessage: any, appDispatch: any) {
     if (username && password) {
       appDispatch(clearMessage());
       appDispatch(
-        signUp({ username: username, password: password, picture: null })
+        signUp({ username: username, password: password, picture: null }),
       );
     } else {
       appDispatch(addMessage(connection.emptyErrorMessage));

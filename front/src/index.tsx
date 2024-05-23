@@ -42,5 +42,5 @@ ReactDOM.render(
       </BrowserRouter>
     </React.StrictMode>
   </Provider>,
-  document.getElementById("root")
+  document.getElementById("root"),
 );

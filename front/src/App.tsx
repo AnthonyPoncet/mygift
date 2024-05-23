@@ -91,7 +91,11 @@ function App() {
               </>
             )}
           </Nav>
-          <Form inline="true" className="d-flex" style={{ alignItems: "center" }}>
+          <Form
+            inline="true"
+            className="d-flex"
+            style={{ alignItems: "center" }}
+          >
             {username && (
               <>
                 <Dropdown isOpen={dropdownState} toggle={toggleDropdown}>
@@ -169,8 +173,8 @@ function App() {
                     changeLocale(
                       e.target.value === "English"
                         ? LocaleAvailable["English"]
-                        : LocaleAvailable["Francais"]
-                    )
+                        : LocaleAvailable["Francais"],
+                    ),
                   )
                 }
               >

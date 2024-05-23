@@ -21,7 +21,7 @@ function loadImage(
   imageName: string,
   token: string,
   setImage: any,
-  appDispatch: any
+  appDispatch: any,
 ) {
   if (imageName === undefined || imageName === "") {
     return;

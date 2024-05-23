@@ -29,7 +29,7 @@ function SignInPage() {
     if (username && password) {
       appDispatch(clearMessage());
       appDispatch(
-        signIn({ username: username, password: password, changeAccount: true })
+        signIn({ username: username, password: password, changeAccount: true }),
       ).then(() => {
         navigate("../");
       });

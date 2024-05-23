@@ -44,7 +44,7 @@ function reserve(
   reserve: boolean,
   token: string,
   setBuyList: any,
-  appDispatch: any
+  appDispatch: any,
 ) {
   const request = async () => {
     const response = await fetch(url + "/gifts/" + giftId + "/reserve", {
@@ -69,7 +69,7 @@ function deleteDeletedGift(
   token: string,
   setBuyList: any,
   setShowGift: any,
-  appDispatch: any
+  appDispatch: any,
 ) {
   const request = async () => {
     const response = await fetch(url + "/buy-list/deleted-gifts/" + giftId, {
@@ -101,7 +101,7 @@ function openGift(
   appDispatch: any,
   friendwishlist: any,
   mywishlist: any,
-  username: string
+  username: string,
 ) {
   setShowGift(true);
   const { gift } = fGift;
@@ -166,7 +166,7 @@ function openGift(
           </div>
         )}
       </div>
-    </div>
+    </div>,
   );
   setModalGiftFooter(
     <div>
@@ -182,7 +182,7 @@ function openGift(
           </Button>{" "}
         </>
       )}
-    </div>
+    </div>,
   );
 }
 
@@ -197,7 +197,7 @@ function openDeletedGift(
   appDispatch: any,
   myBuyList: any,
   mywishlist: any,
-  username: string
+  username: string,
 ) {
   setShowGift(true);
   setModalGiftTitle(gift.name);
@@ -252,7 +252,7 @@ function openDeletedGift(
           </div>
         )}
       </div>
-    </div>
+    </div>,
   );
   setModalGiftFooter(
     <Button
@@ -262,7 +262,7 @@ function openDeletedGift(
       }
     >
       {myBuyList.ok}
-    </Button>
+    </Button>,
   );
 }
 
@@ -272,7 +272,7 @@ function renderInsideGift(
   type: string,
   fGift: any,
   giftHover: any,
-  showFun: Function
+  showFun: Function,
 ) {
   const { gift } = fGift;
   if (fgi + "-" + gi + "-" + type === giftHover || isMobile) {
@@ -353,7 +353,7 @@ function MyBuyList() {
                                     reservedByMe,
                                     token,
                                     setBuyList,
-                                    appDispatch
+                                    appDispatch,
                                   )
                                 }
                               >
@@ -375,7 +375,7 @@ function MyBuyList() {
                                 appDispatch,
                                 friendwishlist,
                                 mywishlist,
-                                username
+                                username,
                               )
                             }
                           >
@@ -406,8 +406,8 @@ function MyBuyList() {
                                 appDispatch,
                                 friendwishlist,
                                 mywishlist,
-                                username
-                              )
+                                username,
+                              ),
                           )}
                         </div>
                       );
@@ -443,7 +443,7 @@ function MyBuyList() {
                                 appDispatch,
                                 myBuyList,
                                 mywishlist,
-                                username
+                                username,
                               )
                             }
                           >
@@ -474,8 +474,8 @@ function MyBuyList() {
                                 appDispatch,
                                 myBuyList,
                                 mywishlist,
-                                username
-                              )
+                                username,
+                              ),
                           )}
                         </div>
                       );

@@ -120,10 +120,7 @@ function FriendWishList() {
       request();
     };
 
-    const renderInsideGift = (
-      cgi: number,
-      gi: number,
-      fGift: any) => {
+    const renderInsideGift = (cgi: number, gi: number, fGift: any) => {
       const { gift, secret } = fGift;
       if (cgi + "-" + gi === giftHover || isMobile) {
         return (

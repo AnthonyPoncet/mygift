@@ -30,7 +30,7 @@ function handleSubmit(
   username: string,
   password: string,
   setStatus: any,
-  appDispatch: any
+  appDispatch: any,
 ) {
   const request = async () => {
     const response = await fetch(url + "/passwords/reset/" + uuid, {
