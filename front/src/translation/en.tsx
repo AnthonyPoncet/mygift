@@ -112,7 +112,7 @@ class En implements Itrans {
         username: "Username",
         can_not_be_changed: "Can not be changed",
         profile_picture: "Profile picture",
-        save: "Save"
+        save: "Save",
       },
     };
   }

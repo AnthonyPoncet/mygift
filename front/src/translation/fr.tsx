@@ -113,7 +113,7 @@ class Fr implements Itrans {
         username: "Pseudo",
         can_not_be_changed: "Ne peut pas être changé",
         profile_picture: "Photo de profil",
-        save: "Sauvegarder"
+        save: "Sauvegarder",
       },
     };
   }

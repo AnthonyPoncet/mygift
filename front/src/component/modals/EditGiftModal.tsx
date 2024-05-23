@@ -64,7 +64,6 @@ function EditGiftModal({
 
   const appDispatch = useAppDispatch();
 
-  const [shouldCheckName, setShouldCheckName] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const [imgSrc, setImgSrc] = useState("");
@@ -74,15 +73,26 @@ function EditGiftModal({
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
 
   const [loadingImage, setLoadingImage] = useState(false);
+  const [sendingImage, setSendingImage] = useState(false);
 
   useEffect(() => {
+    setImgSrc("");
+    setRotate(0);
+    setCrop(undefined);
+    setErrorMessage("");
+
     if (token && picture) {
+      setLoadingImage(true);
       const request = async () => {
-        const response = await fetch(url + "/files/" + picture + "/not_compressed", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await fetch(
+          url + "/files/" + picture + "/not_compressed",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
         if (response.status === 404) {
           console.error("file '" + picture + "' could not be found on server");
+          setLoadingImage(false);
           return;
         }
         if (response.status === 401) {
@@ -92,12 +102,14 @@ function EditGiftModal({
         }
         if (response.status === 500) {
           console.error("Internal server error: " + response);
+          setLoadingImage(false);
           return;
         }
 
         response.blob().then((blob) => {
           let url = window.URL.createObjectURL(blob);
           setImgSrc(url);
+          setLoadingImage(false);
         });
       };
       request();
@@ -198,10 +210,9 @@ function EditGiftModal({
   };
 
   const onFormSubmit = (e: any) => {
-    setLoadingImage(true);
+    setSendingImage(true);
     e.preventDefault();
     if (name === "") {
-      setShouldCheckName(true);
       return;
     }
 
@@ -224,18 +235,14 @@ function EditGiftModal({
         }),
       });
       if (response.status === 200) {
-        setErrorMessage("");
-        setShouldCheckName(false);
-        setLoadingImage(false);
-        setImgSrc("");
-        setRotate(0);
+        setSendingImage(false);
         closeModal();
       } else if (response.status === 401) {
         appDispatch(logout());
       } else {
         const json = await response.json();
         setErrorMessage(json.error);
-        setLoadingImage(false);
+        setSendingImage(false);
       }
     };
     request();
@@ -269,14 +276,11 @@ function EditGiftModal({
           <FormGroup>
             <Label>{mywishlist.name}</Label>
             <Input
-              invalid={shouldCheckName && name.length === 0}
+              invalid={name.length === 0}
               name="name"
               placeholder={mywishlist.name}
               value={name}
-              onChange={(e) => {
-                setShouldCheckName(true);
-                setName(e.target.value);
-              }}
+              onChange={(e) => setName(e.target.value)}
             />
             <FormFeedback>{mywishlist.nameErrorMessage}</FormFeedback>
           </FormGroup>
@@ -318,6 +322,12 @@ function EditGiftModal({
             <Label>{mywishlist.image}</Label>
             <Input type="file" onChange={(e) => loadImage(e)} />
           </FormGroup>
+          {loadingImage && (
+            <p>
+              <Spinner hidden={!loadingImage} size="sm" /> Loading previous
+              image...
+            </p>
+          )}
           {!!imgSrc && (
             <ReactCrop
               crop={crop}
@@ -343,12 +353,12 @@ function EditGiftModal({
           {!!imgSrc && <br />}
           {!!imgSrc && <br />}
           <Button
-            disabled={shouldCheckName && name.length === 0}
+            disabled={name.length === 0 || loadingImage || sendingImage}
             color="primary"
             block
             type="submit"
           >
-            <Spinner hidden={!loadingImage} size="sm" />{" "}
+            <Spinner hidden={!sendingImage} size="sm" />{" "}
             {mywishlist.updateModalButton}
           </Button>
         </Form>

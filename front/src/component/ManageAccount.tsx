@@ -36,15 +36,21 @@ function ManageAccount() {
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
 
   const [loadingImage, setLoadingImage] = useState(false);
+  const [sendingImage, setSendingImage] = useState(false);
 
   useEffect(() => {
     if (token && picture) {
+      setLoadingImage(true);
       const request = async () => {
-        const response = await fetch(url + "/files/" + picture + "/not_compressed", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await fetch(
+          url + "/files/" + picture + "/not_compressed",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
         if (response.status === 404) {
           console.error("file '" + picture + "' could not be found on server");
+          setLoadingImage(false);
           return;
         }
         if (response.status === 401) {
@@ -54,12 +60,14 @@ function ManageAccount() {
         }
         if (response.status === 500) {
           console.error("Internal server error: " + response);
+          setLoadingImage(false);
           return;
         }
 
         response.blob().then((blob) => {
           let url = window.URL.createObjectURL(blob);
           setImgSrc(url);
+          setLoadingImage(false);
         });
       };
       request();
@@ -161,7 +169,7 @@ function ManageAccount() {
     };
 
     let onFormSubmit = (e: any) => {
-      setLoadingImage(true);
+      setSendingImage(true);
       e.preventDefault();
       const request = async () => {
         const serverFileName = await storeFileOnServer();
@@ -189,7 +197,7 @@ function ManageAccount() {
           appDispatch(logout());
         } else {
           const json = await response.json();
-          setLoadingImage(false);
+          setSendingImage(false);
           setErrorMessage(json.error);
         }
       };
@@ -208,6 +216,12 @@ function ManageAccount() {
             <Label>{manageAccount.profile_picture}</Label>
             <Input type="file" onChange={(e) => loadImage(e)} />
           </FormGroup>
+          {loadingImage && (
+            <p>
+              <Spinner hidden={!loadingImage} size="sm" /> Loading previous
+              image...
+            </p>
+          )}
           {!!imgSrc && (
             <ReactCrop
               crop={crop}
@@ -232,8 +246,12 @@ function ManageAccount() {
           )}
           {!!imgSrc && <br />}
           {!!imgSrc && <br />}
-          <Button color="primary" type="submit" disabled={loadingImage}>
-            <Spinner hidden={!loadingImage} size="sm" /> {manageAccount.save}
+          <Button
+            color="primary"
+            type="submit"
+            disabled={loadingImage || sendingImage}
+          >
+            <Spinner hidden={!sendingImage} size="sm" /> {manageAccount.save}
           </Button>
         </Form>
       </div>

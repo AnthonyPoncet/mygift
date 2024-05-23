@@ -113,10 +113,10 @@ export interface MyBuyListMessage {
 }
 
 export interface ManageAccountMessage {
-    username: string;
-    can_not_be_changed: string;
-    profile_picture: string;
-    save: string;
+  username: string;
+  can_not_be_changed: string;
+  profile_picture: string;
+  save: string;
 }
 
 export interface Translations {

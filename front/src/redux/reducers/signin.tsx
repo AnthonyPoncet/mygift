@@ -57,7 +57,7 @@ export const signUp = createAsyncThunk(
     }).catch((err) => {
       console.error("Unexpected error: " + err.message);
       thunkAPI.dispatch(
-        addMessage("Unable to reach the server. Contact support.")
+        addMessage("Unable to reach the server. Contact support."),
       );
     });
 
@@ -82,10 +82,10 @@ export const signUp = createAsyncThunk(
     } catch (e: any) {
       console.error("Unexpected error: " + e.message);
       thunkAPI.dispatch(
-        addMessage("Unable to reach the server. Contact support.")
+        addMessage("Unable to reach the server. Contact support."),
       );
     }
-  }
+  },
 );
 
 export const signIn = createAsyncThunk(
@@ -118,7 +118,7 @@ export const signIn = createAsyncThunk(
       if (response.status === 200) {
         if (userSignIn.changeAccount) {
           const otherUsers = JSON.parse(
-            localStorage.getItem("otherUsers") || "[]"
+            localStorage.getItem("otherUsers") || "[]",
           );
           console.log("other: " + otherUsers + " - " + typeof otherUsers);
           const otherUser = {
@@ -150,10 +150,10 @@ export const signIn = createAsyncThunk(
     } catch (e: any) {
       console.error("Unexpected error: " + e.message);
       thunkAPI.dispatch(
-        addMessage("Unable to reach the server. Contact support.")
+        addMessage("Unable to reach the server. Contact support."),
       );
     }
-  }
+  },
 );
 
 export const logout = createAsyncThunk("users/logout", async () => {
@@ -186,7 +186,7 @@ export const changeUser = createAsyncThunk(
     };
 
     let newOtherUsers = otherUsers.filter(
-      (u: OtherUser) => u.username !== otherUser.username
+      (u: OtherUser) => u.username !== otherUser.username,
     );
     newOtherUsers.push(currentUser);
 
@@ -201,7 +201,7 @@ export const changeUser = createAsyncThunk(
       picture: otherUser.picture,
       otherUsers: newOtherUsers,
     };
-  }
+  },
 );
 
 export const accountUpdated = createAsyncThunk(
@@ -210,7 +210,7 @@ export const accountUpdated = createAsyncThunk(
     localStorage.setItem("username", userAccountUpdated.username);
     localStorage.setItem("picture", userAccountUpdated.picture);
     return userAccountUpdated;
-  }
+  },
 );
 
 export const signInSlice = createSlice({
