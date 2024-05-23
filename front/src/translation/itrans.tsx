@@ -77,34 +77,6 @@ export interface Connection {
   eventsDesc: string;
 }
 
-export interface MyEventsMessage {
-  createEventButton: string;
-  createEventModalTitle: string;
-  createEventModalButton: string;
-  name: string;
-  nameErrorMessage: string;
-  description: string;
-  endDate: string;
-  endDatePlaceholder: string;
-  endDateErrorMessage: string;
-  target: string;
-  targetErrorMessage: string;
-  myEvents: string;
-  comingEvents: string;
-  pendingEvents: string;
-}
-
-export interface EventMessage {
-  addParticipantModalTitle: string;
-  addParticipantModalButton: string;
-  name: string;
-  nameErrorMessage: string;
-  description: string;
-  creator: string;
-  participantsTitle: string;
-  targetIsTitle: string;
-}
-
 export interface MyBuyListMessage {
   title: string;
   received: string;
@@ -119,6 +91,11 @@ export interface ManageAccountMessage {
   save: string;
 }
 
+export interface ImageEdition {
+  rotateLeft: string;
+  rotateRight: string;
+}
+
 export interface Translations {
   app: AppMessage;
   connection: Connection;
@@ -126,10 +103,9 @@ export interface Translations {
   mywishlist: MyWishListMessage;
   myfriends: MyFriendsMessage;
   friendwishlist: FriendWishListMessage;
-  myevents: MyEventsMessage;
-  event: EventMessage;
   myBuyList: MyBuyListMessage;
   manageAccount: ManageAccountMessage;
+  imageEdition: ImageEdition;
 }
 
 interface Itrans {

@@ -76,33 +76,6 @@ class Fr implements Itrans {
         deleteModalButtonReceived: "Cadeau reçu",
         deleteModalButtonNotWanted: "Cadeau à supprimer",
       },
-      myevents: {
-        createEventButton: "Créer un évènement",
-        createEventModalTitle: "Créer un nouveau évènement",
-        createEventModalButton: "Créer",
-        name: "Nom",
-        nameErrorMessage: "Le Nom est obligatoire",
-        description: "Description",
-        endDate: "Date de fin",
-        endDatePlaceholder: "Date de fin au format jj/mm/aaaa",
-        endDateErrorMessage:
-          "Date de fin est obligatoire et doit être au format jj/mm/aaaa",
-        target: "Utilisateur concerné",
-        targetErrorMessage: "Utilisateur est obligatoire",
-        myEvents: "Mes Evènements",
-        comingEvents: "Evènements à venir",
-        pendingEvents: "Evènements en attente",
-      },
-      event: {
-        addParticipantModalTitle: "Ajouter un nouveau participant",
-        addParticipantModalButton: "Ajouter",
-        name: "Nom",
-        nameErrorMessage: "Le nom est obligatoire",
-        description: "Description",
-        creator: "Organisé par",
-        participantsTitle: "Participants",
-        targetIsTitle: "Evènement pour",
-      },
       myBuyList: {
         title: "Ma liste d'achat",
         received: "Reçu",
@@ -114,6 +87,10 @@ class Fr implements Itrans {
         can_not_be_changed: "Ne peut pas être changé",
         profile_picture: "Photo de profil",
         save: "Sauvegarder",
+      },
+      imageEdition: {
+        rotateLeft: "Tourner à gauche",
+        rotateRight: "Tourner à droite",
       },
     };
   }

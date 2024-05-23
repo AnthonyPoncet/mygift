@@ -75,33 +75,6 @@ class En implements Itrans {
         deleteModalButtonReceived: "Gift received",
         deleteModalButtonNotWanted: "Gift to delete",
       },
-      myevents: {
-        createEventButton: "Create event",
-        createEventModalTitle: "Create a new event",
-        createEventModalButton: "Create",
-        name: "Name",
-        nameErrorMessage: "Name is mandatory",
-        description: "Description",
-        endDate: "End date",
-        endDatePlaceholder: "End date in format dd/mm/yyyy",
-        endDateErrorMessage:
-          "End date is mandatory and its format is dd/mm/yyyy",
-        target: "Target user",
-        targetErrorMessage: "Target is mandatory",
-        myEvents: "My Events",
-        comingEvents: "Coming Events",
-        pendingEvents: "Pending Events",
-      },
-      event: {
-        addParticipantModalTitle: "Add a new participant",
-        addParticipantModalButton: "Add",
-        name: "Name",
-        nameErrorMessage: "Name is mandatory",
-        description: "Description",
-        creator: "Organised by",
-        participantsTitle: "Participants",
-        targetIsTitle: "Event for",
-      },
       myBuyList: {
         title: "My Buy List",
         received: "Received",
@@ -113,6 +86,10 @@ class En implements Itrans {
         can_not_be_changed: "Can not be changed",
         profile_picture: "Profile picture",
         save: "Save",
+      },
+      imageEdition: {
+        rotateLeft: "Rotate left",
+        rotateRight: "Rotate right",
       },
     };
   }

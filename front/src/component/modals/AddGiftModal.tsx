@@ -38,7 +38,9 @@ function AddGiftModal({
   friendName,
 }: AddGiftModalProps) {
   const token = useAppSelector(selectSignIn).token;
+
   const mywishlist = useAppSelector(selectMessages).mywishlist;
+  const imageEdition = useAppSelector(selectMessages).imageEdition;
 
   const appDispatch = useAppDispatch();
 
@@ -70,9 +72,10 @@ function AddGiftModal({
     setCrop(centerAspectCrop(width, height));
   };
 
-  let rotateImage = () => {
-    let newRotate = rotate + 90;
-    if (newRotate === 360) newRotate = 0;
+  let rotateImage = (amount: number) => {
+    let newRotate = rotate + amount;
+    if (newRotate >= 360) newRotate -= 360;
+    if (newRotate <= -360) newRotate += 360;
     setRotate(newRotate);
   };
 
@@ -255,29 +258,41 @@ function AddGiftModal({
             <Input type="file" onChange={(e) => loadImage(e)} />
           </FormGroup>
           {!!imgSrc && (
-            <ReactCrop
-              crop={crop}
-              onChange={(_, percentCrop) => setCrop(percentCrop)}
-              onComplete={(c) => setCompletedCrop(c)}
-              minHeight={100}
-              minWidth={100}
-            >
-              <img
-                ref={imgRef}
-                alt="Gift"
-                src={imgSrc}
-                style={{ transform: `scale(${SCALE}) rotate(${rotate}deg)` }}
-                onLoad={onImageLoad}
-              />
-            </ReactCrop>
+            <FormGroup style={{ display: "flex", flexDirection: "column" }}>
+              <ReactCrop
+                style={{ marginBottom: "5px" }}
+                crop={crop}
+                onChange={(_, percentCrop) => setCrop(percentCrop)}
+                onComplete={(c) => setCompletedCrop(c)}
+                minHeight={100}
+                minWidth={100}
+              >
+                <img
+                  ref={imgRef}
+                  alt="Gift"
+                  src={imgSrc}
+                  style={{ transform: `scale(${SCALE}) rotate(${rotate}deg)` }}
+                  onLoad={onImageLoad}
+                />
+              </ReactCrop>
+              <div style={{ display: "flex" }}>
+                <Button
+                  style={{ width: "45%", marginRight: "10%" }}
+                  color="dark"
+                  onClick={() => rotateImage(-90)}
+                >
+                  {imageEdition.rotateLeft}
+                </Button>
+                <Button
+                  style={{ width: "45%" }}
+                  color="dark"
+                  onClick={() => rotateImage(90)}
+                >
+                  {imageEdition.rotateRight}
+                </Button>
+              </div>
+            </FormGroup>
           )}
-          {!!imgSrc && (
-            <Button color="primary" onClick={rotateImage}>
-              Rotate
-            </Button>
-          )}
-          {!!imgSrc && <br />}
-          {!!imgSrc && <br />}
           <Button
             disabled={shouldCheckName && name.length === 0}
             color="primary"
