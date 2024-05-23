@@ -4,28 +4,18 @@ import { Button, Input, Label, Form, FormGroup, Spinner } from "reactstrap";
 import { useNavigate } from "react-router-dom";
 
 import { useAppSelector, useAppDispatch } from "../redux/store";
-import {
-  addMessage,
-  selectErrorMessage,
-  clearMessage,
-} from "../redux/reducers/error";
 import { selectSignIn, logout, accountUpdated } from "../redux/reducers/signin";
 import { selectMessages } from "../redux/reducers/locale";
 
 import { isMobile } from "react-device-detect";
 
-import ReactCrop, {
-  centerCrop,
-  makeAspectCrop,
-  Crop,
-  PixelCrop,
-} from "react-image-crop";
+import ReactCrop, {Crop, PixelCrop} from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
+
+import { TO_RADIANS, SCALE, ASPECT, centerAspectCrop } from "./helpers/image";
 
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
-
-const TO_RADIANS = Math.PI / 180;
 
 function ManageAccount() {
   const username = useAppSelector(selectSignIn).username;
@@ -34,7 +24,7 @@ function ManageAccount() {
 
   const manageAccount = useAppSelector(selectMessages).manageAccount;
 
-  const errorMessage = useAppSelector(selectErrorMessage);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const appDispatch = useAppDispatch();
   let navigate = useNavigate();
@@ -46,9 +36,6 @@ function ManageAccount() {
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
 
   const [loadingImage, setLoadingImage] = useState(false);
-
-  const scale = 1;
-  const aspect = 1;
 
   useEffect(() => {
     if (token && picture) {
@@ -80,26 +67,6 @@ function ManageAccount() {
   }, [token, picture, appDispatch]);
 
   if (token && username) {
-    let centerAspectCrop = (
-      mediaWidth: number,
-      mediaHeight: number,
-      aspect: number,
-    ) => {
-      return centerCrop(
-        makeAspectCrop(
-          {
-            unit: "%",
-            width: 100,
-          },
-          aspect,
-          mediaWidth,
-          mediaHeight,
-        ),
-        mediaWidth,
-        mediaHeight,
-      );
-    };
-
     let rotateImage = () => {
       let newRotate = rotate + 90;
       if (newRotate === 360) newRotate = 0;
@@ -145,7 +112,7 @@ function ManageAccount() {
         // 3) Rotate around the origin
         ctx.rotate(rotateRads);
         // 2) Scale the image
-        ctx.scale(scale, scale);
+        ctx.scale(SCALE, SCALE);
         // 1) Move the center of the image to the origin (0,0)
         ctx.translate(-centerX, -centerY);
         ctx.drawImage(
@@ -183,7 +150,7 @@ function ManageAccount() {
       } else {
         const json = await response.json();
         console.error(json);
-        appDispatch(addMessage(json.error));
+        setErrorMessage(json.error);
         return null;
       }
     };
@@ -210,7 +177,6 @@ function ManageAccount() {
           }),
         });
         if (response.status === 202) {
-          appDispatch(clearMessage());
           appDispatch(
             accountUpdated({
               username: e.target.name.value,
@@ -224,8 +190,7 @@ function ManageAccount() {
         } else {
           const json = await response.json();
           setLoadingImage(false);
-          console.error(json);
-          appDispatch(addMessage(json.error));
+          setErrorMessage(json.error);
         }
       };
       request();
@@ -248,14 +213,14 @@ function ManageAccount() {
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
               onComplete={(c) => setCompletedCrop(c)}
-              aspect={aspect}
+              aspect={ASPECT}
               minHeight={100}
             >
               <img
                 ref={imgRef}
                 alt="Profile"
                 src={imgSrc}
-                style={{ transform: `scale(${scale}) rotate(${rotate}deg)` }}
+                style={{ transform: `scale(${SCALE}) rotate(${rotate}deg)` }}
                 onLoad={onImageLoad}
               />
             </ReactCrop>

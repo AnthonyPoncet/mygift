@@ -418,7 +418,7 @@ function MyFriends() {
             </ModalHeader>
             <ModalBody>
               {errorMessage && <p className="auth-error">{errorMessage}</p>}
-              <Form inline onSubmit={onFormSubmit}>
+              <Form inline="true" onSubmit={onFormSubmit}>
                 <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
                   <Label className="mr-sm-2">{myfriends.name}</Label>
                   <Input name="name" placeholder={myfriends.name} />

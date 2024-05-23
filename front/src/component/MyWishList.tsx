@@ -1,19 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import {
-  Button,
-  Form,
-  FormGroup,
-  Label,
-  Input,
-  FormFeedback,
-  Modal,
-  ModalHeader,
-  ModalBody,
-  Spinner,
-  Col,
-  Row,
-} from "reactstrap";
+import { Button, Form, Modal, ModalHeader, ModalBody } from "reactstrap";
 import { useNavigate } from "react-router-dom";
 import {
   HeartIcon,
@@ -25,13 +12,13 @@ import {
   ArrowRightIcon,
 } from "@primer/octicons-react";
 
+import AddCategoryModal from "./modals/AddCategoryModal";
+import EditCategoryModal from "./modals/EditCategoryModal";
+import AddGiftModal from "./modals/AddGiftModal";
+import EditGiftModal from "./modals/EditGiftModal";
+
 import { useAppSelector, useAppDispatch } from "../redux/store";
 import { selectMessages } from "../redux/reducers/locale";
-import {
-  addMessage,
-  selectErrorMessage,
-  clearMessage,
-} from "../redux/reducers/error";
 import { selectSignIn, logout } from "../redux/reducers/signin";
 
 import SquareImage from "./SquareImage";
@@ -44,1039 +31,40 @@ import "./style/card-gift.css";
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
-function getGifts(token: string, setCategories: any, appDispatch: any) {
-  const request = async () => {
-    const response = await fetch(url + "/gifts", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (response.status === 401) {
-      appDispatch(logout());
-    } else {
-      const json = await response.json();
-      if (response.status === 200) {
-        setCategories(json);
-      } else {
-        console.error(json.error);
-        appDispatch(addMessage(json.error));
-      }
-    }
-  };
-  request();
-}
-
-function getFriends(token: string, setFriends: any, appDispatch: any) {
-  const request = async () => {
-    const response = await fetch(url + "/friends", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (response.status === 401) {
-      appDispatch(logout());
-    } else {
-      const json = await response.json();
-      if (response.status === 200) {
-        setFriends(json);
-      } else {
-        console.error(json.error);
-        appDispatch(addMessage(json.error));
-      }
-    }
-  };
-  request();
-}
-
-function addGiftModal(
-  setModalTitle: any,
-  setModalBody: any,
-  setShow: any,
-  mywishlist: any,
-  token: string,
-  appDispatch: any,
-  categories: any,
-  setCategories: any
-) {
-  appDispatch(clearMessage());
-
-  setModalTitle(mywishlist.addGiftModalTitle);
-
-  let onFormSubmit = (e: any) => {
-    e.preventDefault();
-    if (e.target.name.value === "") {
-      appDispatch(addMessage(mywishlist.nameErrorMessage));
-      return;
-    }
-    let imageName =
-      e.target.picture === undefined ? "" : e.target.picture.value;
-    const request = async () => {
-      const response = await fetch(url + "/gifts", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: e.target.name.value,
-          description: e.target.description.value,
-          price: e.target.price.value,
-          whereToBuy: e.target.whereToBuy.value,
-          categoryId: e.target.categoryId.value,
-          picture: imageName,
-        }),
-      });
-      if (response.status === 200) {
-        getGifts(token, setCategories, appDispatch);
-        setShow(false);
-      } else if (response.status === 401) {
-        appDispatch(logout());
-      } else {
-        const json = await response.json();
-        console.error(json);
-        appDispatch(addMessage(json.error));
-      }
-    };
-    request();
-  };
-
-  let changeImage = (e: any) => {
-    e.target.form[8].disabled = true;
-    e.target.form[8].children[0].hidden = false;
-    const formData = new FormData();
-    formData.append("0", e.target.files[0]);
-    const request = async () => {
-      const response = await fetch(url + "/files", {
-        method: "post",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      if (response.status === 401) {
-        appDispatch(logout());
-      } else if (response.status === 202) {
-        const json = await response.json();
-        e.target.form[7].value = json.name; //TODO: horrible. to replace by states
-        e.target.form[8].disabled = false;
-        e.target.form[8].children[0].hidden = true;
-      } else {
-        const json = await response.json();
-        console.error(json);
-        appDispatch(addMessage(json.error));
-      }
-    };
-    request();
-  };
-
-  let scrapUrl = (e: any) => {
-    e.target.form[4].disabled = true;
-    e.target.form[4].children[0].hidden = false;
-    e.target.form[8].disabled = true;
-    const scrap_url = e.target.form[3].value;
-    const request = async () => {
-      const response = await fetch(url + "/gifts/scrap", {
-        method: "post",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          source: "Amazon",
-          url: scrap_url,
-        }),
-      });
-      if (response.status === 401) {
-        appDispatch(logout());
-      } else if (response.status === 200) {
-        const json = await response.json();
-        e.target.form[0].value = json.title;
-        e.target.form[1].value = json.description;
-        e.target.form[2].value = json.price;
-        e.target.form[7].value = json.image;
-        e.target.form[4].disabled = false;
-        e.target.form[4].children[0].hidden = true;
-        e.target.form[8].disabled = false;
-      } else if (response.status === 501) {
-        console.error("Supports only Amazon");
-        appDispatch(addMessage("Supports only Amazon"));
-        e.target.form[4].disabled = false;
-        e.target.form[4].children[0].hidden = true;
-        e.target.form[8].disabled = false;
-      } else {
-        const json = await response.json();
-        console.error(json);
-        appDispatch(addMessage(json.error));
-      }
-    };
-    request();
-  };
-
-  const options = categories.map((cag: any, index: any) => {
-    let value = cag.category;
-    return (
-      <option key={index} value={value.id}>
-        {value.name}
-      </option>
-    );
-  });
-
-  setModalBody(
-    <Form onSubmit={onFormSubmit}>
-      <FormGroup>
-        <Label>{mywishlist.name}</Label>
-        <Input name="name" placeholder={mywishlist.name} />
-        <FormFeedback>{mywishlist.nameErrorMessage}</FormFeedback>
-      </FormGroup>
-      <FormGroup>
-        <Label>{mywishlist.description}</Label>
-        <Input
-          type="textarea"
-          name="description"
-          placeholder={mywishlist.description}
-        />
-      </FormGroup>
-      <FormGroup>
-        <Label>{mywishlist.price}</Label>
-        <Input name="price" placeholder="10" />
-      </FormGroup>
-      <Row>
-        <Col md={8}>
-          <FormGroup>
-            <Label>{mywishlist.whereToBuy}</Label>
-            <Input
-              name="whereToBuy"
-              placeholder={mywishlist.whereToBuyPlaceholder}
-            />
-          </FormGroup>
-        </Col>
-        <Col md={4}>
-          <FormGroup>
-            <Button
-              className="scrap"
-              color="primary"
-              block
-              onClick={(e) => scrapUrl(e)}
-            >
-              <Spinner hidden size="sm" /> Scrap
-            </Button>
-          </FormGroup>
-        </Col>
-      </Row>
-      <FormGroup>
-        <Label>{mywishlist.category}</Label>
-        <Input type="select" name="categoryId">
-          {options}
-        </Input>
-      </FormGroup>
-      <FormGroup>
-        <Label>{mywishlist.image}</Label>
-        <Input type="file" onChange={(e) => changeImage(e)} />
-      </FormGroup>
-      <FormGroup>
-        <Input hidden name="picture" />
-      </FormGroup>
-      <Button color="primary" block type="submit">
-        <Spinner hidden size="sm" /> {mywishlist.addModalButton}
-      </Button>
-    </Form>
-  );
-  setShow(true);
-}
-
-function editGiftModal(
-  gift: any,
-  setModalTitle: any,
-  setModalBody: any,
-  setShow: any,
-  mywishlist: any,
-  token: string,
-  appDispatch: any,
-  categories: any,
-  setCategories: any
-) {
-  appDispatch(clearMessage());
-
-  setModalTitle(mywishlist.updateGiftModalTitle);
-
-  let onFormSubmit = (e: any) => {
-    e.preventDefault();
-    if (e.target.name.value === "") {
-      appDispatch(addMessage(mywishlist.nameErrorMessage));
-      return;
-    }
-    let imageName =
-      e.target.picture === undefined ? "" : e.target.picture.value;
-    const request = async () => {
-      const response = await fetch(url + "/gifts/" + gift.id, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: e.target.name.value,
-          description: e.target.description.value,
-          price: e.target.price.value,
-          whereToBuy: e.target.whereToBuy.value,
-          categoryId: e.target.categoryId.value,
-          picture: imageName,
-          rank: gift.rank,
-        }),
-      });
-      if (response.status === 200) {
-        getGifts(token, setCategories, appDispatch);
-        setShow(false);
-      } else if (response.status === 401) {
-        appDispatch(logout());
-      } else {
-        const json = await response.json();
-        console.error(json);
-        appDispatch(addMessage(json.error));
-      }
-    };
-    request();
-  };
-
-  let changeImage = (e: any) => {
-    e.target.form[7].disabled = true;
-    e.target.form[7].children[0].hidden = false;
-    const formData = new FormData();
-    formData.append("0", e.target.files[0]);
-    const request = async () => {
-      const response = await fetch(url + "/files", {
-        method: "post",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      if (response.status === 401) {
-        appDispatch(logout());
-      } else if (response.status === 202) {
-        const json = await response.json();
-        e.target.form[6].value = json.name; //TODO: horrible. to replace by states
-        e.target.form[7].disabled = false;
-        e.target.form[7].children[0].hidden = true;
-      } else {
-        const json = await response.json();
-        console.error(json);
-        appDispatch(addMessage(json.error));
-      }
-    };
-    request();
-  };
-
-  const options = categories.map((cag: any, index: any) => {
-    let value = cag.category;
-    if (gift.categoryId === value.id) {
-      return (
-        <option key={index} value={value.id} selected>
-          {value.name}
-        </option>
-      );
-    } else {
-      return (
-        <option key={index} value={value.id}>
-          {value.name}
-        </option>
-      );
-    }
-  });
-
-  setModalBody(
-    <Form onSubmit={onFormSubmit}>
-      <FormGroup>
-        <Label>{mywishlist.name}</Label>
-        <Input name="name" defaultValue={gift.name} />
-        <FormFeedback>{mywishlist.nameErrorMessage}</FormFeedback>
-      </FormGroup>
-      <FormGroup>
-        <Label>{mywishlist.description}</Label>
-        <Input
-          type="textarea"
-          name="description"
-          defaultValue={gift.description}
-        />
-      </FormGroup>
-      <FormGroup>
-        <Label>{mywishlist.price}</Label>
-        <Input name="price" defaultValue={gift.price} />
-      </FormGroup>
-      <FormGroup>
-        <Label>{mywishlist.whereToBuy}</Label>
-        <Input name="whereToBuy" defaultValue={gift.whereToBuy} />
-      </FormGroup>
-      <FormGroup>
-        <Label>{mywishlist.category}</Label>
-        <Input type="select" name="categoryId">
-          {options}
-        </Input>
-      </FormGroup>
-      <FormGroup>
-        <Label>{mywishlist.image}</Label>
-        <Input type="file" onChange={(e) => changeImage(e)} />
-      </FormGroup>
-      <FormGroup>
-        <Input hidden name="picture" defaultValue={gift.picture} />
-      </FormGroup>
-      <Button color="primary" block type="submit">
-        <Spinner hidden size="sm" /> {mywishlist.updateModalButton}
-      </Button>
-    </Form>
-  );
-  setShow(true);
-}
-
-function deleteGiftModal(
-  id: number,
-  setModalTitle: any,
-  setModalBody: any,
-  setShow: any,
-  mywishlist: any,
-  token: string,
-  appDispatch: any,
-  setCategories: any
-) {
-  appDispatch(clearMessage());
-
-  setModalTitle(mywishlist.deleteGiftModalTitle);
-
-  let onFormSubmit = (e: any) => {
-    e.preventDefault();
-    const request = async () => {
-      const response = await fetch(
-        url + "/gifts/" + id + "?status=" + e.nativeEvent.submitter.value,
-        { method: "delete", headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (response.status === 202) {
-        getGifts(token, setCategories, appDispatch);
-        setShow(false);
-      } else if (response.status === 401) {
-        appDispatch(logout());
-      } else {
-        const json = await response.json();
-        console.error(json);
-        appDispatch(addMessage(json.error));
-      }
-    };
-    request();
-  };
-
-  setModalBody(
-    <Form onSubmit={onFormSubmit}>
-      <Button color="primary" type="submit" value="RECEIVED">
-        {mywishlist.deleteModalButtonReceived}
-      </Button>{" "}
-      <Button color="primary" type="submit" value="NOT_WANTED">
-        {mywishlist.deleteModalButtonNotWanted}
-      </Button>
-    </Form>
-  );
-  setShow(true);
-}
-
-function rankGift(
-  id: number,
-  downUp: number,
-  token: string,
-  appDispatch: any,
-  setCategories: any
-) {
-  //0 = down , other = up
-  const val = downUp === 0 ? "up" : "down";
-  const request = async () => {
-    const response = await fetch(
-      url + "/gifts/" + id + "/rank-actions/" + val,
-      { method: "post", headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (response.status === 202) {
-      getGifts(token, setCategories, appDispatch);
-    } else if (response.status === 401) {
-      appDispatch(logout());
-    } else {
-      const json = await response.json();
-      console.error(json);
-      appDispatch(addMessage(json.error));
-    }
-  };
-  request();
-}
-
-function addCategoryModal(
-  setModalTitle: any,
-  setModalBody: any,
-  setShow: any,
-  mywishlist: any,
-  token: string,
-  appDispatch: any,
-  setCategories: any,
-  friends: any
-) {
-  appDispatch(clearMessage());
-
-  setModalTitle(mywishlist.addCategoryModalTitle);
-
-  let onFormSubmit = (e: any) => {
-    e.preventDefault();
-    let share: string[] = [];
-    for (var i = 0; i < e.target.length; i++) {
-      const input = e.target[i];
-      if (input.type === "checkbox" && input.checked) {
-        share.push(input.name);
-      }
-    }
-    if (e.target.name.value === "") {
-      appDispatch(addMessage(mywishlist.nameErrorMessage));
-      return;
-    }
-    const request = async () => {
-      const response = await fetch(url + "/categories", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: e.target.name.value,
-          rank: null,
-          share: share,
-        }),
-      });
-      if (response.status === 200) {
-        getGifts(token, setCategories, appDispatch);
-        setShow(false);
-      } else if (response.status === 401) {
-        appDispatch(logout());
-      } else {
-        const json = await response.json();
-        appDispatch(addMessage(json.error));
-      }
-    };
-    request();
-  };
-
-  const names = friends.map((f: any, i: any) => {
-    return (
-      <FormGroup check>
-        <Label check>
-          <Input type="checkbox" id={f.id + "-" + i} name={f.otherUser.name} />
-          {f.otherUser.name}
-        </Label>
-      </FormGroup>
-    );
-  });
-
-  setModalBody(
-    <Form onSubmit={onFormSubmit}>
-      <FormGroup>
-        <Label>{mywishlist.name}</Label>
-        <Input name="name" placeholder={mywishlist.name} />
-      </FormGroup>
-      <FormGroup name="share">
-        <Label>{mywishlist.sharedWith}</Label>
-        {names}
-      </FormGroup>
-      <Button color="primary" block type="submit">
-        {mywishlist.addModalButton}
-      </Button>
-    </Form>
-  );
-  setShow(true);
-}
-
-function editCategoryModal(
-  name: string,
-  id: number,
-  rank: number,
-  setModalTitle: any,
-  setModalBody: any,
-  setShow: any,
-  mywishlist: any,
-  token: string,
-  appDispatch: any,
-  setCategories: any,
-  friends: any
-) {
-  appDispatch(clearMessage());
-
-  setModalTitle(mywishlist.updateCategoryModalTitle);
-
-  let onFormSubmit = (e: any) => {
-    e.preventDefault();
-    let share: string[] = [];
-    for (var i = 0; i < e.target.length; i++) {
-      const input = e.target[i];
-      if (input.type === "checkbox" && input.checked) {
-        share.push(input.name);
-      }
-    }
-    if (e.target.name.value === "") {
-      appDispatch(addMessage(mywishlist.nameErrorMessage));
-      return;
-    }
-    const request = async () => {
-      const response = await fetch(url + "/categories/" + id, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: e.target.name.value,
-          rank: rank,
-          share: share,
-        }),
-      });
-      if (response.status === 200) {
-        getGifts(token, setCategories, appDispatch);
-        setShow(false);
-      } else if (response.status === 401) {
-        appDispatch(logout());
-      } else {
-        const json = await response.json();
-        appDispatch(addMessage(json.error));
-      }
-    };
-    request();
-  };
-
-  const names = friends.map((f: any, i: any) => {
-    return (
-      <FormGroup check>
-        <Label check>
-          <Input type="checkbox" id={f.id + "-" + i} name={f.otherUser.name} />
-          {f.otherUser.name}
-        </Label>
-      </FormGroup>
-    );
-  });
-
-  setModalBody(
-    <Form onSubmit={onFormSubmit}>
-      <FormGroup>
-        <Label>{mywishlist.name}</Label>
-        <Input name="name" defaultValue={name} />
-      </FormGroup>
-      <FormGroup name="share">
-        <Label>{mywishlist.sharedWith}</Label>
-        {names}
-      </FormGroup>
-      <Button color="primary" block type="submit">
-        {mywishlist.updateModalButton}
-      </Button>
-    </Form>
-  );
-  setShow(true);
-}
-
-function deleteCat(
-  id: number,
-  token: string,
-  appDispatch: any,
-  setCategories: any
-) {
-  const request = async () => {
-    const response = await fetch(url + "/categories/" + id, {
-      method: "delete",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (response.status === 202) {
-      getGifts(token, setCategories, appDispatch);
-    } else if (response.status === 401) {
-      appDispatch(logout());
-    } else {
-      const json = await response.json();
-      console.error(json);
-      appDispatch(addMessage(json.error));
-    }
-  };
-  request();
-}
-
-function heartGift(
-  id: number,
-  heart: boolean,
-  token: string,
-  appDispatch: any,
-  setCategories: any
-) {
-  const request = async () => {
-    let req_heart = heart ? "unlike" : "like";
-    const response = await fetch(url + "/gifts/" + id + "/heart/" + req_heart, {
-      method: "post",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (response.status === 202) {
-      getGifts(token, setCategories, appDispatch);
-    } else if (response.status === 401) {
-      appDispatch(logout());
-    } else {
-      const json = await response.json();
-      console.error(json);
-      appDispatch(addMessage(json.error));
-    }
-  };
-  request();
-}
-
-function rankCategory(
-  id: number,
-  downUp: number,
-  token: string,
-  appDispatch: any,
-  setCategories: any
-) {
-  //0 = down , other = up
-  const val = downUp === 0 ? "down" : "up";
-  const request = async () => {
-    const response = await fetch(
-      url + "/categories/" + id + "/rank-actions/" + val,
-      { method: "post", headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (response.status === 202) {
-      getGifts(token, setCategories, appDispatch);
-    } else if (response.status === 401) {
-      appDispatch(logout());
-    } else {
-      const json = await response.json();
-      appDispatch(addMessage(json.error));
-    }
-  };
-  request();
-}
-
-function renderInsideGift(
-  cgi: number,
-  gi: number,
-  giftHover: string,
-  gift: any,
-  setModalTitle: any,
-  setModalBody: any,
-  setShow: any,
-  mywishlist: any,
-  token: any,
-  appDispatch: any,
-  categories: any,
-  setCategories: any
-) {
-  if (cgi + "-" + gi === giftHover || isMobile) {
-    return (
-      <div
-        style={{ cursor: "pointer" }}
-        onClick={() =>
-          editGiftModal(
-            gift,
-            setModalTitle,
-            setModalBody,
-            setShow,
-            mywishlist,
-            token,
-            appDispatch,
-            categories,
-            setCategories
-          )
-        }
-      >
-        <div className="card-name">{gift.name}</div>
-        <div className="card-description">{gift.description}</div>
-        <div className="mycard-footer">
-          <div className="card-wtb">{gift.whereToBuy}</div>
-          <div className="card-price">{gift.price}</div>
-        </div>
-      </div>
-    );
-  } else {
-    return <div className="card-name-only">{gift.name}</div>;
-  }
-}
-
-function renderGifts(
-  categories: any,
-  token: string,
-  appDispatch: any,
-  setCategories: any,
-  setModalTitle: any,
-  setModalBody: any,
-  setShow: any,
-  mywishlist: any,
-  giftHover: string,
-  setGiftHover: any,
-  friends: any
-) {
-  if (categories) {
-    return categories.map((cg: any, cgi: any) => {
-      return (
-        <div key={cgi}>
-          <h5 style={{ margin: "10px" }}>
-            {cg.category.name}{" "}
-            <span
-              style={{ cursor: "pointer" }}
-              onClick={() =>
-                editCategoryModal(
-                  cg.category.name,
-                  cg.category.id,
-                  cg.category.rank,
-                  setModalTitle,
-                  setModalBody,
-                  setShow,
-                  mywishlist,
-                  token,
-                  appDispatch,
-                  setCategories,
-                  friends
-                )
-              }
-            >
-              <PencilIcon verticalAlign="middle" />
-            </span>{" "}
-            <span
-              style={{ cursor: "pointer" }}
-              onClick={() =>
-                deleteCat(cg.category.id, token, appDispatch, setCategories)
-              }
-            >
-              <XIcon verticalAlign="middle" />
-            </span>
-          </h5>
-
-          <div className="mycard-row">
-            {cg.gifts.map((gift: any, gi: any) => {
-              return (
-                <div
-                  className="mycard"
-                  onMouseEnter={() => setGiftHover(cgi + "-" + gi)}
-                  onMouseLeave={() => setGiftHover("")}
-                  key={gi}
-                >
-                  <div
-                    className={
-                      gift.heart
-                        ? "heart-selected two-icon-first"
-                        : "two-icon-first"
-                    }
-                  >
-                    <span
-                      style={{ cursor: "pointer" }}
-                      onClick={() =>
-                        heartGift(
-                          gift.id,
-                          gift.heart,
-                          token,
-                          appDispatch,
-                          setCategories
-                        )
-                      }
-                    >
-                      <HeartIcon />
-                    </span>
-                  </div>
-                  <div className="card-edit-close two-icon-second">
-                    <span
-                      style={{ cursor: "pointer" }}
-                      onClick={() =>
-                        deleteGiftModal(
-                          gift.id,
-                          setModalTitle,
-                          setModalBody,
-                          setShow,
-                          mywishlist,
-                          token,
-                          appDispatch,
-                          setCategories
-                        )
-                      }
-                    >
-                      <XIcon />
-                    </span>
-                  </div>
-                  <div
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      editGiftModal(
-                        gift,
-                        setModalTitle,
-                        setModalBody,
-                        setShow,
-                        mywishlist,
-                        token,
-                        appDispatch,
-                        categories,
-                        setCategories
-                      )
-                    }
-                  >
-                    <SquareImage
-                      token={token}
-                      className="card-image"
-                      imageName={gift.picture}
-                      size={150}
-                      alt="Gift"
-                      alternateImage={blank_gift}
-                    />
-                  </div>
-                  {renderInsideGift(
-                    cgi,
-                    gi,
-                    giftHover,
-                    gift,
-                    setModalTitle,
-                    setModalBody,
-                    setShow,
-                    mywishlist,
-                    token,
-                    appDispatch,
-                    categories,
-                    setCategories
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    });
-  }
-}
-
-function renderGiftsEditMode(
-  categories: any,
-  token: string,
-  appDispatch: any,
-  setCategories: any,
-  setModalTitle: any,
-  setModalBody: any,
-  setShow: any,
-  mywishlist: any,
-  giftHover: string,
-  setGiftHover: any
-) {
-  return categories.map((cg: any, cgi: any) => {
-    let displayDown = cgi !== categories.length - 1;
-    let displayUp = cgi !== 0;
-    return (
-      <div key={cgi}>
-        <h5 style={{ margin: "10px" }}>
-          {cg.category.name} - {cg.category.rank}{" "}
-          {displayDown && (
-            <span
-              style={{ cursor: "pointer" }}
-              onClick={() =>
-                rankCategory(
-                  cg.category.id,
-                  1,
-                  token,
-                  appDispatch,
-                  setCategories
-                )
-              }
-            >
-              <ArrowDownIcon verticalAlign="middle" />
-            </span>
-          )}{" "}
-          {displayUp && (
-            <span
-              style={{ cursor: "pointer" }}
-              onClick={() =>
-                rankCategory(
-                  cg.category.id,
-                  0,
-                  token,
-                  appDispatch,
-                  setCategories
-                )
-              }
-            >
-              <ArrowUpIcon verticalAlign="middle" />
-            </span>
-          )}
-        </h5>
-
-        <div className="mycard-row">
-          {cg.gifts.map((gift: any, gi: any) => {
-            let displayLeft = gi !== 0;
-            let displayRight = gi !== cg.gifts.length - 1;
-            return (
-              <div className="mycard">
-                <div className="card-edit-close">
-                  <div className="two-icon-first">
-                    {displayLeft && (
-                      <span
-                        style={{ cursor: "pointer" }}
-                        onClick={() =>
-                          rankGift(
-                            gift.id,
-                            1,
-                            token,
-                            appDispatch,
-                            setCategories
-                          )
-                        }
-                      >
-                        <ArrowLeftIcon verticalAlign="middle" />
-                      </span>
-                    )}
-                  </div>
-                  <div className="two-icon-second">
-                    {displayRight && (
-                      <span
-                        style={{ cursor: "pointer" }}
-                        onClick={() =>
-                          rankGift(
-                            gift.id,
-                            0,
-                            token,
-                            appDispatch,
-                            setCategories
-                          )
-                        }
-                      >
-                        <ArrowRightIcon verticalAlign="middle" />
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <SquareImage
-                  token={token}
-                  className="card-image"
-                  imageName={gift.picture}
-                  size={150}
-                  alt="Gift"
-                  alternateImage={blank_gift}
-                />
-                <div></div>
-                {renderInsideGift(
-                  cgi,
-                  gi,
-                  giftHover,
-                  gift,
-                  setModalTitle,
-                  setModalBody,
-                  setShow,
-                  mywishlist,
-                  token,
-                  appDispatch,
-                  categories,
-                  setCategories
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  });
-}
-
 function MyWishList() {
   const token = useAppSelector(selectSignIn).token;
   const mywishlist = useAppSelector(selectMessages).mywishlist;
-  const errorMessage = useAppSelector(selectErrorMessage);
 
   const appDispatch = useAppDispatch();
 
   let navigate = useNavigate();
 
-  const [editMode, setEditMode] = useState(false);
-  const [show, setShow] = useState(false);
-  const handleClose = () => setShow(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const [modalTitle, setModalTitle] = useState("title");
-  const [modalBody, setModalBody] = useState(<div></div>);
+  const [editMode, setEditMode] = useState(false);
+
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+
+  const [showEditCategoryModal, setShowEditCategoryModal] = useState(false);
+  const [editCategoryId, setEditCategoryId] = useState(-1);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [editCategoryRank, setEditCategoryRank] = useState(-1);
+
+  const [showAddGiftModal, setShowAddGiftModal] = useState(false);
+
+  const [showEditGiftModal, setShowEditGiftModal] = useState(false);
+  const [editGiftName, setEditGiftName] = useState("");
+  const [editGiftDescription, setEditGiftDescription] = useState("");
+  const [editGiftPrice, setEditGiftPrice] = useState("");
+  const [editGiftWhereToBuy, setEditGiftWhereToBuy] = useState("");
+  const [editGiftCategory, setEditGiftCategory] = useState(-1);
+  const [editGiftPicture, setEditGiftPicture] = useState("");
+  const [editGiftId, setEditGiftId] = useState(-1);
+  const [editGiftRank, setEditGiftRank] = useState(-1);
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteGiftId, setDeleteGiftId] = useState(-1);
+  const [errorMessageModal, setErrorMessageModal] = useState("");
 
   const [categories, setCategories] = useState([]);
   const [giftHover, setGiftHover] = useState("");
@@ -1085,91 +73,470 @@ function MyWishList() {
 
   useEffect(() => {
     if (token) {
-      getGifts(token, setCategories, appDispatch);
-      getFriends(token, setFriends, appDispatch);
+      const getGifts = () => {
+        setErrorMessage("");
+        const request = async () => {
+          const response = await fetch(url + "/gifts", {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (response.status === 401) {
+            appDispatch(logout());
+          } else {
+            const json = await response.json();
+            if (response.status === 200) {
+              setCategories(json);
+            } else {
+              setErrorMessage(json.error);
+            }
+          }
+        };
+        request();
+      };
+
+      const getFriends = () => {
+        setErrorMessage("");
+        const request = async () => {
+          const response = await fetch(url + "/friends", {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (response.status === 401) {
+            appDispatch(logout());
+          } else {
+            const json = await response.json();
+            if (response.status === 200) {
+              setFriends(json);
+            } else {
+              setErrorMessage(json.error);
+            }
+          }
+        };
+        request();
+      };
+
+      getGifts();
+      getFriends();
     }
   }, [token, appDispatch]);
 
   if (token) {
+    const getGifts = () => {
+      setErrorMessage("");
+      const request = async () => {
+        const response = await fetch(url + "/gifts", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.status === 401) {
+          appDispatch(logout());
+        } else {
+          const json = await response.json();
+          if (response.status === 200) {
+            setCategories(json);
+          } else {
+            setErrorMessage(json.error);
+          }
+        }
+      };
+      request();
+    };
+
+    const deleteGiftModal = (id: number) => {
+      setErrorMessageModal("");
+      setDeleteGiftId(id);
+      setShowDeleteModal(true);
+    };
+
+    const onDeleteFormSubmit = (e: any) => {
+      e.preventDefault();
+      const request = async () => {
+        const response = await fetch(
+          url +
+            "/gifts/" +
+            deleteGiftId +
+            "?status=" +
+            e.nativeEvent.submitter.value,
+          { method: "delete", headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (response.status === 202) {
+          getGifts();
+          setShowDeleteModal(false);
+        } else if (response.status === 401) {
+          appDispatch(logout());
+        } else {
+          const json = await response.json();
+          setErrorMessageModal(json.error);
+        }
+      };
+      request();
+    };
+
+    const rankGift = (id: number, downUp: number) => {
+      //0 = down , other = up
+      const val = downUp === 0 ? "up" : "down";
+      const request = async () => {
+        const response = await fetch(
+          url + "/gifts/" + id + "/rank-actions/" + val,
+          { method: "post", headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (response.status === 202) {
+          getGifts();
+        } else if (response.status === 401) {
+          appDispatch(logout());
+        } else {
+          const json = await response.json();
+          setErrorMessage(json.error);
+        }
+      };
+      request();
+    };
+
+    const deleteCat = (id: number) => {
+      const request = async () => {
+        const response = await fetch(url + "/categories/" + id, {
+          method: "delete",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.status === 202) {
+          getGifts();
+        } else if (response.status === 401) {
+          appDispatch(logout());
+        } else {
+          const json = await response.json();
+          setErrorMessage(json.error);
+        }
+      };
+      request();
+    };
+
+    const heartGift = (id: number, heart: boolean) => {
+      const request = async () => {
+        let req_heart = heart ? "unlike" : "like";
+        const response = await fetch(
+          url + "/gifts/" + id + "/heart/" + req_heart,
+          {
+            method: "post",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (response.status === 202) {
+          getGifts();
+        } else if (response.status === 401) {
+          appDispatch(logout());
+        } else {
+          const json = await response.json();
+          setErrorMessage(json.error);
+        }
+      };
+      request();
+    };
+
+    const rankCategory = (id: number, downUp: number) => {
+      //0 = down , other = up
+      const val = downUp === 0 ? "down" : "up";
+      const request = async () => {
+        const response = await fetch(
+          url + "/categories/" + id + "/rank-actions/" + val,
+          { method: "post", headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (response.status === 202) {
+          getGifts();
+        } else if (response.status === 401) {
+          appDispatch(logout());
+        } else {
+          const json = await response.json();
+          setErrorMessage(json.error);
+        }
+      };
+      request();
+    };
+
+    const editGiftModalOpen = (gift: any) => {
+      setEditGiftName(gift.name);
+      setEditGiftDescription(gift.description);
+      setEditGiftPrice(gift.price);
+      setEditGiftWhereToBuy(gift.whereToBuy);
+      setEditGiftCategory(gift.categoryId);
+      setEditGiftPicture(gift.picture);
+      setEditGiftId(gift.id);
+      setEditGiftRank(gift.rank);
+      setShowEditGiftModal(true);
+    };
+
+    const renderGifts = () => {
+      if (categories) {
+        return categories.map((cg: any, cgi: any) => {
+          return (
+            <div key={cgi}>
+              <h5 style={{ margin: "10px" }}>
+                {cg.category.name}{" "}
+                <span
+                  style={{ cursor: "pointer" }}
+                  onClick={() => {
+                    setEditCategoryId(cg.category.id);
+                    setEditCategoryName(cg.category.name);
+                    setEditCategoryRank(cg.category.rank);
+                    setShowEditCategoryModal(true);
+                  }}
+                >
+                  <PencilIcon verticalAlign="middle" />
+                </span>{" "}
+                <span
+                  style={{ cursor: "pointer" }}
+                  onClick={() => deleteCat(cg.category.id)}
+                >
+                  <XIcon verticalAlign="middle" />
+                </span>
+              </h5>
+
+              <div className="mycard-row">
+                {cg.gifts.map((gift: any, gi: any) => {
+                  return (
+                    <div
+                      className="mycard"
+                      onMouseEnter={() => setGiftHover(cgi + "-" + gi)}
+                      onMouseLeave={() => setGiftHover("")}
+                      key={gi}
+                    >
+                      <div
+                        className={
+                          gift.heart
+                            ? "heart-selected two-icon-first"
+                            : "two-icon-first"
+                        }
+                      >
+                        <span
+                          style={{ cursor: "pointer" }}
+                          onClick={() => heartGift(gift.id, gift.heart)}
+                        >
+                          <HeartIcon />
+                        </span>
+                      </div>
+                      <div className="card-edit-close two-icon-second">
+                        <span
+                          style={{ cursor: "pointer" }}
+                          onClick={() => deleteGiftModal(gift.id)}
+                        >
+                          <XIcon />
+                        </span>
+                      </div>
+                      <div
+                        style={{ cursor: "pointer" }}
+                        onClick={() => editGiftModalOpen(gift)}
+                      >
+                        <SquareImage
+                          token={token}
+                          className="card-image"
+                          imageName={gift.picture}
+                          size={150}
+                          alt="Gift"
+                          alternateImage={blank_gift}
+                        />
+                      </div>
+                      {renderInsideGift(cgi, gi, gift)}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        });
+      }
+    };
+
+    const renderInsideGift = (cgi: number, gi: number, gift: any) => {
+      if (cgi + "-" + gi === giftHover || isMobile) {
+        return (
+          <div
+            style={{ cursor: "pointer" }}
+            onClick={() => editGiftModalOpen(gift)}
+          >
+            <div className="card-name">{gift.name}</div>
+            <div className="card-description">{gift.description}</div>
+            <div className="mycard-footer">
+              <div className="card-wtb">{gift.whereToBuy}</div>
+              <div className="card-price">{gift.price}</div>
+            </div>
+          </div>
+        );
+      } else {
+        return <div className="card-name-only">{gift.name}</div>;
+      }
+    };
+
+    const renderGiftsEditMode = () => {
+      return categories.map((cg: any, cgi: any) => {
+        let displayDown = cgi !== categories.length - 1;
+        let displayUp = cgi !== 0;
+        return (
+          <div key={cgi}>
+            <h5 style={{ margin: "10px" }}>
+              {cg.category.name} - {cg.category.rank}{" "}
+              {displayDown && (
+                <span
+                  style={{ cursor: "pointer" }}
+                  onClick={() => rankCategory(cg.category.id, 1)}
+                >
+                  <ArrowDownIcon verticalAlign="middle" />
+                </span>
+              )}{" "}
+              {displayUp && (
+                <span
+                  style={{ cursor: "pointer" }}
+                  onClick={() => rankCategory(cg.category.id, 0)}
+                >
+                  <ArrowUpIcon verticalAlign="middle" />
+                </span>
+              )}
+            </h5>
+
+            <div className="mycard-row">
+              {cg.gifts.map((gift: any, gi: any) => {
+                let displayLeft = gi !== 0;
+                let displayRight = gi !== cg.gifts.length - 1;
+                return (
+                  <div className="mycard">
+                    <div className="card-edit-close">
+                      <div className="two-icon-first">
+                        {displayLeft && (
+                          <span
+                            style={{ cursor: "pointer" }}
+                            onClick={() => rankGift(gift.id, 1)}
+                          >
+                            <ArrowLeftIcon verticalAlign="middle" />
+                          </span>
+                        )}
+                      </div>
+                      <div className="two-icon-second">
+                        {displayRight && (
+                          <span
+                            style={{ cursor: "pointer" }}
+                            onClick={() => rankGift(gift.id, 0)}
+                          >
+                            <ArrowRightIcon verticalAlign="middle" />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <SquareImage
+                      token={token}
+                      className="card-image"
+                      imageName={gift.picture}
+                      size={150}
+                      alt="Gift"
+                      alternateImage={blank_gift}
+                    />
+                    <div></div>
+                    {renderInsideGift(cgi, gi, gift)}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      });
+    };
+
     return (
       <div>
+        {errorMessage && <p className="auth-error">{errorMessage}</p>}
         <Button
           color="link"
           disabled={editMode}
-          onClick={() =>
-            addGiftModal(
-              setModalTitle,
-              setModalBody,
-              setShow,
-              mywishlist,
-              token,
-              appDispatch,
-              categories,
-              setCategories
-            )
-          }
+          onClick={() => setShowAddGiftModal(true)}
         >
           {mywishlist.addGiftButton}
         </Button>
         <Button
           color="link"
           disabled={editMode}
-          onClick={() =>
-            addCategoryModal(
-              setModalTitle,
-              setModalBody,
-              setShow,
-              mywishlist,
-              token,
-              appDispatch,
-              setCategories,
-              friends
-            )
-          }
+          onClick={() => setShowAddCategoryModal(true)}
         >
           {mywishlist.addCategoryButton}
         </Button>
-        <Button
-          color="link"
-          onClick={() => {
-            setEditMode(!editMode);
-          }}
-        >
+        <Button color="link" onClick={() => setEditMode(!editMode)}>
           {mywishlist.reorderButtonTitle}
         </Button>
 
-        {editMode
-          ? renderGiftsEditMode(
-              categories,
-              token,
-              appDispatch,
-              setCategories,
-              setModalTitle,
-              setModalBody,
-              setShow,
-              mywishlist,
-              giftHover,
-              setGiftHover
-            )
-          : renderGifts(
-              categories,
-              token,
-              appDispatch,
-              setCategories,
-              setModalTitle,
-              setModalBody,
-              setShow,
-              mywishlist,
-              giftHover,
-              setGiftHover,
-              friends
-            )}
+        {editMode ? renderGiftsEditMode() : renderGifts()}
 
-        <Modal isOpen={show} toggle={handleClose}>
-          <ModalHeader toggle={handleClose}>{modalTitle}</ModalHeader>
+        <AddCategoryModal
+          show={showAddCategoryModal}
+          closeModal={() => {
+            setShowAddCategoryModal(false);
+            getGifts();
+          }}
+          friends={friends}
+        />
+        <EditCategoryModal
+          show={showEditCategoryModal}
+          closeModal={() => {
+            setShowEditCategoryModal(false);
+            getGifts();
+          }}
+          friends={friends}
+          id={editCategoryId}
+          name={editCategoryName}
+          setName={setEditCategoryName}
+          rank={editCategoryRank}
+        />
+        <AddGiftModal
+          show={showAddGiftModal}
+          closeModal={() => {
+            setShowAddGiftModal(false);
+            getGifts();
+          }}
+          categories={categories}
+        />
+        <EditGiftModal
+          show={showEditGiftModal}
+          closeModal={() => {
+            setShowEditGiftModal(false);
+            getGifts();
+          }}
+          categories={categories}
+          name={editGiftName}
+          setName={setEditGiftName}
+          description={editGiftDescription}
+          setDescription={setEditGiftDescription}
+          price={editGiftPrice}
+          setPrice={setEditGiftPrice}
+          whereToBuy={editGiftWhereToBuy}
+          setWhereToBuy={setEditGiftWhereToBuy}
+          categoryId={editGiftCategory}
+          picture={editGiftPicture}
+          giftId={editGiftId}
+          rank={editGiftRank}
+        />
+
+        <Modal
+          isOpen={showDeleteModal}
+          toggle={() => {
+            setShowDeleteModal(false);
+            getGifts();
+          }}
+        >
+          <ModalHeader
+            toggle={() => {
+              setShowDeleteModal(false);
+              getGifts();
+            }}
+          >
+            {mywishlist.deleteGiftModalTitle}
+          </ModalHeader>
           <ModalBody>
-            {errorMessage && <p className="auth-error">{errorMessage}</p>}
-            {modalBody}
+            {errorMessageModal && (
+              <p className="auth-error">{errorMessageModal}</p>
+            )}
+            <Form onSubmit={onDeleteFormSubmit}>
+              <Button color="primary" type="submit" value="RECEIVED">
+                {mywishlist.deleteModalButtonReceived}
+              </Button>{" "}
+              <Button color="primary" type="submit" value="NOT_WANTED">
+                {mywishlist.deleteModalButtonNotWanted}
+              </Button>
+            </Form>
           </ModalBody>
         </Modal>
       </div>
