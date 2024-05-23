@@ -42,6 +42,9 @@ export interface MyFriendsMessage {
   addFriendButton: string;
   addFriendModalTitle: string;
   addModalButton: string;
+  deleteFriendModalTitlePre: string;
+  deleteFriendModalTitleSuffix: string;
+  deleteModalButton: string;
   name: string;
   nameErrorMessage: string;
   requests: string;

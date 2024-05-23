@@ -23,63 +23,10 @@ import { isMobile } from "react-device-detect";
 
 import { useAppSelector, useAppDispatch } from "../redux/store";
 import { selectMessages } from "../redux/reducers/locale";
-import {
-  addMessage,
-  selectErrorMessage,
-  clearMessage,
-} from "../redux/reducers/error";
 import { selectSignIn, logout } from "../redux/reducers/signin";
 
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
-
-function getFriends(token: string, setFriends: any, appDispatch: any) {
-  const request = async () => {
-    const response = await fetch(url + "/friends", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (response.status === 401) {
-      appDispatch(logout());
-    } else {
-      const json = await response.json();
-      if (response.status === 200) {
-        setFriends(json);
-      } else {
-        console.error(json.error);
-        appDispatch(addMessage(json.error));
-      }
-    }
-  };
-  request();
-}
-
-function getPending(
-  token: string,
-  setPending: any,
-  setReceived: any,
-  appDispatch: any
-) {
-  const request = async () => {
-    const response = await fetch(url + "/friend-requests/pending", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (response.status === 401) {
-      appDispatch(logout());
-    } else {
-      const json = await response.json();
-      if (response.status === 200) {
-        setPending(json.sent);
-        setReceived(json.received);
-      } else {
-        console.error(json.error);
-        appDispatch(addMessage(json.error));
-      }
-    }
-  };
-  request();
-}
 
 function generateMessage(json: any, friendName: string): string {
   switch (json.status) {
@@ -102,136 +49,211 @@ function generateMessage(json: any, friendName: string): string {
   return "";
 }
 
-function cancelRequest(
-  id: number,
-  token: string,
-  getFriends: any,
-  setFriends: any,
-  getPending: any,
-  setPending: any,
-  setReceived: any,
-  appDispatch: any
-) {
-  const request = async () => {
-    const response = await fetch(url + "/friend-requests/" + id, {
-      method: "delete",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (response.status === 202) {
-      getFriends(token, setFriends);
-      getPending(token, setPending, setReceived, appDispatch);
-    } else if (response.status === 401) {
-      appDispatch(logout());
-    } else {
-      const json = await response.json();
-      console.error(json);
-      appDispatch(addMessage(json.error));
-    }
-  };
-  request();
-}
-
-function acceptRequest(
-  id: number,
-  token: string,
-  getFriends: any,
-  setFriends: any,
-  getPending: any,
-  setPending: any,
-  setReceived: any,
-  appDispatch: any
-) {
-  const request = async () => {
-    const response = await fetch(url + "/friend-requests/" + id + "/accept", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (response.status === 202) {
-      getFriends(token, setFriends);
-      getPending(token, setPending, setReceived, appDispatch);
-    } else if (response.status === 401) {
-      appDispatch(logout());
-    } else {
-      const json = await response.json();
-      console.error(json);
-      appDispatch(addMessage(json.error));
-    }
-  };
-  request();
-}
-
-function declineRequest(
-  id: number,
-  blockUser: boolean,
-  token: string,
-  getFriends: any,
-  setFriends: any,
-  getPending: any,
-  setPending: any,
-  setReceived: any,
-  appDispatch: any
-) {
-  const request = async () => {
-    const response = await fetch(
-      url + "/friend-requests/" + id + "/decline?blockUser=" + blockUser,
-      { method: "post", headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (response.status === 202) {
-      getFriends(token, setFriends);
-      getPending(token, setPending, setReceived, appDispatch);
-    } else if (response.status === 401) {
-      appDispatch(logout());
-    } else {
-      const json = await response.json();
-      console.error(json);
-      appDispatch(addMessage(json.error));
-    }
-  };
-  request();
-}
-
-function renderHoverFriend(i: number, req: any, user: any, userHover: number) {
-  if (i === userHover || isMobile) {
-    return (
-      <div className="friend-card-delete one-icon">
-        <span style={{ cursor: "pointer" }}>
-          <XIcon />
-        </span>
-      </div>
-    );
-  } else {
-    return <div />;
-  }
-}
-
 function MyFriends() {
   const token = useAppSelector(selectSignIn).token;
   const myfriends = useAppSelector(selectMessages).myfriends;
-  const errorMessage = useAppSelector(selectErrorMessage);
 
   const appDispatch = useAppDispatch();
 
   let navigate = useNavigate();
+
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [friends, setFriends] = useState([]);
   const [pending, setPending] = useState([]);
   const [received, setReceived] = useState([]);
   const [userHover, setUserHover] = useState(-1);
 
-  const [show, setShow] = useState(false);
-  const handleClose = () => setShow(false);
+  const [showAddFriendModal, setShowAddFriendModal] = useState(false);
+  const [name, setName] = useState("");
+  const [shouldCheckName, setShouldCheckName] = useState(false);
+  const [errorMessageAddFriendModal, setErrorMessageAddFriendModal] =
+    useState("");
+
+  const [showDeleteFriendModal, setShowDeleteFriendModal] = useState(false);
+  const [deleteFriendId, setDeleteFriendId] = useState(-1);
+  const [deleteFriendName, setDeleteFriendName] = useState("");
+  const [errorMessageDeleteFriendModal, setErrorMessageDeleteFriendModal] =
+    useState("");
 
   useEffect(() => {
     if (token) {
-      getFriends(token, setFriends, appDispatch);
-      getPending(token, setPending, setReceived, appDispatch);
+      const getFriends = () => {
+        const request = async () => {
+          const response = await fetch(url + "/friends", {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (response.status === 401) {
+            appDispatch(logout());
+          } else {
+            const json = await response.json();
+            if (response.status === 200) {
+              setFriends(json);
+            } else {
+              setErrorMessage(json.error);
+            }
+          }
+        };
+        request();
+      };
+
+      const getPending = () => {
+        const request = async () => {
+          const response = await fetch(url + "/friend-requests/pending", {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (response.status === 401) {
+            appDispatch(logout());
+          } else {
+            const json = await response.json();
+            if (response.status === 200) {
+              setPending(json.sent);
+              setReceived(json.received);
+            } else {
+              setErrorMessage(json.error);
+            }
+          }
+        };
+        request();
+      };
+
+      getFriends();
+      getPending();
     }
   }, [token, appDispatch]);
 
   if (token) {
-    let onFormSubmit = (e: any) => {
+    const getFriends = () => {
+      const request = async () => {
+        const response = await fetch(url + "/friends", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.status === 401) {
+          appDispatch(logout());
+        } else {
+          const json = await response.json();
+          if (response.status === 200) {
+            setFriends(json);
+          } else {
+            setErrorMessage(json.error);
+          }
+        }
+      };
+      request();
+    };
+
+    const getPending = () => {
+      const request = async () => {
+        const response = await fetch(url + "/friend-requests/pending", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.status === 401) {
+          appDispatch(logout());
+        } else {
+          const json = await response.json();
+          if (response.status === 200) {
+            setPending(json.sent);
+            setReceived(json.received);
+          } else {
+            setErrorMessage(json.error);
+          }
+        }
+      };
+      request();
+    };
+
+    const cancelRequest = (id: number) => {
+      const request = async () => {
+        const response = await fetch(url + "/friend-requests/" + id, {
+          method: "delete",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.status === 202) {
+          getFriends();
+          getPending();
+        } else if (response.status === 401) {
+          appDispatch(logout());
+        } else {
+          const json = await response.json();
+          setErrorMessage(json.error);
+        }
+      };
+      request();
+    };
+
+    const acceptRequest = (id: number) => {
+      const request = async () => {
+        const response = await fetch(
+          url + "/friend-requests/" + id + "/accept",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (response.status === 202) {
+          getFriends();
+          getPending();
+        } else if (response.status === 401) {
+          appDispatch(logout());
+        } else {
+          const json = await response.json();
+          setErrorMessage(json.error);
+        }
+      };
+      request();
+    };
+
+    const declineRequest = (id: number, blockUser: boolean) => {
+      const request = async () => {
+        const response = await fetch(
+          url + "/friend-requests/" + id + "/decline?blockUser=" + blockUser,
+          {
+            method: "post",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (response.status === 202) {
+          getFriends();
+          getPending();
+        } else if (response.status === 401) {
+          appDispatch(logout());
+        } else {
+          const json = await response.json();
+          setErrorMessage(json.error);
+        }
+      };
+      request();
+    };
+
+    const renderHoverFriend = (i: number, req: any, user: any) => {
+      if (i === userHover || isMobile) {
+        return (
+          <div className="friend-card-delete one-icon">
+            <span
+              style={{ cursor: "pointer" }}
+              onClick={() => {
+                setDeleteFriendName(user.name);
+                setDeleteFriendId(req.id);
+                setErrorMessageDeleteFriendModal("");
+                setShowDeleteFriendModal(true);
+              }}
+            >
+              <XIcon />
+            </span>
+          </div>
+        );
+      } else {
+        return <div />;
+      }
+    };
+
+    const onAddFriendFormSubmit = (e: any) => {
       e.preventDefault();
-      if (e.target.name.value === "") {
-        appDispatch(addMessage(myfriends.nameErrorMessage));
+      if (name === "") {
+        setShouldCheckName(true);
         return;
       }
       const request = async () => {
@@ -244,9 +266,11 @@ function MyFriends() {
           body: JSON.stringify({ name: e.target.name.value }),
         });
         if (response.status === 200) {
-          getFriends(token, setFriends, appDispatch);
-          getPending(token, setPending, setReceived, appDispatch);
-          setShow(false);
+          getFriends();
+          getPending();
+          setShouldCheckName(false);
+          setName("");
+          setShowAddFriendModal(false);
         } else if (response.status === 401) {
           appDispatch(logout());
         } else {
@@ -255,7 +279,31 @@ function MyFriends() {
             response.status === 409
               ? generateMessage(json, e.target.name.value)
               : json.error;
-          appDispatch(addMessage(errorMessage));
+          setErrorMessageAddFriendModal(errorMessage);
+        }
+      };
+      request();
+    };
+
+    const onDeleteFriendFormSubmit = (e: any) => {
+      e.preventDefault();
+      const request = async () => {
+        const response = await fetch(
+          url + "/friend-requests/" + deleteFriendId,
+          {
+            method: "delete",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (response.status === 202) {
+          getFriends();
+          getPending();
+          setShowDeleteFriendModal(false);
+        } else if (response.status === 401) {
+          appDispatch(logout());
+        } else {
+          const json = await response.json();
+          setErrorMessageDeleteFriendModal(json.error);
         }
       };
       request();
@@ -267,8 +315,10 @@ function MyFriends() {
           <Button
             color="link"
             onClick={() => {
-              appDispatch(clearMessage());
-              setShow(true);
+              setShouldCheckName(false);
+              setName("");
+              setErrorMessageAddFriendModal("");
+              setShowAddFriendModal(true);
             }}
           >
             {myfriends.addFriendButton}
@@ -297,7 +347,7 @@ function MyFriends() {
                       alternateImage={blank_profile_picture}
                     />
                   </div>
-                  {renderHoverFriend(i, req, user, userHover)}
+                  {renderHoverFriend(i, req, user)}
                   <div
                     style={{ cursor: "pointer" }}
                     className="friend-footer"
@@ -321,54 +371,19 @@ function MyFriends() {
                   {req.otherUser.name}
                   <span
                     style={{ cursor: "pointer", padding: "5px" }}
-                    onClick={() =>
-                      acceptRequest(
-                        req.id,
-                        token,
-                        getFriends,
-                        setFriends,
-                        getPending,
-                        setPending,
-                        setReceived,
-                        appDispatch
-                      )
-                    }
+                    onClick={() => acceptRequest(req.id)}
                   >
                     <CheckIcon />
                   </span>
                   <span
                     style={{ cursor: "pointer", padding: "5px" }}
-                    onClick={() =>
-                      declineRequest(
-                        req.id,
-                        false,
-                        token,
-                        getFriends,
-                        setFriends,
-                        getPending,
-                        setPending,
-                        setReceived,
-                        appDispatch
-                      )
-                    }
+                    onClick={() => declineRequest(req.id, false)}
                   >
                     <XIcon />
                   </span>
                   <span
                     style={{ cursor: "pointer", padding: "5px" }}
-                    onClick={() =>
-                      declineRequest(
-                        req.id,
-                        true,
-                        token,
-                        getFriends,
-                        setFriends,
-                        getPending,
-                        setPending,
-                        setReceived,
-                        appDispatch
-                      )
-                    }
+                    onClick={() => declineRequest(req.id, true)}
                   >
                     <CircleSlashIcon />
                   </span>
@@ -390,18 +405,7 @@ function MyFriends() {
                   {req.otherUser.name}{" "}
                   <span
                     style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      cancelRequest(
-                        req.id,
-                        token,
-                        getFriends,
-                        setFriends,
-                        getPending,
-                        setPending,
-                        setReceived,
-                        appDispatch
-                      )
-                    }
+                    onClick={() => cancelRequest(req.id)}
                   >
                     <XIcon />
                   </span>
@@ -412,20 +416,58 @@ function MyFriends() {
             <p style={{ margin: "10px" }}>{myfriends.allRequestsAccepted}</p>
           )}
 
-          <Modal isOpen={show} toggle={handleClose}>
-            <ModalHeader toggle={handleClose}>
+          <Modal
+            isOpen={showAddFriendModal}
+            toggle={() => setShowAddFriendModal(false)}
+          >
+            <ModalHeader toggle={() => setShowAddFriendModal(false)}>
               {myfriends.addFriendModalTitle}
             </ModalHeader>
             <ModalBody>
-              {errorMessage && <p className="auth-error">{errorMessage}</p>}
-              <Form inline="true" onSubmit={onFormSubmit}>
+              {errorMessageAddFriendModal && (
+                <p className="auth-error">{errorMessageAddFriendModal}</p>
+              )}
+              <Form inline="true" onSubmit={onAddFriendFormSubmit}>
                 <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
                   <Label className="mr-sm-2">{myfriends.name}</Label>
-                  <Input name="name" placeholder={myfriends.name} />
+                  <Input
+                    invalid={shouldCheckName && name.length === 0}
+                    name="name"
+                    placeholder={myfriends.name}
+                    value={name}
+                    onChange={(e) => {
+                      setShouldCheckName(true);
+                      setName(e.target.value);
+                    }}
+                  />
                   <FormFeedback>{myfriends.nameErrorMessage}</FormFeedback>
                 </FormGroup>
                 <br />
-                <Button color="primary">{myfriends.addModalButton}</Button>
+                <Button
+                  disabled={shouldCheckName && name.length === 0}
+                  color="primary"
+                >
+                  {myfriends.addModalButton}
+                </Button>
+              </Form>
+            </ModalBody>
+          </Modal>
+
+          <Modal
+            isOpen={showDeleteFriendModal}
+            toggle={() => setShowDeleteFriendModal(false)}
+          >
+            <ModalHeader toggle={() => setShowDeleteFriendModal(false)}>
+              {myfriends.deleteFriendModalTitlePre}
+              {deleteFriendName}
+              {myfriends.deleteFriendModalTitleSuffix}
+            </ModalHeader>
+            <ModalBody>
+              {errorMessageDeleteFriendModal && (
+                <p className="auth-error">{errorMessageDeleteFriendModal}</p>
+              )}
+              <Form inline="true" onSubmit={onDeleteFriendFormSubmit}>
+                <Button color="primary">{myfriends.deleteModalButton}</Button>
               </Form>
             </ModalBody>
           </Modal>
