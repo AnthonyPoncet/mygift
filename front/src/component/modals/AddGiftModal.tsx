@@ -19,7 +19,7 @@ import { useAppSelector, useAppDispatch } from "../../redux/store";
 import { selectMessages } from "../../redux/reducers/locale";
 import { selectSignIn, logout } from "../../redux/reducers/signin";
 
-import { TO_RADIANS, SCALE, ASPECT, centerAspectCrop } from "../helpers/image";
+import { TO_RADIANS, SCALE, centerAspectCrop } from "../helpers/image";
 
 import { getServerUrl } from "../../ServerInformation";
 let url = getServerUrl();
@@ -67,7 +67,7 @@ function AddGiftModal({
 
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
-    setCrop(centerAspectCrop(width, height, 1));
+    setCrop(centerAspectCrop(width, height));
   };
 
   let rotateImage = () => {
@@ -259,8 +259,8 @@ function AddGiftModal({
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
               onComplete={(c) => setCompletedCrop(c)}
-              aspect={ASPECT}
               minHeight={100}
+              minWidth={100}
             >
               <img
                 ref={imgRef}

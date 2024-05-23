@@ -12,7 +12,7 @@ import { isMobile } from "react-device-detect";
 import ReactCrop, { Crop, PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 
-import { TO_RADIANS, SCALE, ASPECT, centerAspectCrop } from "./helpers/image";
+import { TO_RADIANS, SCALE, centerAspectCrop } from "./helpers/image";
 
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
@@ -157,7 +157,7 @@ function ManageAccount() {
 
     let onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
       const { width, height } = e.currentTarget;
-      setCrop(centerAspectCrop(width, height, 1));
+      setCrop(centerAspectCrop(width, height));
     };
 
     let onFormSubmit = (e: any) => {
@@ -213,8 +213,8 @@ function ManageAccount() {
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
               onComplete={(c) => setCompletedCrop(c)}
-              aspect={ASPECT}
               minHeight={100}
+              minWidth={100}
             >
               <img
                 ref={imgRef}
