@@ -28,9 +28,15 @@ interface AddGiftModalProps {
   show: boolean;
   closeModal: () => void;
   categories: any[];
+  friendName: string | null;
 }
 
-function AddGiftModal({ show, closeModal, categories }: AddGiftModalProps) {
+function AddGiftModal({
+  show,
+  closeModal,
+  categories,
+  friendName,
+}: AddGiftModalProps) {
   const token = useAppSelector(selectSignIn).token;
   const mywishlist = useAppSelector(selectMessages).mywishlist;
 
@@ -151,7 +157,10 @@ function AddGiftModal({ show, closeModal, categories }: AddGiftModalProps) {
 
     const request = async () => {
       const serverFileName = await storeFileOnServer();
-      const response = await fetch(url + "/gifts", {
+
+      let append_url = friendName ? "?forUser=" + friendName : "";
+
+      const response = await fetch(url + "/gifts" + append_url, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

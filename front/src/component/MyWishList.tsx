@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import { Button, Form, Modal, ModalHeader, ModalBody } from "reactstrap";
+import { Button } from "reactstrap";
 import { useNavigate } from "react-router-dom";
 import {
   HeartIcon,
@@ -16,6 +16,7 @@ import AddCategoryModal from "./modals/AddCategoryModal";
 import EditCategoryModal from "./modals/EditCategoryModal";
 import AddGiftModal from "./modals/AddGiftModal";
 import EditGiftModal from "./modals/EditGiftModal";
+import DeleteGiftModal from "./modals/DeleteGiftModal";
 
 import { useAppSelector, useAppDispatch } from "../redux/store";
 import { selectMessages } from "../redux/reducers/locale";
@@ -64,7 +65,6 @@ function MyWishList() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteGiftId, setDeleteGiftId] = useState(-1);
-  const [errorMessageModal, setErrorMessageModal] = useState("");
 
   const [categories, setCategories] = useState([]);
   const [giftHover, setGiftHover] = useState("");
@@ -143,33 +143,8 @@ function MyWishList() {
     };
 
     const deleteGiftModal = (id: number) => {
-      setErrorMessageModal("");
       setDeleteGiftId(id);
       setShowDeleteModal(true);
-    };
-
-    const onDeleteFormSubmit = (e: any) => {
-      e.preventDefault();
-      const request = async () => {
-        const response = await fetch(
-          url +
-            "/gifts/" +
-            deleteGiftId +
-            "?status=" +
-            e.nativeEvent.submitter.value,
-          { method: "delete", headers: { Authorization: `Bearer ${token}` } },
-        );
-        if (response.status === 202) {
-          getGifts();
-          setShowDeleteModal(false);
-        } else if (response.status === 401) {
-          appDispatch(logout());
-        } else {
-          const json = await response.json();
-          setErrorMessageModal(json.error);
-        }
-      };
-      request();
     };
 
     const rankGift = (id: number, downUp: number) => {
@@ -488,6 +463,7 @@ function MyWishList() {
             getGifts();
           }}
           categories={categories}
+          friendName={null}
         />
         <EditGiftModal
           show={showEditGiftModal}
@@ -509,36 +485,16 @@ function MyWishList() {
           giftId={editGiftId}
           rank={editGiftRank}
         />
-
-        <Modal
-          isOpen={showDeleteModal}
-          toggle={() => {
+        <DeleteGiftModal
+          show={showDeleteModal}
+          closeModal={() => {
             setShowDeleteModal(false);
             getGifts();
           }}
-        >
-          <ModalHeader
-            toggle={() => {
-              setShowDeleteModal(false);
-              getGifts();
-            }}
-          >
-            {mywishlist.deleteGiftModalTitle}
-          </ModalHeader>
-          <ModalBody>
-            {errorMessageModal && (
-              <p className="auth-error">{errorMessageModal}</p>
-            )}
-            <Form onSubmit={onDeleteFormSubmit}>
-              <Button color="primary" type="submit" value="RECEIVED">
-                {mywishlist.deleteModalButtonReceived}
-              </Button>{" "}
-              <Button color="primary" type="submit" value="NOT_WANTED">
-                {mywishlist.deleteModalButtonNotWanted}
-              </Button>
-            </Form>
-          </ModalBody>
-        </Modal>
+          giftId={deleteGiftId}
+          received={mywishlist.deleteModalButtonReceived}
+          not_wanted={mywishlist.deleteModalButtonNotWanted}
+        />
       </div>
     );
   } else {
