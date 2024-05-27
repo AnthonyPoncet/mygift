@@ -10,7 +10,7 @@ interface UserProvider {
     /**
      * Add a new user
      */
-    fun addUser(name: String, password: ByteArray, salt: ByteArray, picture: String)
+    fun addUser(name: String, password: ByteArray, salt: ByteArray, picture: String, dateOfBirth: Long?)
 
     /**
      * Return an User from a given name

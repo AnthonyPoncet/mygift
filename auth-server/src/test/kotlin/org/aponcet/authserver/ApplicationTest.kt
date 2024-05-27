@@ -131,7 +131,7 @@ class ApplicationTest : StringSpec({
             this.application { authModule(TestUserProvider()) }
             val response = client.put("/create") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                setBody(Gson().toJson(UserAndPictureJson("toto", "pwd", "picture")))
+                setBody(Gson().toJson(UserAndPictureJson("toto", "pwd", "picture", 50)))
             }
             assertEquals(HttpStatusCode.Created, response.status)
         }
@@ -142,7 +142,7 @@ class ApplicationTest : StringSpec({
             this.application { authModule(TestUserProvider()) }
             val response = client.put("/create") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                setBody(Gson().toJson(UserAndPictureJson("test", "pwd", "picture")))
+                setBody(Gson().toJson(UserAndPictureJson("test", "pwd", "picture", 50)))
             }
             assertEquals(HttpStatusCode.Conflict, response.status)
         }
@@ -153,7 +153,7 @@ class ApplicationTest : StringSpec({
             this.application { authModule(TestUserProvider()) }
             val response = client.put("/create") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                setBody(Gson().toJson(UserAndPictureJson(null, "pwd", "picture")))
+                setBody(Gson().toJson(UserAndPictureJson(null, "pwd", "picture", 50)))
             }
             assertEquals(HttpStatusCode.BadRequest, response.status)
         }
@@ -164,7 +164,7 @@ class ApplicationTest : StringSpec({
             this.application { authModule(TestUserProvider()) }
             val response = client.put("/create") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                setBody(Gson().toJson(UserAndPictureJson("toto", null, "picture")))
+                setBody(Gson().toJson(UserAndPictureJson("toto", null, "picture", 50)))
             }
             assertEquals(HttpStatusCode.BadRequest, response.status)
         }
@@ -180,7 +180,7 @@ class TestUserProvider : UserProvider {
         )
     )
 
-    override fun addUser(name: String, password: ByteArray, salt: ByteArray, picture: String) {
+    override fun addUser(name: String, password: ByteArray, salt: ByteArray, picture: String, dateOfBirth: Long?) {
     }
 
     override fun modifyUser(name: String, password: ByteArray, salt: ByteArray) {

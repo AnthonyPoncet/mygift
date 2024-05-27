@@ -9,12 +9,14 @@ interface OtherUser {
   token: string;
   username: string;
   picture: string;
+  dateOfBirth: number | null;
 }
 
 interface SignInState {
   token: string | null;
   username: string | null;
   picture: string | null;
+  dateOfBirth: number | null;
   otherUsers: OtherUser[];
 }
 
@@ -22,6 +24,7 @@ const defaultState: SignInState = {
   token: localStorage.getItem("token"),
   username: localStorage.getItem("username"),
   picture: localStorage.getItem("picture"),
+  dateOfBirth: Number(localStorage.getItem("dateOfBirth")),
   otherUsers: JSON.parse(localStorage.getItem("otherUsers") || "[]"),
 };
 
@@ -29,6 +32,7 @@ interface UserSignUp {
   username: string;
   password: string;
   picture: string | null;
+  dateOfBirth: number | null;
 }
 
 interface UserSignIn {
@@ -40,6 +44,7 @@ interface UserSignIn {
 interface UserAccountUpdated {
   username: string;
   picture: string;
+  dateOfBirth: number | null;
 }
 
 export const signUp = createAsyncThunk(
@@ -53,6 +58,7 @@ export const signUp = createAsyncThunk(
         name: userSignUp.username,
         password: userSignUp.password,
         picture: imageName,
+        dateOfBirth: userSignUp.dateOfBirth,
       }),
     }).catch((err) => {
       console.error("Unexpected error: " + err.message);
@@ -74,6 +80,9 @@ export const signUp = createAsyncThunk(
             : null;
         if (picture !== null) localStorage.setItem("picture", json.picture);
         else localStorage.removeItem("picture");
+        if (json.dateOfBirth !== undefined)
+          localStorage.setItem("dateOfBirth", json.dateOfBirth);
+        else localStorage.removeItem("dateOfBirth");
 
         return json;
       } else {
@@ -125,6 +134,7 @@ export const signIn = createAsyncThunk(
             token: localStorage.getItem("token"),
             username: localStorage.getItem("username"),
             picture: localStorage.getItem("picture"),
+            dateOfBirth: localStorage.getItem("dateOfBirth"),
           };
           otherUsers.push(otherUser);
           localStorage.setItem("otherUsers", JSON.stringify(otherUsers));
@@ -142,6 +152,9 @@ export const signIn = createAsyncThunk(
             : null;
         if (picture !== null) localStorage.setItem("picture", json.picture);
         else localStorage.removeItem("picture");
+        if (json.dateOfBirth !== undefined)
+          localStorage.setItem("dateOfBirth", json.dateOfBirth);
+        else localStorage.removeItem("dateOfBirth");
 
         return json;
       } else {
@@ -165,6 +178,7 @@ export const logout = createAsyncThunk("users/logout", async () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
     localStorage.removeItem("picture");
+    localStorage.removeItem("dateOfBirth");
     localStorage.removeItem("otherUsers");
     console.error("Unexpected error: " + err.message);
   });
@@ -172,6 +186,7 @@ export const logout = createAsyncThunk("users/logout", async () => {
   localStorage.removeItem("token");
   localStorage.removeItem("username");
   localStorage.removeItem("picture");
+  localStorage.removeItem("dateOfBirth");
   localStorage.removeItem("otherUsers");
 });
 
@@ -183,6 +198,7 @@ export const changeUser = createAsyncThunk(
       token: localStorage.getItem("token"),
       username: localStorage.getItem("username"),
       picture: localStorage.getItem("picture"),
+      dateOfBirth: localStorage.getItem("dateOfBirth"),
     };
 
     let newOtherUsers = otherUsers.filter(
@@ -193,12 +209,16 @@ export const changeUser = createAsyncThunk(
     localStorage.setItem("token", otherUser.token);
     localStorage.setItem("username", otherUser.username);
     localStorage.setItem("picture", otherUser.picture);
+    if (otherUser.dateOfBirth !== null)
+      localStorage.setItem("dateOfBirth", otherUser.dateOfBirth.toString());
+    else localStorage.removeItem("dateOfBirth");
     localStorage.setItem("otherUsers", JSON.stringify(newOtherUsers));
 
     return {
       token: otherUser.token,
       username: otherUser.username,
       picture: otherUser.picture,
+      dateOfBirth: otherUser.dateOfBirth,
       otherUsers: newOtherUsers,
     };
   },
@@ -209,6 +229,12 @@ export const accountUpdated = createAsyncThunk(
   async (userAccountUpdated: UserAccountUpdated) => {
     localStorage.setItem("username", userAccountUpdated.username);
     localStorage.setItem("picture", userAccountUpdated.picture);
+    if (userAccountUpdated.dateOfBirth !== null)
+      localStorage.setItem(
+        "dateOfBirth",
+        userAccountUpdated.dateOfBirth.toString(),
+      );
+    else localStorage.removeItem("dateOfBirth");
     return userAccountUpdated;
   },
 );
@@ -221,35 +247,54 @@ export const signInSlice = createSlice({
     builder
       .addCase(signUp.fulfilled, (state: SignInState, action) => {
         const json = action.payload;
-        state.token = json.token;
-        state.username = json.name;
-        state.picture = json.picture;
-        state.otherUsers = [];
+        if (json !== undefined) {
+          state.token = json.token;
+          state.username = json.name;
+          state.picture = json.picture;
+          state.dateOfBirth =
+            json.dateOfBirth === undefined ? null : json.dateOfBirth;
+          state.otherUsers = [];
+        }
       })
       .addCase(signIn.fulfilled, (state: SignInState, action) => {
         const json = action.payload;
-        state.token = json.token;
-        state.username = json.name;
-        state.picture = json.picture;
-        state.otherUsers = json.otherUsers;
+        if (json !== undefined) {
+          state.token = json.token;
+          state.username = json.name;
+          state.picture = json.picture;
+          state.dateOfBirth =
+            json.dateOfBirth === undefined ? null : json.dateOfBirth;
+          state.otherUsers = json.otherUsers;
+        }
       })
       .addCase(logout.fulfilled, (state: SignInState) => {
         state.token = null;
         state.username = null;
         state.picture = null;
+        state.dateOfBirth = null;
         state.otherUsers = [];
       })
       .addCase(changeUser.fulfilled, (state: SignInState, action) => {
         const json = action.payload;
-        state.token = json.token;
-        state.username = json.username;
-        state.picture = json.picture;
-        state.otherUsers = json.otherUsers;
+        if (json !== undefined) {
+          state.token = json.token;
+          state.username = json.username;
+          state.picture = json.picture;
+          state.dateOfBirth =
+            json.dateOfBirth === undefined ? null : json.dateOfBirth;
+          state.otherUsers = json.otherUsers;
+        }
       })
       .addCase(accountUpdated.fulfilled, (state: SignInState, action) => {
         const userAccountUpdated = action.payload;
-        state.username = userAccountUpdated.username;
-        state.picture = userAccountUpdated.picture;
+        if (userAccountUpdated !== undefined) {
+          state.username = userAccountUpdated.username;
+          state.picture = userAccountUpdated.picture;
+          state.dateOfBirth =
+            userAccountUpdated.dateOfBirth === undefined
+              ? null
+              : userAccountUpdated.dateOfBirth;
+        }
       });
   },
 });

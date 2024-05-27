@@ -11,7 +11,12 @@ export interface AppMessage {
 }
 
 export interface HomeMessage {
-  hello: string;
+  birthdayOf: string;
+  christmas: string;
+  motherDay: string;
+  fatherDay: string;
+  in: string;
+  day: string;
 }
 
 export interface MyWishListMessage {
@@ -86,8 +91,12 @@ export interface MyBuyListMessage {
 
 export interface ManageAccountMessage {
   username: string;
-  can_not_be_changed: string;
-  profile_picture: string;
+  usernameEmptyErrorMessage: string;
+  usernameTakenErrorMessage: string;
+  dateOfBirth: string;
+  dateOfBirthDefault: string;
+  dateOfBirthErrorMessage: string;
+  profilePicture: string;
   save: string;
 }
 

@@ -5,10 +5,10 @@ import java.io.ByteArrayInputStream
 class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
 
     companion object {
-        const val INSERT = "INSERT INTO users (name,password,salt,picture) VALUES (?, ?, ?, ?)"
-        const val SELECT_BY_NAME = "SELECT * FROM users WHERE name= ?"
-        const val SELECT_BY_ID = "SELECT * FROM users WHERE id= ?"
-        const val UPDATE = "UPDATE users SET name = ?, picture = ? WHERE id = ?"
+        const val INSERT = "INSERT INTO users (name,password,salt,picture,dateOfBirth) VALUES (?, ?, ?, ?, ?)"
+        const val SELECT_BY_NAME = "SELECT id,name,password,salt,picture,dateOfBirth FROM users WHERE name= ?"
+        const val SELECT_BY_ID = "SELECT id,name,password,salt,picture,dateOfBirth FROM users WHERE id= ?"
+        const val UPDATE = "UPDATE users SET name = ?, picture = ?, dateOfBirth = ? WHERE id = ?"
         const val UPDATE_PWD = "UPDATE users SET password = ?, salt = ? WHERE name = ?"
     }
 
@@ -23,11 +23,12 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
                     "name       TEXT NOT NULL, " +
                     "password   BLOB NOT NULL, " +
                     "salt       BLOB NOT NULL, " +
-                    "picture    TEXT)"
+                    "picture    TEXT, " +
+                    "dateOfBirth LONG)"
         )
     }
 
-    fun addUser(userName: String, password: ByteArray, salt: ByteArray, picture: String): DbUser {
+    fun addUser(userName: String, password: ByteArray, salt: ByteArray, picture: String, dateOfBirth: Long?): DbUser {
         val nextUserId = conn.safeExecute(
             INSERT, {
                 with(it) {
@@ -35,6 +36,7 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
                     setBinaryStream(2, ByteArrayInputStream(password), password.size)
                     setBinaryStream(3, ByteArrayInputStream(salt), salt.size)
                     setString(4, picture)
+                    if (dateOfBirth != null) setLong(5, dateOfBirth) else setNull(5, 5)
                     val rowCount = executeUpdate()
                     if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
                     if (generatedKeys.next()) {
@@ -47,7 +49,7 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
             errorMessage(INSERT, userName, password.toString(), salt.toString(), picture)
         )
 
-        return DbUser(nextUserId, userName, password, salt, picture)
+        return DbUser(nextUserId, userName, password, salt, picture, dateOfBirth)
     }
 
     fun getUser(userName: String): DbUser? {
@@ -59,12 +61,14 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
                     val picture = res.getString("picture")
                     val password = res.getBinaryStream("password")
                     val salt = res.getBinaryStream("salt")
+                    val dateOfBirth = res.getLong("dateOfBirth")
                     DbUser(
                         res.getLong("id"),
                         res.getString("name"),
                         password.readBytes(),
                         salt.readBytes(),
-                        if (picture.isEmpty()) null else picture
+                        picture.ifEmpty { null },
+                        if (dateOfBirth == 0L) null else dateOfBirth
                     )
                 } else {
                     null
@@ -80,9 +84,11 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
                 val res = executeQuery()
                 return@with if (res.next()) {
                     val picture = res.getString("picture")
+                    val dateOfBirth = res.getLong("dateOfBirth")
                     NakedUser(
                         res.getString("name"),
-                        if (picture.isEmpty()) null else picture
+                        picture.ifEmpty { null },
+                        if (dateOfBirth == 0L) null else dateOfBirth
                     )
                 } else {
                     null
@@ -91,12 +97,13 @@ class UsersAccessor(private val conn: DbConnection) : DaoAccessor() {
         }, errorMessage(SELECT_BY_ID, userId.toString()))
     }
 
-    fun modifyUser(userId: Long, name: String, picture: String) {
+    fun modifyUser(userId: Long, name: String, picture: String, dateOfBirth: Long?) {
         conn.safeExecute(UPDATE, {
             with(it) {
                 setString(1, name)
                 setString(2, picture)
-                setLong(3, userId)
+                if (dateOfBirth != null) setLong(3, dateOfBirth) else setNull(3, 3)
+                setLong(4, userId)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
             }

@@ -23,7 +23,7 @@ import java.security.interfaces.RSAPublicKey
 class InvalidCredentialsException(message: String) : RuntimeException(message)
 
 data class UserJson(val name: String?, val password: String?, val session: String?)
-data class UserAndPictureJson(val name: String?, val password: String?, val picture: String?)
+data class UserAndPictureJson(val name: String?, val password: String?, val picture: String?, val dateOfBirth: Long?)
 data class UserAndResetPassword(val name: String?, val password: String?)
 data class ErrorResponse(val error: String)
 data class TokenResponse(val jwt: String, val session: String)
@@ -109,7 +109,8 @@ fun Application.authModule(userProvider: UserProvider) {
                     userAndPictureJson.name,
                     encodedPasswordAndSalt.encodedPassword,
                     encodedPasswordAndSalt.salt,
-                    userAndPictureJson.picture ?: ""
+                    userAndPictureJson.picture ?: "",
+                    userAndPictureJson.dateOfBirth
                 )
                 call.respond(HttpStatusCode.Created)
             } catch (e: DbException) {

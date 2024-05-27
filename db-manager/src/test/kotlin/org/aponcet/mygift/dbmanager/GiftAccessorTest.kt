@@ -52,8 +52,8 @@ class GiftAccessorTest : StringSpec() {
             )
         ) //order matter due to foreign key
 
-        usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "")
-        usersAccessor.addUser("name2", "pwd".toByteArray(), "otherSalt".toByteArray(), "")
+        usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "", null)
+        usersAccessor.addUser("name2", "pwd".toByteArray(), "otherSalt".toByteArray(), "", null)
         categoryAccessor.addCategory(NewCategory("Default"), listOf(1))
         categoryAccessor.addCategory(NewCategory("cat1"), listOf(1))
         categoryAccessor.addCategory(NewCategory("Default"), listOf(2))

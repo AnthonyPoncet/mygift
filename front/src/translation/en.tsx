@@ -30,7 +30,14 @@ class En implements Itrans {
         friendsDesc: "Find what your friends want and bought the right gift",
         eventsDesc: "Create birthday, christmas or other events",
       },
-      home: { hello: "Hello" },
+      home: {
+        birthdayOf: "Birthday of",
+        christmas: "Christmas",
+        motherDay: "Mothers day",
+        fatherDay: "Fathers day",
+        in: "In",
+        day: "day",
+      },
       mywishlist: {
         addGiftButton: "Add Gift",
         addGiftModalTitle: "Add a new gift",
@@ -83,8 +90,12 @@ class En implements Itrans {
       },
       manageAccount: {
         username: "Username",
-        can_not_be_changed: "Can not be changed",
-        profile_picture: "Profile picture",
+        usernameEmptyErrorMessage: "Username cannot be empty",
+        usernameTakenErrorMessage: "Username already taken",
+        dateOfBirth: "Date of birth",
+        dateOfBirthDefault: "dd/mm/yyyy",
+        dateOfBirthErrorMessage: "Date of birth invalid. Format: dd/mm/yyyy.",
+        profilePicture: "Profile picture",
         save: "Save",
       },
       imageEdition: {

@@ -33,7 +33,7 @@ class ResetPasswordAccessorTest : StringSpec() {
         resetPasswordAccessor.createIfNotExists()
         deleteTable(listOf(resetPasswordAccessor.getTableName(), usersAccessor.getTableName()))
 
-        usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "")
+        usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "", null)
     }
 
     override fun afterTest(description: Description, result: TestResult) {

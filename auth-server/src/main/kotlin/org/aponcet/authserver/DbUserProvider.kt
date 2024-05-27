@@ -15,8 +15,8 @@ class DbUserProvider(dbPath: String) : UserProvider {
         sessionAccessor.createIfNotExists()
     }
 
-    override fun addUser(name: String, password: ByteArray, salt: ByteArray, picture: String) {
-        usersAccessor.addUser(name, password, salt, picture)
+    override fun addUser(name: String, password: ByteArray, salt: ByteArray, picture: String, dateOfBirth: Long?) {
+        usersAccessor.addUser(name, password, salt, picture, dateOfBirth)
     }
 
     override fun getUser(name: String): User? {

@@ -6,6 +6,8 @@ import friends from "./image/friends.png";
 
 import { Label, Form, Input, FormGroup, Button } from "reactstrap";
 
+import { useNavigate } from "react-router-dom";
+
 import { useAppSelector, useAppDispatch } from "../redux/store";
 import { selectMessages } from "../redux/reducers/locale";
 import {
@@ -32,7 +34,12 @@ function renderText(connection: any) {
   );
 }
 
-function renderSignUp(connection: any, errorMessage: any, appDispatch: any) {
+function renderSignUp(
+  connection: any,
+  errorMessage: any,
+  appDispatch: any,
+  navigate: any,
+) {
   let onFormSubmit = (e: any) => {
     e.preventDefault();
     const username = e.target.username.value;
@@ -40,8 +47,15 @@ function renderSignUp(connection: any, errorMessage: any, appDispatch: any) {
     if (username && password) {
       appDispatch(clearMessage());
       appDispatch(
-        signUp({ username: username, password: password, picture: null }),
-      );
+        signUp({
+          username: username,
+          password: password,
+          picture: null,
+          dateOfBirth: null,
+        }),
+      ).then(() => {
+        navigate("../");
+      });
     } else {
       appDispatch(addMessage(connection.emptyErrorMessage));
     }
@@ -85,12 +99,15 @@ function SignupPage() {
   const errorMessage = useAppSelector(selectErrorMessage);
 
   const appDispatch = useAppDispatch();
+  let navigate = useNavigate();
 
   if (isMobile) {
     return (
       <div>
         <div className="textMobile">{renderText(connection)}</div>
-        <div>{renderSignUp(connection, errorMessage, appDispatch)}</div>
+        <div>
+          {renderSignUp(connection, errorMessage, appDispatch, navigate)}
+        </div>
       </div>
     );
   } else {
@@ -98,7 +115,7 @@ function SignupPage() {
       <div className="wrapper">
         <div className="left">{renderText(connection)}</div>
         <div className="right">
-          {renderSignUp(connection, errorMessage, appDispatch)}
+          {renderSignUp(connection, errorMessage, appDispatch, navigate)}
         </div>
       </div>
     );

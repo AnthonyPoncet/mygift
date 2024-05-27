@@ -92,9 +92,9 @@ fun Route.users(userManager: UserManager) {
         route("/users") {
             patch {
                 handle(call) { id ->
-                    val info = Gson().fromJson(call.receiveText(), UserModification::class.java)
+                    val userModification = Gson().fromJson(call.receiveText(), UserModification::class.java)
                     try {
-                        val user = userManager.modifyUser(id, info)
+                        val user = userManager.modifyUser(id, userModification)
                         call.respond(HttpStatusCode.Accepted, user)
                     } catch (e: BadParamException) {
                         call.respond(HttpStatusCode.BadRequest, ErrorAnswer(e.error))

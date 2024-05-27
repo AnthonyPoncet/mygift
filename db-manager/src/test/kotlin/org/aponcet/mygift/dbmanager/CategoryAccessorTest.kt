@@ -44,8 +44,8 @@ class CategoryAccessorTest : StringSpec() {
             )
         ) //order matter due to foreign key
 
-        usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "")
-        usersAccessor.addUser("name2", "pwd".toByteArray(), "otherSalt".toByteArray(), "")
+        usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "", null)
+        usersAccessor.addUser("name2", "pwd".toByteArray(), "otherSalt".toByteArray(), "", null)
     }
 
     override fun afterTest(description: Description, result: TestResult) {

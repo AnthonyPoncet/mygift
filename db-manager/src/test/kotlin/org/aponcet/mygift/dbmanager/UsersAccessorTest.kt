@@ -40,12 +40,12 @@ class UsersAccessorTest : StringSpec() {
 
     init {
         "Add user" {
-            val expected = DbUser(1L, "name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg")
+            val expected = DbUser(1L, "name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg", 50)
 
-            usersAccessor.addUser("name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg") shouldBe expected
+            usersAccessor.addUser("name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg", 50) shouldBe expected
 
             usersAccessor.getUser("name") shouldBe expected
-            usersAccessor.getUser(1L) shouldBe NakedUser("name", "pic.jpg")
+            usersAccessor.getUser(1L) shouldBe NakedUser("name", "pic.jpg", 50)
         }
 
         "Unknown name return null" {
@@ -57,24 +57,25 @@ class UsersAccessorTest : StringSpec() {
         }
 
         "Modify user" {
-            val expected = DbUser(1L, "name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg")
-            usersAccessor.addUser("name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg") shouldBe expected
+            val expected = DbUser(1L, "name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg", null)
+            usersAccessor.addUser("name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg", null) shouldBe expected
 
-            usersAccessor.modifyUser(1L, "other", "best_pic.jpg")
+            usersAccessor.modifyUser(1L, "other", "best_pic.jpg", 42)
             usersAccessor.getUser("name") shouldBe null
             usersAccessor.getUser("other") shouldBe DbUser(
                 1L,
                 "other",
                 "pwd".toByteArray(),
                 "azerty".toByteArray(),
-                "best_pic.jpg"
+                "best_pic.jpg",
+                42
             )
-            usersAccessor.getUser(1L) shouldBe NakedUser("other", "best_pic.jpg")
+            usersAccessor.getUser(1L) shouldBe NakedUser("other", "best_pic.jpg", 42)
         }
 
         "User exists" {
-            val expected = DbUser(1L, "name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg")
-            usersAccessor.addUser("name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg") shouldBe expected
+            val expected = DbUser(1L, "name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg", 51)
+            usersAccessor.addUser("name", "pwd".toByteArray(), "azerty".toByteArray(), "pic.jpg", 51) shouldBe expected
 
             usersAccessor.userExists(1L) shouldBe true
             usersAccessor.userExists(2L) shouldBe false

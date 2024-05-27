@@ -41,11 +41,11 @@ class UsersTest : StringSpec() {
 
     companion object {
         val USER_MANAGER = mockk<UserManager>()
-        val USER_AND_PICTURE_JSON = UserAndPictureJson("test", "test", "picture")
+        val USER_AND_PICTURE_JSON = UserAndPictureJson("test", "test", "picture", 50)
         val USER_JSON = UserJson("test", "test", null)
-        val USER_ANSWER = User("token", "session", "test", "picture")
-        val USER_MODIFICATION = UserModification("test2", "other picture")
-        val MODIFIED_USER_ANSWER = User("token", "session", "test2", "other picture")
+        val USER_ANSWER = User("token", "session", "test", "picture", 50)
+        val USER_MODIFICATION = UserModification("test2", "other picture", 42)
+        val MODIFIED_USER_ANSWER = User("token", "session", "test2", "other picture", 50)
 
         val DECODED_JWT = mockk<DecodedJWT>()
         val JWT_VERIFIER = mockk<JWTVerifier>()
@@ -172,7 +172,7 @@ class UsersTest : StringSpec() {
         "test update user invalid request" {
             every { JWT_VERIFIER.verify("mytoken") } returns DECODED_JWT
 
-            coEvery { USER_MANAGER.modifyUser(1, USER_MODIFICATION) } throws CreateUserException("User does not exists")
+            coEvery { USER_MANAGER.modifyUser(1, USER_MODIFICATION) } throws UpdateUserException("User does not exists")
 
             testApplication {
                 this.application { userModule() }

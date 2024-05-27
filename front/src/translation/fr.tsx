@@ -10,7 +10,7 @@ class Fr implements Itrans {
         myList: "Ma Liste",
         myFriends: "Mes Amis",
         myEvents: "Mes Evenements",
-        myBuyList: "Ma Liste D'achat",
+        myBuyList: "Ma Hotte",
         logout: "Se déconnecter",
         manageAccount: "Modifier le compte",
         changeAccount: "Changer de compte",
@@ -30,7 +30,14 @@ class Fr implements Itrans {
         friendsDesc: "Trouver ce que veulent vos amis et acheter le bon cadeau",
         eventsDesc: "Créer des events anniversaire, noël et autre",
       },
-      home: { hello: "Bonjour" },
+      home: {
+        birthdayOf: "Anniversaire de",
+        christmas: "Noël",
+        motherDay: "Fête des mères",
+        fatherDay: "Fête des pères",
+        in: "Dans",
+        day: "jour",
+      },
       mywishlist: {
         addGiftButton: "Ajouter un cadeau",
         addGiftModalTitle: "Ajouter un nouveau cadeau",
@@ -84,8 +91,13 @@ class Fr implements Itrans {
       },
       manageAccount: {
         username: "Pseudo",
-        can_not_be_changed: "Ne peut pas être changé",
-        profile_picture: "Photo de profil",
+        usernameEmptyErrorMessage: "Pseudo ne peut pas être vide",
+        usernameTakenErrorMessage: "Pseudo déjà pris",
+        dateOfBirth: "Date de naissance",
+        dateOfBirthDefault: "jj/mm/aaaa",
+        dateOfBirthErrorMessage:
+          "Date de naissance invalide. Format: jj/mm/aaaa.",
+        profilePicture: "Photo de profil",
         save: "Sauvegarder",
       },
       imageEdition: {

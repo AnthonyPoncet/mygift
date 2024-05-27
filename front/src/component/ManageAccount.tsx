@@ -1,5 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Button, Input, Label, Form, FormGroup, Spinner } from "reactstrap";
+import {
+  Button,
+  Input,
+  Label,
+  Form,
+  FormGroup,
+  Spinner,
+  FormFeedback,
+} from "reactstrap";
 
 import { useNavigate } from "react-router-dom";
 
@@ -21,11 +29,23 @@ function ManageAccount() {
   const username = useAppSelector(selectSignIn).username;
   const token = useAppSelector(selectSignIn).token;
   const picture = useAppSelector(selectSignIn).picture;
+  const stateDateOfBirth = useAppSelector(selectSignIn).dateOfBirth;
+
+  const dateOfBirth =
+    stateDateOfBirth === null
+      ? ""
+      : new Date(stateDateOfBirth * 1000).toLocaleDateString();
 
   const manageAccount = useAppSelector(selectMessages).manageAccount;
   const imageEdition = useAppSelector(selectMessages).imageEdition;
 
   const [errorMessage, setErrorMessage] = useState("");
+  const [name, setName] = useState(username === null ? "" : username);
+  const [nameErrorMessage, setNameErrorMessage] = useState(
+    manageAccount.usernameEmptyErrorMessage,
+  );
+  const [nameValid, setNameValid] = useState(true);
+  const [dateValid, setDateValid] = useState(true);
 
   const appDispatch = useAppDispatch();
   let navigate = useNavigate();
@@ -173,8 +193,36 @@ function ManageAccount() {
     let onFormSubmit = (e: any) => {
       setSendingImage(true);
       e.preventDefault();
+
+      if (name.length === 0) {
+        setSendingImage(false);
+        return;
+      }
+
+      const dateOfBirth = e.target.dateOfBirth.value.split("/");
+      if (dateOfBirth.length !== 3) {
+        setDateValid(false);
+        setSendingImage(false);
+        return;
+      }
+
+      const asDate = new Date(
+        dateOfBirth[2],
+        dateOfBirth[1] - 1,
+        dateOfBirth[0],
+      );
+
+      if (new Date(asDate).toLocaleDateString() !== e.target.dateOfBirth.value) {
+        setDateValid(false);
+        setSendingImage(false);
+        return;
+      }
+
+      setDateValid(true);
+
       const request = async () => {
         const serverFileName = await storeFileOnServer();
+
         const response = await fetch(url + "/users", {
           method: "PATCH",
           headers: {
@@ -182,21 +230,28 @@ function ManageAccount() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            name: e.target.name.value,
+            name: name,
             picture: serverFileName,
+            dateOfBirth: asDate.getTime() / 1000,
           }),
         });
         if (response.status === 202) {
+          const json = await response.json();
           appDispatch(
             accountUpdated({
-              username: e.target.name.value,
-              picture: serverFileName,
+              username: json.name,
+              picture: json.picture,
+              dateOfBirth: json.dateOfBirth,
             }),
           ).then(() => {
             navigate("../");
           });
         } else if (response.status === 401) {
           appDispatch(logout());
+        } else if (response.status === 409) {
+          setNameValid(false);
+          setNameErrorMessage(manageAccount.usernameTakenErrorMessage);
+          setSendingImage(false);
         } else {
           const json = await response.json();
           setSendingImage(false);
@@ -212,10 +267,30 @@ function ManageAccount() {
         <Form onSubmit={onFormSubmit}>
           <FormGroup>
             <Label>{manageAccount.username}</Label>
-            <Input name="name" defaultValue={username} />
+            <Input
+              name="name"
+              invalid={!nameValid || name.length === 0}
+              value={name}
+              onChange={(e) => {
+                setNameValid(true);
+                setNameErrorMessage(manageAccount.usernameEmptyErrorMessage);
+                setName(e.target.value);
+              }}
+            />
+            <FormFeedback>{nameErrorMessage}</FormFeedback>
           </FormGroup>
           <FormGroup>
-            <Label>{manageAccount.profile_picture}</Label>
+            <Label>{manageAccount.dateOfBirth}</Label>
+            <Input
+              name="dateOfBirth"
+              defaultValue={dateOfBirth}
+              invalid={!dateValid}
+              placeholder={manageAccount.dateOfBirthDefault}
+            />
+            <FormFeedback>{manageAccount.dateOfBirthErrorMessage}</FormFeedback>
+          </FormGroup>
+          <FormGroup>
+            <Label>{manageAccount.profilePicture}</Label>
             <Input type="file" onChange={(e) => loadImage(e)} />
           </FormGroup>
           {loadingImage && (

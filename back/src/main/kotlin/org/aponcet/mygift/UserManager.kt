@@ -10,15 +10,19 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import org.aponcet.authserver.*
 import org.aponcet.mygift.dbmanager.*
+import org.aponcet.mygift.dbmanager.ResetPasswordAccessor.Companion.ZONE_OFFSET
 import org.aponcet.mygift.model.AuthServer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.Month
 import kotlin.collections.set
 
 /** RETURN CLASSES **/
-data class User(val token: String, val session: String, val name: String, val picture: String?)
-data class Friend(val name: String, val picture: String?)
+data class User(val token: String, val session: String, val name: String, val picture: String?, val dateOfBirth: Long?)
+data class Friend(val name: String, val picture: String?, val dateOfBirth: Long?)
 data class CleanGift(
     val id: Long,
     val name: String,
@@ -56,8 +60,11 @@ data class DeletedGifts(
 
 data class ResetPassword(val userId: Long, val uuid: String, val expiry: LocalDateTime)
 
+enum class EventKind { BIRTHDAY, CHRISTMAS, MOTHER_DAY, FATHER_DAY }
+data class Event(val kind: EventKind, val date: Long, val name: String?, val picture: String?)
+
 /** INPUT CLASSES **/
-data class UserModification(val name: String?, val picture: String?)
+data class UserModification(val name: String?, val picture: String?, val dateOfBirth: Long?)
 data class RestGift(
     val name: String?,
     val description: String?,
@@ -122,7 +129,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
 
             val name = userJson.name!!
             val user = databaseManager.getUser(name)!! //to get picture
-            return User(tokenResponse.jwt, tokenResponse.session, user.name, user.picture)
+            return User(tokenResponse.jwt, tokenResponse.session, user.name, user.picture, user.dateOfBirth)
         } catch (e: ResponseException) {
             val response = e.response
 
@@ -172,8 +179,8 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         val user = databaseManager.getUser(userId) ?: throw BadParamException("User does not exists")
         if (user.name != userModification.name && databaseManager.getUser(userModification.name) != null) throw UpdateUserException("User with this name already exist")
 
-        databaseManager.modifyUser(userId, userModification.name, userModification.picture)
-        return User("", "", userModification.name, userModification.picture)
+        databaseManager.modifyUser(userId, userModification.name, userModification.picture, userModification.dateOfBirth)
+        return User("", "", userModification.name, userModification.picture, userModification.dateOfBirth)
     }
 
     private fun toGift(g: DbGift): CleanGift {
@@ -477,7 +484,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
 
     private fun toFriend(userId: Long): Friend {
         val user = databaseManager.getUser(userId)!!
-        return Friend(user.name, user.picture)
+        return Friend(user.name, user.picture, user.dateOfBirth)
     }
 
     fun getEntry(uuid: String): ResetPassword {
@@ -517,5 +524,66 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
 
     fun getUsersOfSession(currentUserId: Long, session: String): List<Long> {
         return databaseManager.getUsersOfSession(currentUserId, session)
+    }
+
+    private fun getNext(now: LocalDate, month: Month, day: Int): LocalDate {
+        val potential = LocalDate.of(now.year, month, day)
+        return if (potential.isBefore(now)) {
+            potential.plusYears(1)
+        } else {
+            potential
+        }
+    }
+
+    private fun getNextBirthday(now: LocalDate, epochSecond: Long): LocalDate {
+        val dateOfBirth = LocalDateTime.ofEpochSecond(epochSecond, 0, ZONE_OFFSET).toLocalDate()
+        return getNext(now, dateOfBirth.month, dateOfBirth.dayOfMonth)
+    }
+
+    //In France: Last Sunday of May (in theory except if Pentecote)
+    private fun getNextMotherDay(now: LocalDate): LocalDate {
+        var dayOfMonth = 31
+        val dayOfWeek = LocalDate.of(now.year, Month.MAY, dayOfMonth).dayOfWeek
+        dayOfMonth -= (7 - (DayOfWeek.SUNDAY.ordinal - dayOfWeek.ordinal))
+        return LocalDate.of(now.year, Month.MAY, dayOfMonth)
+    }
+
+    //3rd Sunday of june
+    private fun getNextFatherDay(now: LocalDate): LocalDate {
+        var dayOfMonth = 1
+        val dayOfWeek = LocalDate.of(now.year, Month.JUNE, dayOfMonth).dayOfWeek
+        dayOfMonth += DayOfWeek.SUNDAY.ordinal - dayOfWeek.ordinal
+        return LocalDate.of(now.year, Month.JUNE, dayOfMonth + 14)
+    }
+
+    fun getEvents(userId: Long): List<Event> {
+        val now = LocalDate.now()
+        val inSixMonth = now.plusMonths(6).plusDays(1)
+
+        val friends = getFriends(userId)
+        val comingBirthdays = friends
+            .asSequence()
+            .filter { it.otherUser.dateOfBirth != null }
+            .map { (it.otherUser to getNextBirthday(now, it.otherUser.dateOfBirth!!)) }
+            .filter { it.second.isBefore(inSixMonth)  }
+            .map { Event(EventKind.BIRTHDAY, it.second.toEpochDay()*86400000, it.first.name, it.first.picture) }
+            .toMutableList()
+
+        val motherDay = getNextMotherDay(now)
+        if (motherDay.isBefore(inSixMonth)) {
+            comingBirthdays.add(Event(EventKind.MOTHER_DAY, motherDay.toEpochDay()*86400000, null, null))
+        }
+
+        val fatherDay = getNextFatherDay(now)
+        if (fatherDay.isBefore(inSixMonth)) {
+            comingBirthdays.add(Event(EventKind.FATHER_DAY, fatherDay.toEpochDay()*86400000, null, null))
+        }
+
+        val christmas = getNext(now, Month.DECEMBER, 24)
+        if (christmas.isBefore(inSixMonth)) {
+            comingBirthdays.add(Event(EventKind.CHRISTMAS, christmas.toEpochDay()*86400000, null, null))
+        }
+
+        return comingBirthdays.sortedBy { it.date }
     }
 }

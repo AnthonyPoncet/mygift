@@ -189,13 +189,14 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
     install(CallLogging)
 
     routing {
-        users(userManager)
-        gifts(userManager, data)
         buyList(userManager)
         categories(userManager)
-        friendRequest(userManager)
+        events(userManager)
         files(data)
+        friendRequest(userManager)
+        gifts(userManager, data)
         password(userManager)
+        users(userManager)
         static()
     }
 }

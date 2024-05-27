@@ -1,6 +1,6 @@
 package org.aponcet.mygift.dbmanager
 
-data class DbUser(val id: Long, val name: String, val password: ByteArray, val salt: ByteArray, val picture: String?) {
+data class DbUser(val id: Long, val name: String, val password: ByteArray, val salt: ByteArray, val picture: String?, val dateOfBirth: Long?) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is DbUser) return false
@@ -10,6 +10,7 @@ data class DbUser(val id: Long, val name: String, val password: ByteArray, val s
         if (!password.contentEquals(other.password)) return false
         if (!salt.contentEquals(other.salt)) return false
         if (picture != other.picture) return false
+        if (dateOfBirth != other.dateOfBirth) return false
 
         return true
     }
@@ -20,6 +21,7 @@ data class DbUser(val id: Long, val name: String, val password: ByteArray, val s
         result = 31 * result + password.contentHashCode()
         result = 31 * result + salt.contentHashCode()
         result = 31 * result + (picture?.hashCode() ?: 0)
+        result = 31 * result + (dateOfBirth?.hashCode() ?: 0)
         return result
     }
 }
@@ -59,7 +61,7 @@ data class DbToDeleteGifts(
     val friendId: Long
 )
 
-data class NakedUser(val name: String, val picture: String?)
+data class NakedUser(val name: String, val picture: String?, val dateOfBirth: Long?)
 
 class FriendRequestAlreadyExistException(val dbFriendRequest: DbFriendRequest) :
     Exception("Friend request already exists and is ${dbFriendRequest.status}.")
@@ -112,8 +114,8 @@ class DatabaseManager(dbPath: String) {
      * Users
      */
     @Synchronized
-    fun addUser(userName: String, password: ByteArray, salt: ByteArray, picture: String?): DbUser {
-        val newUser = usersAccessor.addUser(userName, password, salt, picture ?: "")
+    fun addUser(userName: String, password: ByteArray, salt: ByteArray, picture: String?, dateOfBirth: Long?): DbUser {
+        val newUser = usersAccessor.addUser(userName, password, salt, picture ?: "", dateOfBirth)
         addCategory(NewCategory(DEFAULT_CATEGORY_NAME), listOf(newUser.id))
         return newUser
     }
@@ -129,8 +131,8 @@ class DatabaseManager(dbPath: String) {
     }
 
     @Synchronized
-    fun modifyUser(userId: Long, name: String, picture: String?) {
-        return usersAccessor.modifyUser(userId, name, picture ?: "")
+    fun modifyUser(userId: Long, name: String, picture: String?, dateOfBirth: Long?) {
+        return usersAccessor.modifyUser(userId, name, picture ?: "", dateOfBirth)
     }
 
     /**

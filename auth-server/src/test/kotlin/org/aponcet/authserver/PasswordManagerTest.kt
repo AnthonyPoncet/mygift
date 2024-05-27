@@ -63,13 +63,13 @@ class PasswordManagerTest : StringSpec() {
 
         "Could save generated password to DB" {
             val encodedPassword = PasswordManager.generateEncodedPassword("Toto")
-            usersAccessor.addUser("name", encodedPassword.encodedPassword, encodedPassword.salt, "") shouldBe
-                    DbUser(1L, "name", encodedPassword.encodedPassword, encodedPassword.salt, "")
+            usersAccessor.addUser("name", encodedPassword.encodedPassword, encodedPassword.salt, "", null) shouldBe
+                    DbUser(1L, "name", encodedPassword.encodedPassword, encodedPassword.salt, "", null)
         }
 
         "Compare password to saved one work" {
             val encodedPassword = PasswordManager.generateEncodedPassword("Toto")
-            usersAccessor.addUser("name", encodedPassword.encodedPassword, encodedPassword.salt, "")
+            usersAccessor.addUser("name", encodedPassword.encodedPassword, encodedPassword.salt, "", null)
             val user = usersAccessor.getUser("name")!!
             assert(PasswordManager.isPasswordOk("Toto", user.salt, user.password))
         }

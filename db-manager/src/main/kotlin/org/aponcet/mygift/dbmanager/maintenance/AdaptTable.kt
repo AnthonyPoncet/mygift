@@ -40,7 +40,7 @@ class AdaptTable(dbPath: String) {
 
     private val conn = DbConnection("sqlite", dbPath)
 
-    enum class STEP { ADD_RANK_TO_CATEGORY, ADD_RANK_TO_GIFT, ADD_SALT_TO_USER, DELETE_EVENTS, COMMON_CATEGORIES, ADD_HEART_TO_GIFTS }
+    enum class STEP { ADD_RANK_TO_CATEGORY, ADD_RANK_TO_GIFT, ADD_SALT_TO_USER, DELETE_EVENTS, COMMON_CATEGORIES, ADD_HEART_TO_GIFTS, ADD_DOB }
 
     fun execute(step: STEP) {
         when (step) {
@@ -50,6 +50,7 @@ class AdaptTable(dbPath: String) {
             STEP.DELETE_EVENTS -> deleteEvents()
             STEP.COMMON_CATEGORIES -> commonCategories()
             STEP.ADD_HEART_TO_GIFTS -> addHeartToGifts()
+            STEP.ADD_DOB -> addDateOfBirth()
         }
     }
 
@@ -458,6 +459,16 @@ class AdaptTable(dbPath: String) {
                     }
                 }, "Insert toDeleteGifts generated an error"
             )
+        }
+    }
+
+    private fun addDateOfBirth() {
+        try {
+            conn.executeQuery("SELECT dateOfBirth FROM users")
+            LOGGER.info("Column dateOfBirth exists, skip")
+        } catch (e: Exception) {
+            LOGGER.info("Column dateOfBirth does not exist, add it")
+            conn.executeUpdate("ALTER TABLE users ADD COLUMN 'dateOfBirth' INTEGER")
         }
     }
 }
