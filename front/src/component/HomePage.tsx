@@ -14,6 +14,16 @@ import blank_profile_picture from "./image/blank_profile_picture.png";
 import { getServerUrl } from "../ServerInformation";
 let url = getServerUrl();
 
+function getDays(date: number) {
+  return Math.ceil(
+    (new Date(date).getTime() - new Date().getTime()) / (1000 * 3600 * 24),
+  );
+}
+
+function getYears(date: number) {
+  return new Date().getFullYear() - new Date(date).getFullYear();
+}
+
 function HomePage() {
   const username = useAppSelector(selectSignIn).username;
   const token = useAppSelector(selectSignIn).token;
@@ -122,21 +132,17 @@ function HomePage() {
                       alternateImage={blank_profile_picture}
                     />
                     <div className="home-card-center-bold">
-                      {home.birthdayOf}
+                      {getYears(event.birth + new Date().getTimezoneOffset() * 60000)}{" "}{home.year}{getYears(event.birth + new Date().getTimezoneOffset() * 60000) > 1 && "s"}{" "}{home.of}
                     </div>
                     <div className="home-card-center-bold">{event.name}</div>
                   </>
                 )}
                 <div className="home-card-center-no-bold">
-                  {new Date(event.date).toLocaleDateString()}
+                  {new Date(event.date + new Date().getTimezoneOffset() * 60000).toLocaleDateString()}
                 </div>
                 <div className="home-card-center-no-bold">
-                  {home.in}{" "}
-                  {Math.ceil(
-                    (new Date(event.date).getTime() - new Date().getTime()) /
-                      (1000 * 3600 * 24),
-                  )}{" "}
-                  {home.day}
+                  {home.in} {getDays(event.date + new Date().getTimezoneOffset() * 60000)} {home.day}
+                  {getDays(event.date + new Date().getTimezoneOffset() * 60000) > 1 && "s"}
                 </div>
               </div>
             );

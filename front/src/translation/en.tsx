@@ -31,7 +31,8 @@ class En implements Itrans {
         eventsDesc: "Create birthday, christmas or other events",
       },
       home: {
-        birthdayOf: "Birthday of",
+        year: "year",
+        of: "of",
         christmas: "Christmas",
         motherDay: "Mothers day",
         fatherDay: "Fathers day",

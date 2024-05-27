@@ -11,7 +11,8 @@ export interface AppMessage {
 }
 
 export interface HomeMessage {
-  birthdayOf: string;
+  year: string;
+  of: string;
   christmas: string;
   motherDay: string;
   fatherDay: string;

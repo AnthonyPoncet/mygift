@@ -8,15 +8,14 @@ import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.server.util.*
+import io.ktor.util.date.*
 import org.aponcet.authserver.*
 import org.aponcet.mygift.dbmanager.*
-import org.aponcet.mygift.dbmanager.ResetPasswordAccessor.Companion.ZONE_OFFSET
 import org.aponcet.mygift.model.AuthServer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.*
 import java.time.Month
 import kotlin.collections.set
 
@@ -61,7 +60,7 @@ data class DeletedGifts(
 data class ResetPassword(val userId: Long, val uuid: String, val expiry: LocalDateTime)
 
 enum class EventKind { BIRTHDAY, CHRISTMAS, MOTHER_DAY, FATHER_DAY }
-data class Event(val kind: EventKind, val date: Long, val name: String?, val picture: String?)
+data class Event(val kind: EventKind, val date: Long, val name: String?, val picture: String?, val birth: Long?)
 
 /** INPUT CLASSES **/
 data class UserModification(val name: String?, val picture: String?, val dateOfBirth: Long?)
@@ -107,6 +106,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
 
     companion object {
         val LOGGER: Logger = LoggerFactory.getLogger(UserManager::class.java)
+        val ZONE_ID: ZoneId = ZoneId.of("GMT")
     }
 
     suspend fun connect(userJson: UserJson): User {
@@ -526,8 +526,8 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         return databaseManager.getUsersOfSession(currentUserId, session)
     }
 
-    private fun getNext(now: LocalDate, month: Month, day: Int): LocalDate {
-        val potential = LocalDate.of(now.year, month, day)
+    private fun getNext(now: ZonedDateTime, month: Int, day: Int): ZonedDateTime {
+        val potential = ZonedDateTime.of(now.year, month, day, 0, 0, 0, 0, ZONE_ID)
         return if (potential.isBefore(now)) {
             potential.plusYears(1)
         } else {
@@ -535,29 +535,33 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         }
     }
 
-    private fun getNextBirthday(now: LocalDate, epochSecond: Long): LocalDate {
-        val dateOfBirth = LocalDateTime.ofEpochSecond(epochSecond, 0, ZONE_OFFSET).toLocalDate()
-        return getNext(now, dateOfBirth.month, dateOfBirth.dayOfMonth)
+    private fun getNextBirthday(now: ZonedDateTime, epochSecond: Long): ZonedDateTime {
+        println(epochSecond)
+        val dateOfBirth = Instant.ofEpochSecond(epochSecond).atZone(ZONE_ID)
+        println(dateOfBirth)
+        println(dateOfBirth.monthValue)
+        println(dateOfBirth.dayOfMonth)
+        return getNext(now, dateOfBirth.monthValue, dateOfBirth.dayOfMonth)
     }
 
     //In France: Last Sunday of May (in theory except if Pentecote)
-    private fun getNextMotherDay(now: LocalDate): LocalDate {
+    private fun getNextMotherDay(now: ZonedDateTime): ZonedDateTime {
         var dayOfMonth = 31
-        val dayOfWeek = LocalDate.of(now.year, Month.MAY, dayOfMonth).dayOfWeek
+        val dayOfWeek = ZonedDateTime.of(now.year, Month.MAY.value, dayOfMonth, 0, 0, 0, 0, ZONE_ID).dayOfWeek
         dayOfMonth -= (7 - (DayOfWeek.SUNDAY.ordinal - dayOfWeek.ordinal))
-        return LocalDate.of(now.year, Month.MAY, dayOfMonth)
+        return ZonedDateTime.of(now.year, Month.MAY.value, dayOfMonth, 0, 0, 0, 0, ZONE_ID)
     }
 
     //3rd Sunday of june
-    private fun getNextFatherDay(now: LocalDate): LocalDate {
+    private fun getNextFatherDay(now: ZonedDateTime): ZonedDateTime {
         var dayOfMonth = 1
-        val dayOfWeek = LocalDate.of(now.year, Month.JUNE, dayOfMonth).dayOfWeek
+        val dayOfWeek = ZonedDateTime.of(now.year, Month.JUNE.value, dayOfMonth, 0, 0, 0, 0, ZONE_ID).dayOfWeek
         dayOfMonth += DayOfWeek.SUNDAY.ordinal - dayOfWeek.ordinal
-        return LocalDate.of(now.year, Month.JUNE, dayOfMonth + 14)
+        return ZonedDateTime.of(now.year, Month.JUNE.value, dayOfMonth + 14, 0, 0, 0, 0, ZONE_ID)
     }
 
     fun getEvents(userId: Long): List<Event> {
-        val now = LocalDate.now()
+        val now = Instant.now().atZone(ZONE_ID)
         val inSixMonth = now.plusMonths(6).plusDays(1)
 
         val friends = getFriends(userId)
@@ -566,22 +570,22 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
             .filter { it.otherUser.dateOfBirth != null }
             .map { (it.otherUser to getNextBirthday(now, it.otherUser.dateOfBirth!!)) }
             .filter { it.second.isBefore(inSixMonth)  }
-            .map { Event(EventKind.BIRTHDAY, it.second.toEpochDay()*86400000, it.first.name, it.first.picture) }
+            .map { Event(EventKind.BIRTHDAY, it.second.toEpochSecond()*1000, it.first.name, it.first.picture, it.first.dateOfBirth!!*1000) }
             .toMutableList()
 
         val motherDay = getNextMotherDay(now)
-        if (motherDay.isBefore(inSixMonth)) {
-            comingBirthdays.add(Event(EventKind.MOTHER_DAY, motherDay.toEpochDay()*86400000, null, null))
+        if (!motherDay.isBefore(now) && motherDay.isBefore(inSixMonth)) {
+            comingBirthdays.add(Event(EventKind.MOTHER_DAY, motherDay.toEpochSecond()*1000, null, null, null))
         }
 
         val fatherDay = getNextFatherDay(now)
-        if (fatherDay.isBefore(inSixMonth)) {
-            comingBirthdays.add(Event(EventKind.FATHER_DAY, fatherDay.toEpochDay()*86400000, null, null))
+        if (!fatherDay.isBefore(now) && fatherDay.isBefore(inSixMonth)) {
+            comingBirthdays.add(Event(EventKind.FATHER_DAY, fatherDay.toEpochSecond()*1000, null, null, null))
         }
 
-        val christmas = getNext(now, Month.DECEMBER, 24)
-        if (christmas.isBefore(inSixMonth)) {
-            comingBirthdays.add(Event(EventKind.CHRISTMAS, christmas.toEpochDay()*86400000, null, null))
+        val christmas = getNext(now, Month.DECEMBER.value, 24)
+        if (!christmas.isBefore(now) && christmas.isBefore(inSixMonth)) {
+            comingBirthdays.add(Event(EventKind.CHRISTMAS, christmas.toEpochSecond()*1000, null, null, null))
         }
 
         return comingBirthdays.sortedBy { it.date }

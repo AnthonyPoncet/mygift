@@ -31,7 +31,8 @@ class Fr implements Itrans {
         eventsDesc: "Créer des events anniversaire, noël et autre",
       },
       home: {
-        birthdayOf: "Anniversaire de",
+        year: "an",
+        of: "de",
         christmas: "Noël",
         motherDay: "Fête des mères",
         fatherDay: "Fête des pères",

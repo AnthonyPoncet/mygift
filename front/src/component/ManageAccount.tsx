@@ -34,7 +34,7 @@ function ManageAccount() {
   const dateOfBirth =
     stateDateOfBirth === null
       ? ""
-      : new Date(stateDateOfBirth * 1000).toLocaleDateString();
+      : new Date(stateDateOfBirth * 1000 + new Date().getTimezoneOffset() * 60000).toLocaleDateString();
 
   const manageAccount = useAppSelector(selectMessages).manageAccount;
   const imageEdition = useAppSelector(selectMessages).imageEdition;
@@ -212,7 +212,9 @@ function ManageAccount() {
         dateOfBirth[0],
       );
 
-      if (new Date(asDate).toLocaleDateString() !== e.target.dateOfBirth.value) {
+      if (
+        new Date(asDate).toLocaleDateString() !== e.target.dateOfBirth.value
+      ) {
         setDateValid(false);
         setSendingImage(false);
         return;
@@ -232,7 +234,7 @@ function ManageAccount() {
           body: JSON.stringify({
             name: name,
             picture: serverFileName,
-            dateOfBirth: asDate.getTime() / 1000,
+            dateOfBirth: (asDate.getTime() - asDate.getTimezoneOffset() * 60000) / 1000,
           }),
         });
         if (response.status === 202) {
