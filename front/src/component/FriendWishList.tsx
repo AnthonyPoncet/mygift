@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
 
 import { useNavigate, useParams } from "react-router-dom";
-import { HeartIcon, GiftIcon, PencilIcon, XIcon } from "@primer/octicons-react";
+import {
+  HeartIcon,
+  GiftIcon,
+  PencilIcon,
+  TrashIcon,
+} from "@primer/octicons-react";
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from "reactstrap";
 
 import "./style/card-gift.css";
@@ -321,7 +326,7 @@ function FriendWishList() {
                                 style={{ cursor: "pointer" }}
                                 onClick={() => deleteGiftModalOpen(gift.id)}
                               >
-                                <XIcon />
+                                <TrashIcon />
                               </span>
                             </div>
                           )}

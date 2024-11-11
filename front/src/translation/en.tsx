@@ -9,7 +9,6 @@ class En implements Itrans {
         signup: "Sign Up",
         myList: "My List",
         myFriends: "My Friends",
-        myEvents: "My Events",
         myBuyList: "My Buy List",
         logout: "Log Out",
         manageAccount: "Manage account",

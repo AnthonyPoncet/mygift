@@ -12,7 +12,7 @@ import {
   FormFeedback,
 } from "reactstrap";
 import { useNavigate } from "react-router-dom";
-import { CheckIcon, XIcon, CircleSlashIcon } from "@primer/octicons-react";
+import { CheckIcon, TrashIcon, CircleSlashIcon } from "@primer/octicons-react";
 
 import "./style/friends.css";
 
@@ -241,7 +241,7 @@ function MyFriends() {
                 setShowDeleteFriendModal(true);
               }}
             >
-              <XIcon />
+              <TrashIcon />
             </span>
           </div>
         );
@@ -379,7 +379,7 @@ function MyFriends() {
                     style={{ cursor: "pointer", padding: "5px" }}
                     onClick={() => declineRequest(req.id, false)}
                   >
-                    <XIcon />
+                    <TrashIcon />
                   </span>
                   <span
                     style={{ cursor: "pointer", padding: "5px" }}
@@ -407,7 +407,7 @@ function MyFriends() {
                     style={{ cursor: "pointer" }}
                     onClick={() => cancelRequest(req.id)}
                   >
-                    <XIcon />
+                    <TrashIcon />
                   </span>
                 </li>
               );

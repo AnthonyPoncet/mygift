@@ -7,10 +7,9 @@ class Fr implements Itrans {
       app: {
         signin: "Se connecter",
         signup: "S'inscrire",
-        myList: "Ma Liste",
-        myFriends: "Mes Amis",
-        myEvents: "Mes Evenements",
-        myBuyList: "Ma Hotte",
+        myList: "Ma liste",
+        myFriends: "Mes amis",
+        myBuyList: "Ma liste d'achat",
         logout: "Se déconnecter",
         manageAccount: "Modifier le compte",
         changeAccount: "Changer de compte",

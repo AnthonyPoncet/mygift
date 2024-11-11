@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import {
   HeartIcon,
   PencilIcon,
-  XIcon,
+  TrashIcon,
   ArrowDownIcon,
   ArrowUpIcon,
   ArrowLeftIcon,
@@ -261,7 +261,7 @@ function MyWishList() {
                   style={{ cursor: "pointer" }}
                   onClick={() => deleteCat(cg.category.id)}
                 >
-                  <XIcon verticalAlign="middle" />
+                  <TrashIcon verticalAlign="middle" />
                 </span>
               </h5>
 
@@ -293,7 +293,7 @@ function MyWishList() {
                           style={{ cursor: "pointer" }}
                           onClick={() => deleteGiftModal(gift.id)}
                         >
-                          <XIcon />
+                          <TrashIcon />
                         </span>
                       </div>
                       <div

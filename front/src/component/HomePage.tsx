@@ -132,17 +132,30 @@ function HomePage() {
                       alternateImage={blank_profile_picture}
                     />
                     <div className="home-card-center-bold">
-                      {getYears(event.birth + new Date().getTimezoneOffset() * 60000)}{" "}{home.year}{getYears(event.birth + new Date().getTimezoneOffset() * 60000) > 1 && "s"}{" "}{home.of}
+                      {getYears(
+                        event.birth + new Date().getTimezoneOffset() * 60000,
+                      )}{" "}
+                      {home.year}
+                      {getYears(
+                        event.birth + new Date().getTimezoneOffset() * 60000,
+                      ) > 1 && "s"}{" "}
+                      {home.of}
                     </div>
                     <div className="home-card-center-bold">{event.name}</div>
                   </>
                 )}
                 <div className="home-card-center-no-bold">
-                  {new Date(event.date + new Date().getTimezoneOffset() * 60000).toLocaleDateString()}
+                  {new Date(
+                    event.date + new Date().getTimezoneOffset() * 60000,
+                  ).toLocaleDateString()}
                 </div>
                 <div className="home-card-center-no-bold">
-                  {home.in} {getDays(event.date + new Date().getTimezoneOffset() * 60000)} {home.day}
-                  {getDays(event.date + new Date().getTimezoneOffset() * 60000) > 1 && "s"}
+                  {home.in}{" "}
+                  {getDays(event.date + new Date().getTimezoneOffset() * 60000)}{" "}
+                  {home.day}
+                  {getDays(
+                    event.date + new Date().getTimezoneOffset() * 60000,
+                  ) > 1 && "s"}
                 </div>
               </div>
             );

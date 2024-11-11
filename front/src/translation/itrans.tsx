@@ -3,7 +3,6 @@ export interface AppMessage {
   signup: string;
   myList: string;
   myFriends: string;
-  myEvents: string;
   myBuyList: string;
   logout: string;
   manageAccount: string;
