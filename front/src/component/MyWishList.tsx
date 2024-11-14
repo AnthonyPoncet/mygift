@@ -418,7 +418,7 @@ function MyWishList() {
         {errorMessage && <p className="auth-error">{errorMessage}</p>}
         <Button
           color="link"
-          disabled={editMode}
+          disabled={editMode || categories.length === 0}
           onClick={() => setShowAddGiftModal(true)}
         >
           {mywishlist.addGiftButton}
