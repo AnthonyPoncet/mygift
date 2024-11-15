@@ -10,7 +10,7 @@ import org.aponcet.mygift.ErrorAnswer
 class MalformedPayloadException : Exception()
 
 suspend fun handle(call: ApplicationCall, function: suspend (Long) -> Unit) {
-    val payload = (call.authentication.principal as JWTPrincipal).payload
+    val payload = call.authentication.principal<JWTPrincipal>()!!.payload
     val id = payload.getClaim("id").asLong() ?: throw MalformedPayloadException()
     try {
         function(id)

@@ -2,6 +2,9 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val ktorVersion: String by project
 val logbackVersion: String by project
+val kotlinxCli: String by project
+val kotlintestRunner: String by project
+val auth0: String by project
 
 plugins {
     kotlin("jvm")
@@ -32,15 +35,15 @@ dependencies {
 
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-cli:$kotlinxCli")
 
     implementation("it.skrape:skrapeit:1.2.2")
 
     testImplementation(kotlin("test-junit"))
-    testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.2")
+    testImplementation("io.kotlintest:kotlintest-runner-junit5:$kotlintestRunner")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
     testImplementation("io.mockk:mockk:1.12.4")
-    testImplementation("com.auth0:java-jwt:3.19.2")
+    testImplementation("com.auth0:java-jwt:$auth0")
 }
 
 tasks.withType<ShadowJar> {

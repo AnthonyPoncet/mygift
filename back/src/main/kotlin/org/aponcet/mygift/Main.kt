@@ -9,6 +9,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.engine.*
+import io.ktor.server.http.content.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.compression.*
@@ -94,8 +95,7 @@ fun main(args: Array<String>) {
     } else {
         val keystore = KeyStore.getInstance("jks")
         val jks = configuration.mainServer.jks
-        val file = File(jks.path)
-        keystore.load(FileInputStream(file), jks.jksPassword.toCharArray())
+        keystore.load(FileInputStream(File(jks.path)), jks.jksPassword.toCharArray())
         val env = applicationEngineEnvironment {
             module {
                 mygift(userManager, publicKeyManager, configuration.mainServer.debug, configuration.data)
@@ -197,6 +197,11 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         gifts(userManager, data)
         password(userManager)
         users(userManager)
-        static()
+
+        singlePageApplication {
+            useResources = true
+            filesPath = "static"
+            defaultPage = "index.html"
+        }
     }
 }

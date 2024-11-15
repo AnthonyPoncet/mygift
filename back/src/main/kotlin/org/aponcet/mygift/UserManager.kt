@@ -8,8 +8,6 @@ import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.server.util.*
-import io.ktor.util.date.*
 import org.aponcet.authserver.*
 import org.aponcet.mygift.dbmanager.*
 import org.aponcet.mygift.model.AuthServer
@@ -536,11 +534,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
     }
 
     private fun getNextBirthday(now: ZonedDateTime, epochSecond: Long): ZonedDateTime {
-        println(epochSecond)
         val dateOfBirth = Instant.ofEpochSecond(epochSecond).atZone(ZONE_ID)
-        println(dateOfBirth)
-        println(dateOfBirth.monthValue)
-        println(dateOfBirth.dayOfMonth)
         return getNext(now, dateOfBirth.monthValue, dateOfBirth.dayOfMonth)
     }
 

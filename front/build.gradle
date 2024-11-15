@@ -7,12 +7,12 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.moowork.gradle:gradle-node-plugin:1.3.1'
+        classpath 'com.github.node-gradle:gradle-node-plugin:3.2.1'
     }
 }
 
 apply plugin: 'base'
-apply plugin: 'com.moowork.node' // gradle-node-plugin
+apply plugin: 'com.github.node-gradle.node' // gradle-node-plugin
 
 node {
     /* gradle-node-plugin configuration
@@ -37,7 +37,7 @@ npm_run_build {
 }
 
 // pack output of the build into JAR file
-task packageJS(type: Jar) {
+tasks.register('packageJS', Jar) {
     dependsOn npm_run_build
     archiveBaseName = 'front'
     destinationDirectory = file("${projectDir}/build_packageJS")

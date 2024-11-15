@@ -1,3 +1,5 @@
+val gson: String by project
+
 plugins {
     kotlin("jvm")
 }
@@ -5,5 +7,5 @@ plugins {
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
 
-    implementation("com.google.code.gson:gson:2.8.6")
+    implementation("com.google.code.gson:gson:$gson")
 }

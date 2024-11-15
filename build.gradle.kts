@@ -7,8 +7,8 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm") version "1.9.23" apply false
-    id("com.github.johnrengelman.shadow") version "7.1.1" apply false
+    kotlin("jvm") version "2.1.0-RC" apply false
+    id("com.github.johnrengelman.shadow") version "7.1.2" apply false
 }
 
 allprojects {
@@ -17,7 +17,7 @@ allprojects {
 
     tasks.withType<KotlinCompile> {
         kotlinOptions {
-            jvmTarget = "1.8"
+            jvmTarget = "11"
         }
     }
 
