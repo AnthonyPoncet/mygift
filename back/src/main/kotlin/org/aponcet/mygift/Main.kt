@@ -94,8 +94,7 @@ fun main(args: Array<String>) {
     } else {
         val keystore = KeyStore.getInstance("jks")
         val jks = configuration.mainServer.jks
-        val file = File(jks.path)
-        keystore.load(FileInputStream(file), jks.jksPassword.toCharArray())
+        keystore.load(FileInputStream(File(jks.path)), jks.jksPassword.toCharArray())
         val env = applicationEngineEnvironment {
             module {
                 mygift(userManager, publicKeyManager, configuration.mainServer.debug, configuration.data)

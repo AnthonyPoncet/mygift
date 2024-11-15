@@ -1,9 +1,6 @@
 package org.aponcet.mygift.dbmanager
 
-import io.kotlintest.Description
-import io.kotlintest.TestCaseOrder
-import io.kotlintest.TestResult
-import io.kotlintest.shouldBe
+import io.kotlintest.*
 import io.kotlintest.specs.StringSpec
 import kotlin.test.assertFailsWith
 
@@ -11,9 +8,7 @@ class CategoryAccessorTest : StringSpec() {
     private val conn = DbConnection("h2", "mem:test")
     private val categoryAccessor = CategoryAccessor(conn)
 
-    override fun isInstancePerTest(): Boolean {
-        return true
-    }
+    override fun isolationMode() = IsolationMode.InstancePerTest
 
     private fun deleteTable(tables: List<String>) {
         for (table in tables) {
@@ -26,7 +21,7 @@ class CategoryAccessorTest : StringSpec() {
         }
     }
 
-    override fun beforeTest(description: Description) {
+    override fun beforeTest(testCase: TestCase) {
         val usersAccessor = UsersAccessor(conn)
         val joinUserAndCategoryAccessor = JoinUserAndCategoryAccessor(conn)
         usersAccessor.createIfNotExists()
@@ -48,7 +43,7 @@ class CategoryAccessorTest : StringSpec() {
         usersAccessor.addUser("name2", "pwd".toByteArray(), "otherSalt".toByteArray(), "", null)
     }
 
-    override fun afterTest(description: Description, result: TestResult) {
+    override fun afterTest(testCase: TestCase, result: TestResult) {
         val usersAccessor = UsersAccessor(conn)
         conn.safeExecute(
             "DELETE FROM ${JoinUserAndCategoryAccessor(conn).getTableName()}",
