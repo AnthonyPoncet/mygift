@@ -1,5 +1,6 @@
 package org.aponcet.mygift.dbmanager
 
+import io.kotlintest.IsolationMode
 import io.kotlintest.*
 import io.kotlintest.specs.StringSpec
 import java.time.LocalDateTime
@@ -10,9 +11,7 @@ class ResetPasswordAccessorTest : StringSpec() {
     private val conn = DbConnection("h2", "mem:test")
     private val resetPasswordAccessor = ResetPasswordAccessor(conn)
 
-    override fun isInstancePerTest(): Boolean {
-        return true
-    }
+    override fun isolationMode() = IsolationMode.InstancePerTest
 
     private fun deleteTable(tables: List<String>) {
         for (table in tables) {
@@ -27,7 +26,7 @@ class ResetPasswordAccessorTest : StringSpec() {
         }
     }
 
-    override fun beforeTest(description: Description) {
+    override fun beforeTest(testCase: TestCase) {
         val usersAccessor = UsersAccessor(conn)
         usersAccessor.createIfNotExists()
         resetPasswordAccessor.createIfNotExists()
@@ -36,7 +35,7 @@ class ResetPasswordAccessorTest : StringSpec() {
         usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "", null)
     }
 
-    override fun afterTest(description: Description, result: TestResult) {
+    override fun afterTest(testCase: TestCase, result: TestResult) {
         deleteTable(
             listOf(
                 resetPasswordAccessor.getTableName(),

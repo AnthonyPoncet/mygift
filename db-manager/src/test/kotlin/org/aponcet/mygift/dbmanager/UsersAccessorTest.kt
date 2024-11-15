@@ -1,18 +1,13 @@
 package org.aponcet.mygift.dbmanager
 
-import io.kotlintest.Description
-import io.kotlintest.TestCaseOrder
-import io.kotlintest.TestResult
-import io.kotlintest.shouldBe
+import io.kotlintest.*
 import io.kotlintest.specs.StringSpec
 
 class UsersAccessorTest : StringSpec() {
     private val conn = DbConnection("h2", "mem:test")
     private val usersAccessor = UsersAccessor(conn)
 
-    override fun isInstancePerTest(): Boolean {
-        return true
-    }
+    override fun isolationMode() = IsolationMode.InstancePerTest
 
     private fun deleteTable(tables: List<String>) {
         for (table in tables) {
@@ -25,12 +20,12 @@ class UsersAccessorTest : StringSpec() {
         }
     }
 
-    override fun beforeTest(description: Description) {
+    override fun beforeTest(testCase: TestCase) {
         usersAccessor.createIfNotExists()
         deleteTable(listOf(usersAccessor.getTableName()))
     }
 
-    override fun afterTest(description: Description, result: TestResult) {
+    override fun afterTest(testCase: TestCase, result: TestResult) {
         deleteTable(listOf(usersAccessor.getTableName())) //order matter due to foreign key
     }
 
