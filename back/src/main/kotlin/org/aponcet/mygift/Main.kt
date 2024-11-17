@@ -9,7 +9,6 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.engine.*
-import io.ktor.server.http.content.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.callloging.*
 import io.ktor.server.plugins.compression.*
@@ -197,11 +196,6 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         gifts(userManager, data)
         password(userManager)
         users(userManager)
-
-        singlePageApplication {
-            useResources = true
-            filesPath = "static"
-            defaultPage = "index.html"
-        }
+        static()
     }
 }
