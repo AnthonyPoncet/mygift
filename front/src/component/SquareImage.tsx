@@ -27,36 +27,30 @@ function loadImage(
     return;
   }
 
-  let imageBlob = localStorage.getItem(imageName);
-  if (imageBlob === null) {
-    const request = async () => {
-      const response = await fetch(url + "/files/" + imageName, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.status === 404) {
-        console.error("file '" + imageName + "' could not be found on server");
-        return;
-      }
-      if (response.status === 401) {
-        console.error("Unauthorized. Disconnect and redirect to connect");
-        appDispatch(logout());
-        return;
-      }
-      if (response.status === 500) {
-        console.error("Internal server error: " + response);
-        return;
-      }
+  const request = async () => {
+    const response = await fetch(url + "/files/" + imageName, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (response.status === 404) {
+      console.error("file '" + imageName + "' could not be found on server");
+      return;
+    }
+    if (response.status === 401) {
+      console.error("Unauthorized. Disconnect and redirect to connect");
+      appDispatch(logout());
+      return;
+    }
+    if (response.status === 500) {
+      console.error("Internal server error: " + response);
+      return;
+    }
 
-      response.blob().then((blob) => {
-        let url = window.URL.createObjectURL(blob);
-        localStorage.setItem(imageName, url);
-        setImage(url);
-      });
-    };
-    request();
-  } else {
-    setImage(imageBlob);
-  }
+    response.blob().then((blob) => {
+      let url = window.URL.createObjectURL(blob);
+      setImage(url);
+    });
+  };
+  request();
 }
 
 function SquareImage(props: Props) {
