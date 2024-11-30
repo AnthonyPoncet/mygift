@@ -62,7 +62,7 @@ function App() {
     <div>
       <Navbar color="light" expand="lg" light>
         <NavbarBrand href="/" className="me-auto">
-          MyGift
+          <span className="my">My</span><span className="gift-title">Gift</span>
         </NavbarBrand>
 
         <NavbarToggler onClick={toggleNavbar} className="me-2" />

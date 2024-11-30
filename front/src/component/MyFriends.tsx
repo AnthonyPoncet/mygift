@@ -18,8 +18,8 @@ import "./style/friends.css";
 import "./style/christmas.css";
 
 import SquareImage from "./SquareImage";
-import blank_profile_picture from "./image/christmas-easter/blank_profile_picture.png";
-import santa_hat from "./image/christmas-easter/Santa-Hat.webp";
+import blank_profile_picture from "./image/blank_profile_picture.png";
+import santa_hat from "./image/christmas-easter/santa_hat.png";
 
 import { isMobile } from "react-device-detect";
 
@@ -359,6 +359,9 @@ function MyFriends() {
                   </div>
                   { user.picture !== undefined && <div>
                     <img className="santa_hat" src={santa_hat}/>
+                  </div> }
+                   { user.picture === undefined && <div>
+                    <img className="santa_hat_no_picture" src={santa_hat}/>
                   </div> }
                 </div>
               );

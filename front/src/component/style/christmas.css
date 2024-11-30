@@ -2,55 +2,71 @@
     position: relative;
     width: 75px;
     height: 75px;
-    transform: translate(100px, -205px) rotate(30deg);
+    transform: translate(114px, -225px) rotate(45deg);
+    z-index: 1000;
+}
+
+.santa_hat_no_picture {
+    position: relative;
+    width: 70px;
+    height: 70px;
+    transform: translate(42px, -202px) rotate(0deg);
     z-index: 1000;
 }
 
 .knot {
     position: relative;
-    transform: translate(-2px, -278.5px);
+    height: 283px;
+    width: 160px;
+    transform: translate(-9px, -286px);
     z-index: 1000;
     pointer-events: none;
 }
-
-.knot-reserved-other {
-    position: relative;
-    transform: translate(-2px, -249.5px);
-    z-index: 1000;
-    pointer-events: none;
-}
-
-.knot-reserved-other-secret {
-    position: relative;
-    transform: translate(-2px, -221.5px);
-    z-index: 1000;
-    pointer-events: none;
-}
-
 .knot-hover {
     position: relative;
-    transform: translate(-2px, -246.5px);
+    height: 284px;
+    width: 160px;
+    transform: translate(-9px, -254px);
     z-index: 1000;
     pointer-events: none;
 }
-
 .knot-hover-secret {
     position: relative;
-    transform: translate(-2px, -274.5px);
+    height: 283px;
+    width: 160px;
+    transform: translate(-9px, -282px);
     z-index: 1000;
     pointer-events: none;
 }
-
+.knot-reserved-other {
+    position: relative;
+    height: 284px;
+    width: 160px;
+    transform: translate(-9px, -257px);
+    z-index: 1000;
+    pointer-events: none;
+}
+.knot-reserved-other-secret {
+    position: relative;
+    height: 284px;
+    width: 160px;
+    transform: translate(-9px, -229px);
+    z-index: 1000;
+    pointer-events: none;
+}
 .knot-reserved-other-hover {
     position: relative;
-    transform: translate(-2px, -217.5px);
+    height: 284px;
+    width: 160px;
+    transform: translate(-9px, -225px);
     z-index: 1000;
     pointer-events: none;
 }
-
 .knot-reserved-other-hover-secret {
     position: relative;
-    transform: translate(-2px, -217.5px);
+    height: 284px;
+    width: 160px;
+    transform: translate(-9px, -225px);
     z-index: 1000;
     pointer-events: none;
 }
@@ -63,4 +79,12 @@
     font-weight: bold;
     font-size: xx-large;
     color: black;
+}
+
+.my {
+ color: #146E1D
+}
+
+.gift-title {
+ color: #B30000
 }
