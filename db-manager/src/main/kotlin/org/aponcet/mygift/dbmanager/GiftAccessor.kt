@@ -175,8 +175,10 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
             for (giftUserId in giftUserIds) {
                 friendActionOnGift.forEach {
                     toDeleteGiftsAccessor.add(gift, giftUserId, status, it)
-                    friendActionOnGiftAccessor.delete(it.giftId, it.userId)
                 }
+            }
+            friendActionOnGift.forEach {
+                friendActionOnGiftAccessor.delete(it.giftId, it.userId)
             }
         }
 
