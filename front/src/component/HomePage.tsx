@@ -20,8 +20,8 @@ function getDays(date: number) {
   );
 }
 
-function getYears(date: number) {
-  return new Date().getFullYear() - new Date(date).getFullYear();
+function getYears(eventDate: number, birthDate: number) {
+  return new Date(eventDate).getFullYear() - new Date(birthDate).getFullYear();
 }
 
 function HomePage() {
@@ -133,10 +133,12 @@ function HomePage() {
                     />
                     <div className="home-card-center-bold">
                       {getYears(
+                        event.date + new Date().getTimezoneOffset() * 60000,
                         event.birth + new Date().getTimezoneOffset() * 60000,
                       )}{" "}
                       {home.year}
                       {getYears(
+                        event.date + new Date().getTimezoneOffset() * 60000,
                         event.birth + new Date().getTimezoneOffset() * 60000,
                       ) > 1 && "s"}{" "}
                       {home.of}
