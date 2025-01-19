@@ -31,9 +31,11 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
             "SELECT * FROM gifts WHERE categoryId in (%s) AND secret=0 ORDER BY rank ASC"
         const val SELECT_MAX_RANK_OF_GIVEN_CATEGORY = "SELECT MAX(rank) FROM gifts WHERE categoryId=?"
         const val UPDATE =
-            "UPDATE gifts SET name=?, description=?, price=?, whereToBuy=?, categoryId=?, picture=?, rank=? WHERE id=?"
+            "UPDATE gifts SET name=?, description=?, price=?, whereToBuy=?, categoryId=?, picture=? WHERE id=?"
         const val UPDATE_HEART =
             "UPDATE gifts SET heart=? WHERE id=?"
+        const val UPDATE_RANK =
+            "UPDATE gifts SET rank=? WHERE id=?"
         const val DELETE = "DELETE FROM gifts WHERE id=?"
         const val IS_SECRET = "SELECT * FROM gifts WHERE id=? AND secret=1"
 
@@ -147,7 +149,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         return getGifts(friendId, true)
     }
 
-    fun modifyGift(giftId: Long, gift: Gift) {
+    fun modifyGift(giftId: Long, gift: NewGift) {
         conn.safeExecute(UPDATE, {
             with(it) {
                 setString(1, gift.name)
@@ -156,8 +158,7 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
                 setString(4, gift.whereToBuy)
                 setLong(5, gift.categoryId)
                 setString(6, gift.picture)
-                setLong(7, gift.rank)
-                setLong(8, giftId)
+                setLong(7, giftId)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
             }
@@ -250,6 +251,17 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
         switchGift(gift, otherGift)
     }
 
+    fun updateRank(giftId: Long, rank: Long) {
+        conn.safeExecute(UPDATE_RANK, {
+            with(it) {
+                setLong(1, rank)
+                setLong(2, giftId)
+                val rowCount = executeUpdate()
+                if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
+            }
+        }, errorMessage(UPDATE_RANK, rank.toString(), giftId.toString()))
+    }
+
     fun updateHeart(giftId: Long, heart: Boolean) {
         conn.safeExecute(UPDATE_HEART, {
             with(it) {
@@ -286,12 +298,12 @@ class GiftAccessor(private val conn: DbConnection) : DaoAccessor() {
     }
 
     private fun switchGift(gift: DbGift, otherGift: DbGift) {
-        modifyGift(gift.id, to(gift, otherGift.rank))
+        updateRank(gift.id, otherGift.rank)
         try {
-            modifyGift(otherGift.id, to(otherGift, gift.rank))
+            updateRank(otherGift.id, gift.rank)
         } catch (e: DbException) {
             //Try to reverse first switch
-            modifyGift(gift.id, to(gift, gift.rank))
+            updateRank(gift.id, gift.rank)
             throw DbException("No change applied", e)
         }
     }

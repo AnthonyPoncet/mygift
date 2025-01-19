@@ -14,7 +14,7 @@ plugins {
 dependencies {
     implementation(project(":auth-server"))
     implementation(project(":db-manager"))
-    implementation(project(":front"))
+    implementation(project(":front-vue"))
     implementation(project(":model"))
 
     implementation(kotlin("stdlib-jdk8"))

@@ -19,7 +19,7 @@ fun Route.categories(userManager: UserManager) {
                     if (category.name == null || category.share == null) {
                         call.respond(HttpStatusCode.BadRequest, ErrorAnswer("Invalid category json"))
                     } else {
-                        userManager.addCategory(category, id, category.share)
+                        userManager.addCategory(id, category.name, category.share)
                         call.respond(HttpStatusCode.OK)
                     }
                 }
@@ -31,7 +31,7 @@ fun Route.categories(userManager: UserManager) {
                     if (category.name == null) {
                         call.respond(HttpStatusCode.BadRequest, ErrorAnswer("Invalid category json"))
                     } else {
-                        userManager.modifyCategory(id, cid, category)
+                        userManager.modifyCategory(id, cid, category.name)
                         call.respond(HttpStatusCode.OK)
                     }
                 }

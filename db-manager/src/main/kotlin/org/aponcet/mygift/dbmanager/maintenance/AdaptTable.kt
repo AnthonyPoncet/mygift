@@ -78,6 +78,7 @@ class AdaptTable(dbPath: String) {
         LOGGER.info("Will update category of users $userIds")
 
         val categoryAccessor = CategoryAccessor(conn)
+        val joinUserAndCategoryAccessor = JoinUserAndCategoryAccessor(conn)
         for (userId in userIds) {
             val categories = categoryAccessor.getUserCategories(userId)
             LOGGER.info("User $userId has categories $categories")
@@ -89,7 +90,7 @@ class AdaptTable(dbPath: String) {
             LOGGER.info("User $userId will now have categories as $newCategories")
 
             for (category in newCategories) {
-                categoryAccessor.modifyCategory(userId, category.id, Category(category.name, category.rank))
+                joinUserAndCategoryAccessor.modifyRank(userId, category.id, category.rank)
             }
             LOGGER.info("User $userId done")
         }
@@ -136,12 +137,7 @@ class AdaptTable(dbPath: String) {
                 LOGGER.info("\tCategory $category will now have gifts ${newGifts.map { g -> "(${g.id}, ${g.rank})" }}")
 
                 for (gift in newGifts) {
-                    giftAccessor.modifyGift(
-                        gift.id, Gift(
-                            gift.name, gift.description, gift.price,
-                            gift.whereToBuy, gift.categoryId, gift.picture, gift.rank
-                        )
-                    )
+                    giftAccessor.updateRank(gift.id, gift.rank)
                 }
                 LOGGER.info("\tCategory $category done\n")
             }

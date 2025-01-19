@@ -64,119 +64,118 @@ class CategoryAccessorTest : StringSpec() {
 
     init {
         "Add one category ranked one." {
-            categoryAccessor.addCategory(NewCategory("cat"), listOf(1))
+            categoryAccessor.addCategory("cat", listOf(1))
 
-            categoryAccessor.getUserCategories(1) shouldBe listOf(DbCategory(1L, "cat", 1L))
+            categoryAccessor.getUserCategories(1) shouldBe listOf(DbCategory(1L, "cat", 1L, setOf()))
             categoryAccessor.getUserCategories(2) shouldBe emptyList()
-            categoryAccessor.getFriendCategories(2, 1) shouldBe listOf(DbCategory(1L, "cat", 1L))
+            categoryAccessor.getFriendCategories(2, 1) shouldBe listOf(DbCategory(1L, "cat", 1L, setOf()))
             categoryAccessor.getFriendCategories(1, 2) shouldBe emptyList()
         }
 
         "Add one category two users" {
-            categoryAccessor.addCategory(NewCategory("cat"), listOf(1, 2))
-            categoryAccessor.getUserCategories(1) shouldBe listOf(DbCategory(1L, "cat", 1L))
-            categoryAccessor.getUserCategories(2) shouldBe listOf(DbCategory(1L, "cat", 1L))
-            categoryAccessor.getFriendCategories(3, 1) shouldBe listOf(DbCategory(1L, "cat", 1L))
-            categoryAccessor.getFriendCategories(3, 2) shouldBe listOf(DbCategory(1L, "cat", 1L))
+            categoryAccessor.addCategory("cat", listOf(1, 2))
+            categoryAccessor.getUserCategories(1) shouldBe listOf(DbCategory(1L, "cat", 1L, setOf(2)))
+            categoryAccessor.getUserCategories(2) shouldBe listOf(DbCategory(1L, "cat", 1L, setOf(1)))
+            categoryAccessor.getFriendCategories(3, 1) shouldBe listOf(DbCategory(1L, "cat", 1L, setOf()))
+            categoryAccessor.getFriendCategories(3, 2) shouldBe listOf(DbCategory(1L, "cat", 1L, setOf()))
             categoryAccessor.getFriendCategories(2, 1) shouldBe emptyList()
             categoryAccessor.getFriendCategories(1, 2) shouldBe emptyList()
         }
 
         "Add one category user 1, another user 2, another one, another user 1&2 then another user 2" {
-            categoryAccessor.addCategory(NewCategory("one"), listOf(1))
-            categoryAccessor.addCategory(NewCategory("two"), listOf(2))
-            categoryAccessor.addCategory(NewCategory("one bis"), listOf(1))
-            categoryAccessor.addCategory(NewCategory("three"), listOf(1, 2))
-            categoryAccessor.addCategory(NewCategory("four"), listOf(2))
+            categoryAccessor.addCategory("one", listOf(1))
+            categoryAccessor.addCategory("two", listOf(2))
+            categoryAccessor.addCategory("one bis", listOf(1))
+            categoryAccessor.addCategory("three", listOf(1, 2))
+            categoryAccessor.addCategory("four", listOf(2))
 
             categoryAccessor.getUserCategories(1) shouldBe listOf(
-                DbCategory(1L, "one", 1L),
-                DbCategory(3L, "one bis", 2L),
-                DbCategory(4L, "three", 3L)
+                DbCategory(1L, "one", 1L, setOf()),
+                DbCategory(3L, "one bis", 2L, setOf()),
+                DbCategory(4L, "three", 3L, setOf(2))
             )
             categoryAccessor.getUserCategories(2) shouldBe listOf(
-                DbCategory(2L, "two", 1L),
-                DbCategory(4L, "three", 2L),
-                DbCategory(5L, "four", 3L)
+                DbCategory(2L, "two", 1L, setOf()),
+                DbCategory(4L, "three", 2L, setOf(1)),
+                DbCategory(5L, "four", 3L, setOf())
             )
 
             categoryAccessor.getFriendCategories(1, 2) shouldBe listOf(
-                DbCategory(2L, "two", 1L),
-                DbCategory(5L, "four", 3L)
+                DbCategory(2L, "two", 1L, setOf()),
+                DbCategory(5L, "four", 3L, setOf())
             )
 
             categoryAccessor.rankUpCategory(2L, 4L)
             categoryAccessor.getUserCategories(1) shouldBe listOf(
-                DbCategory(1L, "one", 1L),
-                DbCategory(3L, "one bis", 2L),
-                DbCategory(4L, "three", 3L)
+                DbCategory(1L, "one", 1L, setOf()),
+                DbCategory(3L, "one bis", 2L, setOf()),
+                DbCategory(4L, "three", 3L, setOf(2))
             )
             categoryAccessor.getUserCategories(2) shouldBe listOf(
-                DbCategory(2L, "two", 1L),
-                DbCategory(5L, "four", 2L),
-                DbCategory(4L, "three", 3L)
+                DbCategory(2L, "two", 1L, setOf()),
+                DbCategory(5L, "four", 2L, setOf()),
+                DbCategory(4L, "three", 3L, setOf(1))
             )
-
         }
 
         "Add one category unknown user throw." {
             assertFailsWith(DbException::class) {
-                categoryAccessor.addCategory(NewCategory("cat"), listOf(3))
+                categoryAccessor.addCategory("cat", listOf(3))
             }
         }
 
         "Add two categories same user. Ranked 1 & 2" {
-            categoryAccessor.addCategory(NewCategory("cat1"), listOf(1))
-            categoryAccessor.addCategory(NewCategory("cat2"), listOf(1))
+            categoryAccessor.addCategory("cat1", listOf(1))
+            categoryAccessor.addCategory("cat2", listOf(1))
 
             categoryAccessor.getUserCategories(1) shouldBe listOf(
-                DbCategory(1L, "cat1", 1L),
-                DbCategory(2L, "cat2", 2L)
+                DbCategory(1L, "cat1", 1L, setOf()),
+                DbCategory(2L, "cat2", 2L, setOf())
             )
             categoryAccessor.getUserCategories(2) shouldBe emptyList()
             categoryAccessor.getFriendCategories(2, 1) shouldBe listOf(
-                DbCategory(1L, "cat1", 1L),
-                DbCategory(2L, "cat2", 2L)
+                DbCategory(1L, "cat1", 1L, setOf()),
+                DbCategory(2L, "cat2", 2L, setOf())
             )
             categoryAccessor.getFriendCategories(1, 2) shouldBe emptyList()
         }
 
         "Add two categories same name but different user. Both ranked 1" {
-            categoryAccessor.addCategory(NewCategory("cat"), listOf(1))
-            categoryAccessor.addCategory(NewCategory("cat"), listOf(2))
+            categoryAccessor.addCategory("cat", listOf(1))
+            categoryAccessor.addCategory("cat", listOf(2))
 
-            categoryAccessor.getUserCategories(1) shouldBe listOf(DbCategory(1L, "cat", 1L))
-            categoryAccessor.getUserCategories(2) shouldBe listOf(DbCategory(2L, "cat", 1L))
-            categoryAccessor.getFriendCategories(2, 1) shouldBe listOf(DbCategory(1L, "cat", 1L))
-            categoryAccessor.getFriendCategories(1, 2) shouldBe listOf(DbCategory(2L, "cat", 1L))
+            categoryAccessor.getUserCategories(1) shouldBe listOf(DbCategory(1L, "cat", 1L, setOf()))
+            categoryAccessor.getUserCategories(2) shouldBe listOf(DbCategory(2L, "cat", 1L, setOf()))
+            categoryAccessor.getFriendCategories(2, 1) shouldBe listOf(DbCategory(1L, "cat", 1L, setOf()))
+            categoryAccessor.getFriendCategories(1, 2) shouldBe listOf(DbCategory(2L, "cat", 1L, setOf()))
         }
 
         "Modify a category" {
-            categoryAccessor.addCategory(NewCategory("cat"), listOf(1))
-            categoryAccessor.getUserCategories(1) shouldBe listOf(DbCategory(1L, "cat", 1L))
+            categoryAccessor.addCategory("cat", listOf(1))
+            categoryAccessor.getUserCategories(1) shouldBe listOf(DbCategory(1L, "cat", 1L, setOf()))
 
-            categoryAccessor.modifyCategory(1L, 1L, Category("other", 2L))
-            categoryAccessor.getUserCategories(1) shouldBe listOf(DbCategory(1L, "other", 2L))
+            categoryAccessor.modifyCategory(1L, "other")
+            categoryAccessor.getUserCategories(1) shouldBe listOf(DbCategory(1L, "other", 1L, setOf()))
         }
 
         "Remove a category" {
-            categoryAccessor.addCategory(NewCategory("cat"), listOf(1))
-            categoryAccessor.getUserCategories(1) shouldBe listOf(DbCategory(1L, "cat", 1L))
+            categoryAccessor.addCategory("cat", listOf(1))
+            categoryAccessor.getUserCategories(1) shouldBe listOf(DbCategory(1L, "cat", 1L, setOf()))
 
             categoryAccessor.removeCategory(1L)
             categoryAccessor.getUserCategories(1) shouldBe emptyList()
         }
 
         "Category exists" {
-            categoryAccessor.addCategory(NewCategory("cat"), listOf(1))
+            categoryAccessor.addCategory("cat", listOf(1))
 
             categoryAccessor.categoryExists(1L) shouldBe true
             categoryAccessor.categoryExists(2L) shouldBe false
         }
 
         "Category belong to users" {
-            categoryAccessor.addCategory(NewCategory("cat"), listOf(1))
-            categoryAccessor.addCategory(NewCategory("cat2"), listOf(1))
+            categoryAccessor.addCategory("cat", listOf(1))
+            categoryAccessor.addCategory("cat2", listOf(1))
 
             categoryAccessor.categoryBelongToUser(1L, 1L) shouldBe true
             categoryAccessor.categoryBelongToUser(1L, 2L) shouldBe true
@@ -185,35 +184,35 @@ class CategoryAccessorTest : StringSpec() {
         }
 
         "Rank down category" {
-            categoryAccessor.addCategory(NewCategory("cat1"), listOf(1))
-            categoryAccessor.addCategory(NewCategory("cat2"), listOf(1))
-            categoryAccessor.addCategory(NewCategory("cat3"), listOf(1))
+            categoryAccessor.addCategory("cat1", listOf(1))
+            categoryAccessor.addCategory("cat2", listOf(1))
+            categoryAccessor.addCategory("cat3", listOf(1))
 
             categoryAccessor.getUserCategories(1) shouldBe listOf(
-                DbCategory(1L, "cat1", 1L),
-                DbCategory(2L, "cat2", 2L),
-                DbCategory(3L, "cat3", 3L)
+                DbCategory(1L, "cat1", 1L, setOf()),
+                DbCategory(2L, "cat2", 2L, setOf()),
+                DbCategory(3L, "cat3", 3L, setOf())
             )
 
             categoryAccessor.rankDownCategory(1L, 2L)
             categoryAccessor.getUserCategories(1) shouldBe listOf(
-                DbCategory(2L, "cat2", 1L),
-                DbCategory(1L, "cat1", 2L),
-                DbCategory(3L, "cat3", 3L)
+                DbCategory(2L, "cat2", 1L, setOf()),
+                DbCategory(1L, "cat1", 2L, setOf()),
+                DbCategory(3L, "cat3", 3L, setOf())
             )
 
             categoryAccessor.rankDownCategory(1L, 3L)
             categoryAccessor.getUserCategories(1) shouldBe listOf(
-                DbCategory(2L, "cat2", 1L),
-                DbCategory(3L, "cat3", 2L),
-                DbCategory(1L, "cat1", 3L)
+                DbCategory(2L, "cat2", 1L, setOf()),
+                DbCategory(3L, "cat3", 2L, setOf()),
+                DbCategory(1L, "cat1", 3L, setOf())
             )
 
             categoryAccessor.rankDownCategory(1L, 3L)
             categoryAccessor.getUserCategories(1) shouldBe listOf(
-                DbCategory(3L, "cat3", 1L),
-                DbCategory(2L, "cat2", 2L),
-                DbCategory(1L, "cat1", 3L)
+                DbCategory(3L, "cat3", 1L, setOf()),
+                DbCategory(2L, "cat2", 2L, setOf()),
+                DbCategory(1L, "cat1", 3L, setOf())
             )
 
             assertFailsWith(Exception::class) {
@@ -222,35 +221,35 @@ class CategoryAccessorTest : StringSpec() {
         }
 
         "Rank up category" {
-            categoryAccessor.addCategory(NewCategory("cat1"), listOf(1))
-            categoryAccessor.addCategory(NewCategory("cat2"), listOf(1))
-            categoryAccessor.addCategory(NewCategory("cat3"), listOf(1))
+            categoryAccessor.addCategory("cat1", listOf(1))
+            categoryAccessor.addCategory("cat2", listOf(1))
+            categoryAccessor.addCategory("cat3", listOf(1))
 
             categoryAccessor.getUserCategories(1) shouldBe listOf(
-                DbCategory(1L, "cat1", 1L),
-                DbCategory(2L, "cat2", 2L),
-                DbCategory(3L, "cat3", 3L)
+                DbCategory(1L, "cat1", 1L, setOf()),
+                DbCategory(2L, "cat2", 2L, setOf()),
+                DbCategory(3L, "cat3", 3L, setOf())
             )
 
             categoryAccessor.rankUpCategory(1L, 2L)
             categoryAccessor.getUserCategories(1) shouldBe listOf(
-                DbCategory(1L, "cat1", 1L),
-                DbCategory(3L, "cat3", 2L),
-                DbCategory(2L, "cat2", 3L)
+                DbCategory(1L, "cat1", 1L, setOf()),
+                DbCategory(3L, "cat3", 2L, setOf()),
+                DbCategory(2L, "cat2", 3L, setOf())
             )
 
             categoryAccessor.rankUpCategory(1L, 1L)
             categoryAccessor.getUserCategories(1) shouldBe listOf(
-                DbCategory(3L, "cat3", 1L),
-                DbCategory(1L, "cat1", 2L),
-                DbCategory(2L, "cat2", 3L)
+                DbCategory(3L, "cat3", 1L, setOf()),
+                DbCategory(1L, "cat1", 2L, setOf()),
+                DbCategory(2L, "cat2", 3L, setOf())
             )
 
             categoryAccessor.rankUpCategory(1L, 1L)
             categoryAccessor.getUserCategories(1) shouldBe listOf(
-                DbCategory(3L, "cat3", 1L),
-                DbCategory(2L, "cat2", 2L),
-                DbCategory(1L, "cat1", 3L)
+                DbCategory(3L, "cat3", 1L, setOf()),
+                DbCategory(2L, "cat2", 2L, setOf()),
+                DbCategory(1L, "cat1", 3L, setOf())
             )
 
             assertFailsWith(Exception::class) {

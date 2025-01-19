@@ -15,6 +15,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.*
 import java.time.Month
+import java.util.stream.Collectors
 import kotlin.collections.set
 
 /** RETURN CLASSES **/
@@ -28,11 +29,10 @@ data class CleanGift(
     val whereToBuy: String?,
     val categoryId: Long,
     val picture: String?,
-    val heart: Boolean,
-    val rank: Long
+    val heart: Boolean
 )
 
-data class CleanCategory(val id: Long, val name: String, val rank: Long)
+data class CleanCategory(val id: Long, val name: String, val share: Set<String>)
 data class CatAndGift(val category: CleanCategory, val gifts: List<CleanGift>)
 data class FriendGift(
     val gift: CleanGift,
@@ -69,10 +69,9 @@ data class RestGift(
     val whereToBuy: String?,
     val categoryId: Long?,
     val picture: String?,
-    val rank: Long?
 )
 
-data class RestCategory(val name: String?, val rank: Long?, val share: List<String>?)
+data class RestCategory(val name: String?, val share: List<String>?)
 data class RestCreateFriendRequest(val name: String?)
 enum class RankAction { DOWN, UP }
 enum class HeartAction { LIKE, UNLIKE }
@@ -190,8 +189,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
             g.whereToBuy,
             g.categoryId,
             g.picture,
-            g.heart,
-            g.rank
+            g.heart
         )
     }
 
@@ -203,7 +201,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
                 CleanCategory(
                     c.id,
                     c.name,
-                    c.rank
+                    c.share.map { u -> databaseManager.getUser(u)!!.name }.toCollection(hashSetOf())
                 ), gifts.filter { g -> g.categoryId == c.id }.map { g -> toGift(g) })
         }
     }
@@ -219,7 +217,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
                 CleanCategory(
                     c.id,
                     c.name,
-                    c.rank
+                    hashSetOf()
                 ), gifts.filter { g -> g.categoryId == c.id }.map { g ->
                     val actions = databaseManager.getFriendActionOnGift(g.id)
                     FriendGift(toGift(g),
@@ -280,7 +278,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
                                 .map { dummyUserCache.queryName(it.userId)!! },
                             g.secret
                         )
-                    }.sortedBy { it.gift.rank },
+                    }.sortedBy { it.gift.id },
                     m.value.second.sortedBy { it.name })
             }.sortedBy { it.friendName }
     }
@@ -305,20 +303,17 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         databaseManager.addGift(friendUserId, toNewGift(gift), true)
     }
 
-    private fun validateRestGift(restGift: RestGift, withRank: Boolean) {
+    private fun validateRestGift(restGift: RestGift) {
         if (restGift.name == null) {
             throw BadParamException("Gift JSON need to contain 'name' node")
         }
         if (restGift.categoryId == null) {
             throw BadParamException("Gift JSON need to contain 'categoryId' node")
         }
-        if (withRank && restGift.rank == null) {
-            throw BadParamException("Gift JSON need to contain 'rank' node")
-        }
     }
 
     private fun toNewGift(restGift: RestGift): NewGift {
-        validateRestGift(restGift, false)
+        validateRestGift(restGift)
         return NewGift(
             restGift.name!!,
             restGift.description,
@@ -330,20 +325,7 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
     }
 
     fun modifyGift(userId: Long, giftId: Long, gift: RestGift) {
-        databaseManager.modifyGift(userId, giftId, toGift(gift))
-    }
-
-    private fun toGift(restGift: RestGift): Gift {
-        validateRestGift(restGift, true)
-        return Gift(
-            restGift.name!!,
-            restGift.description,
-            restGift.price,
-            restGift.whereToBuy,
-            restGift.categoryId!!,
-            restGift.picture,
-            restGift.rank!!
-        )
+        databaseManager.modifyGift(userId, giftId, toNewGift(gift))
     }
 
     fun removeGift(userId: Long, giftId: Long, status: Status) {
@@ -370,34 +352,15 @@ class UserManager(private val databaseManager: DatabaseManager, private val auth
         databaseManager.changeReserve(giftId, userId, reserve)
     }
 
-    fun addCategory(category: RestCategory, userId: Long, userNames: List<String>) {
-        val users = userNames.map { databaseManager.getUser(it) }
-        if (users.any { it == null }) throw BadParamException("At leats one passed user does not exist")
+    fun addCategory(userId: Long, name: String, shareWith: List<String>) {
+        val users = shareWith.map { databaseManager.getUser(it) }
+        if (users.any { it == null }) throw BadParamException("At least one passed user does not exist")
         val userIds = users.map { it!!.id }
-        databaseManager.addCategory(toNewCategory(category), userIds.plus(userId))
+        databaseManager.addCategory(name, userIds.plus(userId))
     }
 
-    private fun validateRestCategory(category: RestCategory, withRank: Boolean) {
-        if (category.name == null) {
-            throw BadParamException("Category JSON need to contain 'name' node")
-        }
-        if (withRank && category.rank == null) {
-            throw BadParamException("Category JSON need to contain 'rank' node")
-        }
-    }
-
-    private fun toNewCategory(category: RestCategory): NewCategory {
-        validateRestCategory(category, false)
-        return NewCategory(category.name!!)
-    }
-
-    fun modifyCategory(userId: Long, categoryId: Long, category: RestCategory) {
-        databaseManager.modifyCategory(userId, categoryId, toCategory(category))
-    }
-
-    private fun toCategory(category: RestCategory): Category {
-        validateRestCategory(category, true)
-        return Category(category.name!!, category.rank!!)
+    fun modifyCategory(userId: Long, categoryId: Long, name: String) {
+        databaseManager.modifyCategory(userId, categoryId, name)
     }
 
     fun removeCategory(userId: Long, categoryId: Long) {

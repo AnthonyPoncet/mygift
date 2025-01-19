@@ -1,5 +1,8 @@
 package org.aponcet.mygift.dbmanager
 
+import java.util.*
+import java.util.stream.Collectors
+
 data class NewCategory(val name: String)
 data class Category(val name: String, val rank: Long)
 
@@ -10,20 +13,25 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
     companion object {
         const val INSERT = "INSERT INTO categories(name) VALUES (?)"
         const val SELECT_BY_ID =
-            "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE C.id=?"
+            "SELECT id, name, rank FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE C.id=?"
         const val SELECT_BY_ID_AND_USER_ID =
-            "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE C.id=? AND J.userId=?"
+            "SELECT id, name, rank FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE C.id=? AND J.userId=?"
         const val SELECT_FRIEND_CATEGORY =
-            "select * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=? and c.id not in (select id FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=?) ORDER BY rank"
+            "select id, name, rank FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=? and c.id not in (select id FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId where J.userId=?) ORDER BY rank"
         const val SELECT_BY_USER_ID =
-            "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE J.userId=? ORDER BY rank"
+            "WITH cat_to_share as (SELECT categoryId, GROUP_CONCAT(userId) as userIds FROM joinUserAndCategory GROUP BY joinUserAndCategory.categoryId) " +
+            "SELECT C.id, C.name, J.rank, CS.userIds " +
+            "FROM categories C " +
+            "LEFT JOIN cat_to_share CS on C.id = CS.categoryId " +
+            "LEFT JOIN joinUserAndCategory J on C.id = J.categoryId " +
+            "WHERE J.userId=? ORDER BY rank"
         const val UPDATE = "UPDATE categories SET name=? WHERE id=?"
         const val DELETE = "DELETE FROM categories WHERE id=?"
 
         const val SELECT_CAT_WITH_SMALLER_RANK =
-            "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE userId=? AND rank=(SELECT MAX(rank) FROM joinUserAndCategory WHERE userId=? AND rank<?)"
+            "SELECT id, name, rank FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE userId=? AND rank=(SELECT MAX(rank) FROM joinUserAndCategory WHERE userId=? AND rank<?)"
         const val SELECT_CAT_WITH_HIGHER_RANK =
-            "SELECT * FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE userId=? AND rank=(SELECT MIN(rank) FROM joinUserAndCategory WHERE userId=? AND rank>?)"
+            "SELECT id, name, rank FROM categories C LEFT JOIN joinUserAndCategory J on C.id = J.categoryId WHERE userId=? AND rank=(SELECT MIN(rank) FROM joinUserAndCategory WHERE userId=? AND rank>?)"
     }
 
     override fun getTableName(): String {
@@ -38,10 +46,10 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
         )
     }
 
-    fun addCategory(category: NewCategory, userIds: List<Long>) {
+    fun addCategory(name: String, userIds: List<Long>) {
         val categoryId = conn.safeExecute(INSERT, {
             with(it) {
-                setString(1, category.name)
+                setString(1, name)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
                 if (generatedKeys.next()) {
@@ -50,7 +58,7 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
                     throw Exception("executeUpdate, no key generated")
                 }
             }
-        }, errorMessage(INSERT, category.name))
+        }, errorMessage(INSERT, name))
 
         joinUserAndCategoryAccessor.addCategory(userIds, categoryId)
     }
@@ -62,11 +70,19 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
                 val res = executeQuery()
                 val categories = arrayListOf<DbCategory>()
                 while (res.next()) {
+                    //array are stupid and does not do what it is supposed to do, it returns an array of one CSV string
+                    val share = res.getString(4)
+                        .split(",")
+                        .map { v -> v.toLong() }
+                        .filter { u -> u != userId }
+                        .toCollection(hashSetOf())
+
                     categories.add(
                         DbCategory(
                             res.getLong("id"),
                             res.getString("name"),
-                            res.getLong("rank")
+                            res.getLong("rank"),
+                            share
                         )
                     )
                 }
@@ -87,26 +103,25 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
                         DbCategory(
                             res.getLong("id"),
                             res.getString("name"),
-                            res.getLong("rank")
+                            res.getLong("rank"),
+                            setOf()
                         )
                     )
                 }
                 return@with categories
             }
-        }, errorMessage(SELECT_BY_USER_ID, userId.toString()))
+        }, errorMessage(SELECT_FRIEND_CATEGORY, userId.toString()))
     }
 
-    fun modifyCategory(userId: Long, categoryId: Long, category: Category) {
+    fun modifyCategory(categoryId: Long, name: String) {
         conn.safeExecute(UPDATE, {
             with(it) {
-                setString(1, category.name)
+                setString(1, name)
                 setLong(2, categoryId)
                 val rowCount = executeUpdate()
                 if (rowCount == 0) throw Exception("executeUpdate return no rowCount")
             }
-        }, errorMessage(UPDATE, category.name, categoryId.toString()))
-
-        joinUserAndCategoryAccessor.modifyRank(userId, categoryId, category.rank)
+        }, errorMessage(UPDATE, name, categoryId.toString()))
     }
 
     fun removeCategory(categoryId: Long) {
@@ -162,10 +177,11 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
                 return@with DbCategory(
                     rs.getLong("id"),
                     rs.getString("name"),
-                    rs.getLong("rank")
+                    rs.getLong("rank"),
+                    setOf()
                 )
             }
-        }, errorMessage(SELECT_BY_ID, categoryId.toString()))
+        }, errorMessage(SELECT_BY_ID_AND_USER_ID, categoryId.toString()))
     }
 
     private fun getOtherCategory(userId: Long, dbCategory: DbCategory, query: String): DbCategory? {
@@ -179,19 +195,20 @@ class CategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
                 return@with DbCategory(
                     rs.getLong("id"),
                     rs.getString("name"),
-                    rs.getLong("rank")
+                    rs.getLong("rank"),
+                    setOf()
                 )
             }
         }, errorMessage(query, userId.toString(), dbCategory.rank.toString()))
     }
 
     private fun switchCategory(userId: Long, dbCategory: DbCategory, downCat: DbCategory) {
-        modifyCategory(userId, dbCategory.id, Category(dbCategory.name, downCat.rank))
+        joinUserAndCategoryAccessor.modifyRank(userId, dbCategory.id, downCat.rank)
         try {
-            modifyCategory(userId, downCat.id, Category(downCat.name, dbCategory.rank))
+            joinUserAndCategoryAccessor.modifyRank(userId, downCat.id, dbCategory.rank)
         } catch (e: DbException) {
             //Try to reverse first switch
-            modifyCategory(userId, dbCategory.id, Category(dbCategory.name, dbCategory.rank))
+            joinUserAndCategoryAccessor.modifyRank(userId, dbCategory.id, dbCategory.rank)
             throw DbException("No change applied", e)
         }
     }

@@ -49,10 +49,10 @@ class GiftAccessorTest : StringSpec() {
 
         usersAccessor.addUser("name1", "pwd".toByteArray(), "azerty".toByteArray(), "", null)
         usersAccessor.addUser("name2", "pwd".toByteArray(), "otherSalt".toByteArray(), "", null)
-        categoryAccessor.addCategory(NewCategory("Default"), listOf(1))
-        categoryAccessor.addCategory(NewCategory("cat1"), listOf(1))
-        categoryAccessor.addCategory(NewCategory("Default"), listOf(2))
-        categoryAccessor.addCategory(NewCategory("cat2"), listOf(2))
+        categoryAccessor.addCategory("Default", listOf(1))
+        categoryAccessor.addCategory("cat1", listOf(1))
+        categoryAccessor.addCategory("Default", listOf(2))
+        categoryAccessor.addCategory("cat2", listOf(2))
     }
 
     override fun afterTest(testCase: TestCase, result: TestResult) {
@@ -145,7 +145,7 @@ class GiftAccessorTest : StringSpec() {
 
         "Modify gift from null to values." {
             giftAccessor.addGift(NewGift(name = "g1", categoryId = 1L), false)
-            giftAccessor.modifyGift(1L, Gift("modified", "desc", "1€", "here", 2L, "pic.jpg", 1L))
+            giftAccessor.modifyGift(1L, NewGift("modified", "desc", "1€", "here", 2L, "pic.jpg"))
 
             val expected = DbGift(
                 1L, "modified", "desc", "1€", "here", 2L, "pic.jpg", secret = false, heart = false, rank = 1L
@@ -159,7 +159,7 @@ class GiftAccessorTest : StringSpec() {
 
         "Modify gift from values to null." {
             giftAccessor.addGift(NewGift("g1", "desc", "1€", "Here", 1L, "nice_pic.jpg"), false)
-            giftAccessor.modifyGift(1L, Gift(name = "modified", categoryId = 2L, rank = 1L))
+            giftAccessor.modifyGift(1L, NewGift(name = "modified", categoryId = 2L))
 
             val expected = DbGift(1L, "modified", null, null, null, 2L, null, secret = false, heart = false, rank = 1L)
             giftAccessor.getGift(1L) shouldBe expected
@@ -171,7 +171,7 @@ class GiftAccessorTest : StringSpec() {
 
         "Modify unknown gift throw." {
             assertFailsWith(DbException::class) {
-                giftAccessor.modifyGift(1L, Gift(name = "modified", categoryId = 2L, rank = 1L))
+                giftAccessor.modifyGift(1L, NewGift(name = "modified", categoryId = 2L))
             }
         }
 
