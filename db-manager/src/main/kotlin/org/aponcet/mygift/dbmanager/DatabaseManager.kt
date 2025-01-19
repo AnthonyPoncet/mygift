@@ -26,7 +26,7 @@ data class DbUser(val id: Long, val name: String, val password: ByteArray, val s
     }
 }
 
-data class DbCategory(val id: Long, val name: String, val rank: Long)
+data class DbCategory(val id: Long, val name: String, val rank: Long, val share: Set<Long>)
 data class DbGift(
     val id: Long,
     val name: String,
@@ -116,7 +116,7 @@ class DatabaseManager(dbPath: String) {
     @Synchronized
     fun addUser(userName: String, password: ByteArray, salt: ByteArray, picture: String?, dateOfBirth: Long?): DbUser {
         val newUser = usersAccessor.addUser(userName, password, salt, picture ?: "", dateOfBirth)
-        addCategory(NewCategory(DEFAULT_CATEGORY_NAME), listOf(newUser.id))
+        addCategory(DEFAULT_CATEGORY_NAME, listOf(newUser.id))
         return newUser
     }
 
@@ -178,7 +178,7 @@ class DatabaseManager(dbPath: String) {
     }
 
     @Synchronized
-    fun modifyGift(userId: Long, giftId: Long, gift: Gift) {
+    fun modifyGift(userId: Long, giftId: Long, gift: NewGift) {
         checkUpdateGiftsInputs(userId, giftId)
         giftAccessor.modifyGift(giftId, gift)
     }
@@ -270,10 +270,10 @@ class DatabaseManager(dbPath: String) {
      * Category
      */
     @Synchronized
-    fun addCategory(category: NewCategory, userIds: List<Long>) {
+    fun addCategory(name: String, userIds: List<Long>) {
         userIds.forEach { if (!usersAccessor.userExists(it)) throw Exception("Unknown user $it") }
 
-        categoryAccessor.addCategory(category, userIds)
+        categoryAccessor.addCategory(name, userIds)
     }
 
     @Synchronized
@@ -297,9 +297,9 @@ class DatabaseManager(dbPath: String) {
     }
 
     @Synchronized
-    fun modifyCategory(userId: Long, categoryId: Long, category: Category) {
+    fun modifyCategory(userId: Long, categoryId: Long, name: String) {
         checkCategoryInputs(userId, categoryId)
-        categoryAccessor.modifyCategory(userId, categoryId, category)
+        categoryAccessor.modifyCategory(categoryId, name)
     }
 
     @Synchronized

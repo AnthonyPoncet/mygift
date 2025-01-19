@@ -1,5 +1,7 @@
 package org.aponcet.mygift.dbmanager
 
+import org.aponcet.mygift.dbmanager.CategoryAccessor.Companion.INSERT
+
 class JoinUserAndCategoryAccessor(private val conn: DbConnection) : DaoAccessor() {
     companion object {
         const val ADD_CATEGORY = "INSERT into joinUserAndCategory(userId, categoryId, rank) VALUES (?,?,?)"
@@ -25,7 +27,7 @@ class JoinUserAndCategoryAccessor(private val conn: DbConnection) : DaoAccessor(
         )
     }
 
-    fun addCategory(userId: Long, categoryId: Long) {
+    private fun addCategory(userId: Long, categoryId: Long) {
         val maxId = getCurrentMaxRank(userId)
         conn.safeExecute(ADD_CATEGORY, {
             with(it) {

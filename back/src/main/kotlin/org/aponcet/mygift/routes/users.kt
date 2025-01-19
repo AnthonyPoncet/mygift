@@ -12,7 +12,7 @@ import org.aponcet.authserver.UserAndPictureJson
 import org.aponcet.authserver.UserJson
 import org.aponcet.mygift.*
 
-fun Route.users(userManager: UserManager) {
+fun Route.users(userManager: UserManager, debug: Boolean) {
     /** Connect **/
     route("/user") {
         post("/connect") {
@@ -51,7 +51,9 @@ fun Route.users(userManager: UserManager) {
             post("/change-account") {
                 var userJson = Gson().fromJson(call.receiveText(), UserJson::class.java)
 
-                userJson = userJson.copy(session = call.sessions.get<Session>()!!.session)
+                if (!debug) {
+                    userJson = userJson.copy(session = call.sessions.get<Session>()!!.session)
+                }
 
                 try {
                     val user = userManager.connect(userJson)

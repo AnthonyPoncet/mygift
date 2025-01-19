@@ -131,8 +131,8 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
             allowHeader(HttpHeaders.AccessControlAllowOrigin)
             allowHost("www.druponps.fr", listOf("https"))
         } else {
-            allowHost("0.0.0.0:3000", listOf("http"))
-            allowHost("localhost:3000", listOf("http"))
+            allowHost("0.0.0.0:5173", listOf("http"))
+            allowHost("localhost:5173", listOf("http"))
             allowHost("localhost:8080", listOf("http"))
         }
     }
@@ -195,7 +195,7 @@ fun Application.mygift(userManager: UserManager, publicKeyManager: PublicKeyMana
         friendRequest(userManager)
         gifts(userManager, data)
         password(userManager)
-        users(userManager)
+        users(userManager, debug)
         static()
     }
 }
