@@ -8,7 +8,10 @@ export async function make_authorized_request(
   body: BodyInit | null = null,
   isJson: boolean = true,
 ): Promise<Response | null> {
-  const user = useUserStore().user;
+  const router = useRouter();
+  const userStore = useUserStore();
+  const user = userStore.user;
+  console.debug(`Make request ${path} for user ${user} with router ${router}`);
   if (user !== null) {
     const headers: Record<string, string> = { Authorization: `Bearer ${user.token}` };
     if (body !== null && isJson) {
@@ -18,6 +21,7 @@ export async function make_authorized_request(
     const requestInit: RequestInit = {
       method: method,
       headers: headers,
+      credentials: "same-origin",
     };
 
     if (body !== null) {
@@ -27,13 +31,13 @@ export async function make_authorized_request(
     const response = await fetch(`${getBaseUrl()}${path}`, requestInit);
 
     if (response.status === 401) {
-      useUserStore().logout();
-      useRouter().push({ name: "home" });
+      userStore.logout();
+      router.push({ name: "home" });
     } else if (response.ok) {
       return response;
     }
   } else {
-    useRouter().push({ name: "home" });
+    router.push({ name: "home" });
   }
 
   return null;

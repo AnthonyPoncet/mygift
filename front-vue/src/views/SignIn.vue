@@ -18,9 +18,16 @@ async function signin(e: Event) {
   e.preventDefault();
   logining.value = true;
 
-  const form: HTMLFormElement = (e.target as HTMLButtonElement).parentElement as HTMLFormElement;
+  console.debug(e);
+  console.debug(e.target);
+  const form: HTMLFormElement =
+    (e.target as HTMLBaseElement).tagName === "DIV"
+      ? ((e.target as HTMLDivElement).parentElement?.parentElement as HTMLFormElement)
+      : ((e.target as HTMLButtonElement).parentElement as HTMLFormElement);
+  console.debug(form);
   if (!form.checkValidity()) {
     form.classList.add("was-validated");
+    logining.value = false;
     return;
   }
 
@@ -30,7 +37,7 @@ async function signin(e: Event) {
   }
 
   const response = await fetch(
-    `${getBaseUrl()}/user/${route.path === "/changeaccount" ? "change-account" : "connect"}`,
+    `${getBaseUrl()}/users/${route.path === "/changeaccount" ? "change-account" : "connect"}`,
     {
       method: "post",
       headers,
@@ -73,6 +80,7 @@ async function signin(e: Event) {
           id="username"
           :placeholder="useLanguageStore().language.messages.global__username"
           v-model="username"
+          autocomplete="username"
           required
         />
         <div class="invalid-feedback">
@@ -92,6 +100,7 @@ async function signin(e: Event) {
           id="password"
           :placeholder="useLanguageStore().language.messages.global__password"
           v-model="password"
+          autocomplete="current-password"
           required
         />
         <div class="invalid-feedback">

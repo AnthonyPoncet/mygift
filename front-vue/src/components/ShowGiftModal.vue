@@ -7,9 +7,10 @@ import { onMounted, ref, useTemplateRef } from "vue";
 import { Modal } from "bootstrap";
 
 const props = defineProps<{
-  gift: Gift | null;
+  gift: Gift;
   giftUrl: string | null;
   reserved: boolean;
+  friendId: number;
 }>();
 
 const modal = useTemplateRef("showGiftModal");
@@ -22,7 +23,10 @@ function truncateWebsites(whereToBuy: string): string {
 }
 
 async function reserve() {
-  const response = await make_authorized_request(`/gifts/${props.gift?.id}/reserve`, "POST");
+  const response = await make_authorized_request(
+    `/wishlist/friend/${props.friendId}/gifts/${props.gift.id}`,
+    "POST",
+  );
   if (response !== null) {
     bootstrapModal.value.hide();
     emit("refresh-wishlist");
@@ -63,13 +67,13 @@ onMounted(() => {
           />
           <div class="mt-2">{{ props.gift?.description }}</div>
           <div>{{ props.gift?.price }}</div>
-          <template v-if="props.gift?.whereToBuy && props.gift?.whereToBuy.startsWith('http')">
-            <a :href="props.gift?.whereToBuy" target="_blank" rel="noopener noreferrer">{{
-              truncateWebsites(props.gift?.whereToBuy)
+          <template v-if="props.gift?.where_to_buy && props.gift?.where_to_buy.startsWith('http')">
+            <a :href="props.gift?.where_to_buy" target="_blank" rel="noopener noreferrer">{{
+              truncateWebsites(props.gift?.where_to_buy)
             }}</a>
           </template>
           <template v-else>
-            <div class="max-text text-truncate">{{ props.gift?.whereToBuy }}</div>
+            <div class="max-text text-truncate">{{ props.gift?.where_to_buy }}</div>
           </template>
         </div>
         <div v-if="props.reserved === false" class="modal-footer" @click="reserve">

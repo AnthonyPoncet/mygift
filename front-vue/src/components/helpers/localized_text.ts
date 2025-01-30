@@ -50,9 +50,8 @@ export interface Messages {
   delete_modal__pre_text_category: string;
   delete_modal__pre_text_gift: string;
   delete_modal__category_hint: string;
+  delete_modal__category_shared_hint: string;
   delete_modal__post_text_friend: string;
-  delete_modal__delete_gift_i_got_it: string;
-  delete_modal__delete_gift_dont_want_it: string;
 
   myfriends__add_friend: string;
   myfriends__friend_list: string;
@@ -119,8 +118,8 @@ export const fr: Messages = {
   delete_modal__pre_text_gift: "le cadeau ",
   delete_modal__post_text_friend: "de vos amis?",
   delete_modal__category_hint: "Ceci supprimera aussi tous les cadeaux de cette catégorie.",
-  delete_modal__delete_gift_i_got_it: "Je l'ai reçu",
-  delete_modal__delete_gift_dont_want_it: "Je n'en veux plus",
+  delete_modal__category_shared_hint:
+    "Ceci ne supprimera pas la categorie partagée de la liste de vos amis.",
 
   myfriends__add_friend: "Ajouter un ami",
   myfriends__friend_list: "Amis",
@@ -136,8 +135,6 @@ export const fr: Messages = {
   home__special_event: {
     [EventKind.BIRTHDAY]: "",
     [EventKind.CHRISTMAS]: "Noël",
-    [EventKind.MOTHER_DAY]: "Fête des mères",
-    [EventKind.FATHER_DAY]: "Fête des pères",
   },
 };
 
@@ -191,9 +188,9 @@ export const en: Messages = {
   delete_modal__pre_text_category: "the category ",
   delete_modal__pre_text_gift: "the gift ",
   delete_modal__category_hint: "This will also delete all gifts of this category.",
+  delete_modal__category_shared_hint:
+    "This will not delete the shared category from your friends list.",
   delete_modal__post_text_friend: " of your firend list?",
-  delete_modal__delete_gift_i_got_it: "I have received it",
-  delete_modal__delete_gift_dont_want_it: "I don't want it anymore",
 
   myfriends__add_friend: "Add friend",
   myfriends__friend_list: "Friends",
@@ -209,7 +206,5 @@ export const en: Messages = {
   home__special_event: {
     [EventKind.BIRTHDAY]: "",
     [EventKind.CHRISTMAS]: "Christmas",
-    [EventKind.MOTHER_DAY]: "Mothers day",
-    [EventKind.FATHER_DAY]: "Fathers day",
   },
 };

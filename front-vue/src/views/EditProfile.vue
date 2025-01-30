@@ -13,7 +13,7 @@ function humanReadableDateOfBirth(): string | null {
   return new Date(unixTime * 1000 + new Date().getTimezoneOffset() * 60000).toLocaleDateString();
 }
 
-const username: Ref<string> = ref(useUserStore().user!.username);
+const username: Ref<string> = ref(useUserStore().user!.name);
 const dateOfBirth: Ref<string | null> = ref(humanReadableDateOfBirth());
 const pictureUrl: Ref<string | null> = ref(null);
 const pictureHasChanged: Ref<boolean> = ref(false);
@@ -128,11 +128,11 @@ async function editProfile(event: Event) {
 
   if (response != null) {
     useUserStore().updateUser({
-      token: useUserStore().user!.token,
-      session: "",
+      id: useUserStore().user!.id,
       name: username.value,
+      token: useUserStore().user!.token,
       picture: picture,
-      dateOfBirth: Number(sendingDateOfBirth),
+      date_of_birth: Number(sendingDateOfBirth),
     });
   }
 
@@ -143,7 +143,7 @@ watch(
   () => useUserStore().user,
   () => {
     getImage();
-    username.value = useUserStore().user!.username;
+    username.value = useUserStore().user!.name;
     dateOfBirth.value = humanReadableDateOfBirth();
     pictureUrl.value = null;
     pictureHasChanged.value = false;

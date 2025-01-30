@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, type Ref } from "vue";
 import { make_authorized_request } from "@/components/helpers/make_request";
-import type { Category, Gift, OneCategory } from "@/components/helpers/common_json";
+import type { Category, Gift, Wishlist } from "@/components/helpers/common_json";
 import SquareImage from "@/components/SquareImage.vue";
 import blank_gift from "@/assets/images/blank_gift.png";
 import CategoryModal, { CategoryModalAction } from "@/components/CategoryModal.vue";
@@ -10,7 +10,7 @@ import DeleteModal, { DeleteModalAction } from "@/components/DeleteModal.vue";
 import GiftModal, { GiftModalAction } from "@/components/GiftModal.vue";
 import { useUserStore } from "@/stores/user";
 
-const wishList: Ref<OneCategory[]> = ref([]);
+const wishList: Ref<Wishlist> = ref({ categories: [] });
 const editMode: Ref<boolean> = ref(false);
 const pdfDownloadMode: Ref<boolean> = ref(false);
 
@@ -33,29 +33,28 @@ enum Kind {
   Gift = "gifts",
 }
 
-async function getGifts() {
-  const response = await make_authorized_request("/gifts");
+async function getWishlist() {
+  const response = await make_authorized_request("/wishlist");
   if (response !== null) {
     wishList.value = await response.json();
   }
 }
 
-async function heartGift(id: number, currentHeartState: boolean) {
+async function heartGift(categoryId: number, giftId: number) {
   if (pdfDownloadMode.value) return;
 
   const response = await make_authorized_request(
-    `/gifts/${id}/heart/${currentHeartState ? "unlike" : "like"}`,
-    "POST",
+    `/wishlist/categories/${categoryId}/gifts/${giftId}/change_like`,
   );
   if (response !== null) {
-    await getGifts();
+    await getWishlist();
   }
 }
 
 async function rank(kind: Kind, id: number, rank: Rank) {
   const response = await make_authorized_request(`/${kind}/${id}/rank-actions/${rank}`, "POST");
   if (response !== null) {
-    await getGifts();
+    await getWishlist();
   }
 }
 
@@ -67,7 +66,7 @@ async function getPdf() {
     const url = window.URL.createObjectURL(new Blob([blob]));
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `mygift_${useUserStore().user?.username}.pdf`);
+    link.setAttribute("download", `mygift_${useUserStore().user?.name}.pdf`);
 
     // Append to html link element page
     document.body.appendChild(link);
@@ -81,12 +80,12 @@ async function getPdf() {
   pdfDownloadMode.value = false;
 }
 
-getGifts();
+getWishlist();
 
 watch(
   () => useUserStore().user,
   () => {
-    getGifts();
+    getWishlist();
   },
 );
 </script>
@@ -97,7 +96,7 @@ watch(
       <button
         type="button"
         class="btn btn-outline-dark me-2"
-        :disabled="editMode || pdfDownloadMode || wishList.length === 0"
+        :disabled="editMode || pdfDownloadMode || wishList.categories.length === 0"
         data-bs-toggle="modal"
         data-bs-target="#giftModal"
         @click="
@@ -127,17 +126,12 @@ watch(
         type="button"
         class="btn btn-outline-dark me-2"
         data-bs-toggle="button"
-        :disabled="pdfDownloadMode"
+        disabled="true"
         @click="editMode = !editMode"
       >
         {{ useLanguageStore().language.messages.mywishlist__reorderButton }}
       </button>
-      <button
-        type="button"
-        class="btn btn-outline-dark me-2"
-        :disabled="editMode || pdfDownloadMode"
-        @click="getPdf"
-      >
+      <button type="button" class="btn btn-outline-dark me-2" disabled="true" @click="getPdf">
         <div class="d-flex align-items-center justify-content-center">
           {{ useLanguageStore().language.messages.mywishlist__downloadPdfButton }}
           <div
@@ -150,9 +144,9 @@ watch(
       </button>
     </div>
     <div class="mt-4">
-      <template v-for="(category, categoryIndex) in wishList" :key="'c' + category.category.id">
+      <template v-for="(category, categoryIndex) in wishList.categories" :key="'c' + category.id">
         <h5 class="mt-4">
-          {{ category.category.name }}
+          {{ category.name }}
           <template v-if="editMode">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -163,7 +157,7 @@ watch(
               :visibility="categoryIndex === 0 ? 'collapse' : 'visible'"
               :class="categoryIndex === 0 ? 'collapse' : ''"
               class="clickable-icon ms-1"
-              @click="rank(Kind.Category, category.category.id, Rank.Down)"
+              @click="rank(Kind.Category, category.id, Rank.Down)"
             >
               <path
                 fill-rule="evenodd"
@@ -176,10 +170,10 @@ watch(
               height="16"
               fill="black"
               viewBox="0 0 16 16"
-              :visibility="categoryIndex === wishList.length - 1 ? 'hidden' : 'visible'"
+              :visibility="categoryIndex === wishList.categories.length - 1 ? 'hidden' : 'visible'"
               :class="categoryIndex === 0 ? 'ms-1' : 'ms-2'"
               class="clickable-icon"
-              @click="rank(Kind.Category, category.category.id, Rank.Up)"
+              @click="rank(Kind.Category, category.id, Rank.Up)"
             >
               <path
                 fill-rule="evenodd"
@@ -201,7 +195,7 @@ watch(
               @click="
                 () => {
                   if (pdfDownloadMode) return;
-                  categoryModal = category.category;
+                  categoryModal = category;
                   categoryActionModal = CategoryModalAction.Edit;
                 }
               "
@@ -224,7 +218,7 @@ watch(
               @click="
                 () => {
                   if (pdfDownloadMode) return;
-                  categoryModal = category.category;
+                  categoryModal = category;
                   deleteActionModal = DeleteModalAction.Category;
                 }
               "
@@ -284,7 +278,7 @@ watch(
                     :fill="gift.heart ? 'red' : 'black'"
                     viewBox="0 0 16 16"
                     :class="pdfDownloadMode ? '' : 'clickable-icon'"
-                    @click="heartGift(gift.id, gift.heart)"
+                    @click="heartGift(category.id, gift.id)"
                   >
                     <path
                       fill-rule="evenodd"
@@ -303,6 +297,7 @@ watch(
                     @click="
                       () => {
                         if (pdfDownloadMode) return;
+                        categoryModal = category;
                         giftModal = gift;
                         deleteActionModal = DeleteModalAction.Gift;
                       }
@@ -322,7 +317,7 @@ watch(
                 @click="
                   () => {
                     if (editMode || pdfDownloadMode) return;
-                    categoryModal = category.category;
+                    categoryModal = category;
                     giftModal = gift;
                     giftActionModal = GiftModalAction.Edit;
                   }
@@ -352,12 +347,12 @@ watch(
     </div>
   </div>
   <CategoryModal
-    @refresh-wishlist="getGifts"
+    @refresh-wishlist="getWishlist"
     :category="categoryModal"
     :action="categoryActionModal"
   />
   <GiftModal
-    @refresh-wishlist="getGifts"
+    @refresh-wishlist="getWishlist"
     :gift="giftModal"
     :giftUrl="
       giftModal === null
@@ -367,12 +362,12 @@ watch(
           : giftIdToImageUrl[giftModal.id]
     "
     :category="categoryModal === null ? null : categoryModal.id"
-    :categories="wishList.map((c) => c.category)"
+    :categories="wishList.categories"
     :action="giftActionModal"
     :secretUser="null"
   />
   <DeleteModal
-    @refresh-wishlist="getGifts"
+    @refresh-wishlist="getWishlist"
     :action="deleteActionModal"
     :category="categoryModal"
     :gift="giftModal"
