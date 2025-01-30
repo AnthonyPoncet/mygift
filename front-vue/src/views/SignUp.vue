@@ -17,9 +17,11 @@ async function signup(e: Event) {
   e.preventDefault();
   creating.value = true;
 
-  const form: HTMLFormElement = (e.target as HTMLButtonElement).parentElement as HTMLFormElement;
+  const form: HTMLFormElement = (e.target as HTMLButtonElement).parentElement
+    ?.parentElement as HTMLFormElement;
   if (!form.checkValidity()) {
     form.classList.add("was-validated");
+    creating.value = false;
     return;
   }
 
@@ -58,6 +60,7 @@ async function signup(e: Event) {
           id="username"
           :placeholder="useLanguageStore().language.messages.global__username"
           v-model="username"
+          autocomplete="username"
           required
         />
         <div class="invalid-feedback">
@@ -77,6 +80,7 @@ async function signup(e: Event) {
           id="password"
           :placeholder="useLanguageStore().language.messages.global__password"
           v-model="password"
+          autocomplete="new-password"
           required
         />
         <div class="invalid-feedback">

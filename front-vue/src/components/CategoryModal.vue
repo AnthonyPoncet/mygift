@@ -10,7 +10,7 @@ import { onMounted, ref, useTemplateRef, watch, type Ref } from "vue";
 import { make_authorized_request } from "./helpers/make_request";
 import { Modal } from "bootstrap";
 import { useLanguageStore } from "@/stores/language";
-import type { Category, Friend, FriendRequest } from "./helpers/common_json";
+import type { Category, Friends } from "./helpers/common_json";
 
 const props = defineProps<{
   action: CategoryModalAction;
@@ -28,13 +28,13 @@ const title: Ref<string> = ref(
 const buttonText: Ref<string> = ref(useLanguageStore().language.messages.global__add);
 
 const actionRef: Ref<CategoryModalAction> = ref(CategoryModalAction.Add);
-const categoryRef: Ref<Category> = ref({ id: 0, name: "", share: [] });
+const categoryRef: Ref<Category> = ref({ id: 0, name: "", share_with: [], gifts: [] });
 
-const friends: Ref<Friend[]> = ref([]);
+const friends: Ref<Friends> = ref({ friends: [] });
 
 watch(props, () => {
   if (props.category === null) {
-    categoryRef.value = { id: 0, name: "", share: [] };
+    categoryRef.value = { id: 0, name: "", share_with: [], gifts: [] };
   } else {
     categoryRef.value = props.category;
   }
@@ -51,9 +51,7 @@ watch(props, () => {
 async function getFriends() {
   const response = await make_authorized_request("/friends");
   if (response !== null) {
-    const firendRequests: FriendRequest[] = await response.json();
-
-    friends.value = firendRequests.map((fr) => fr.otherUser);
+    friends.value = await response.json();
   }
 }
 
@@ -74,10 +72,10 @@ async function clickButton(event: Event) {
   let endpoint,
     method = "";
   if (actionRef.value === CategoryModalAction.Add) {
-    endpoint = "/categories";
-    method = "PUT";
+    endpoint = "/wishlist/categories";
+    method = "POST";
   } else {
-    endpoint = `/categories/${categoryRef.value.id}`;
+    endpoint = `/wishlist/categories/${categoryRef.value.id}`;
     method = "PATCH";
   }
 
@@ -86,14 +84,14 @@ async function clickButton(event: Event) {
     method,
     JSON.stringify({
       name: categoryRef.value.name,
-      share: categoryRef.value.share,
+      share_with: categoryRef.value.share_with,
     }),
   );
   if (response !== null) {
     bootstrapModal.value.hide();
     emit("refresh-wishlist");
     form.value.classList.remove("was-validated");
-    categoryRef.value = { id: 0, name: "", share: [] };
+    categoryRef.value = { id: 0, name: "", share_with: [], gifts: [] };
     form.value!.reset();
   }
 }
@@ -150,14 +148,14 @@ onMounted(() => {
               <p class="form-label">
                 {{ useLanguageStore().language.messages.global__share_with }}
               </p>
-              <template v-for="friend in friends" :key="friend">
+              <template v-for="friend in friends.friends" :key="friend">
                 <div class="form-check">
                   <input
                     class="form-check-input"
                     type="checkbox"
                     :id="friend.name"
-                    :value="friend.name"
-                    v-model="categoryRef.share"
+                    :value="friend.id"
+                    v-model="categoryRef.share_with"
                   />
                   <label class="form-check-label" :for="friend.name">{{ friend.name }}</label>
                 </div>

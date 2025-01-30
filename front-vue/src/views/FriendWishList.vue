@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type {
-  Category,
+  FriendCategory,
   FriendGift,
+  FriendWishlist,
   Gift,
-  OneFriendCategory,
 } from "@/components/helpers/common_json";
 import { make_authorized_request } from "@/components/helpers/make_request";
 import SquareImage from "@/components/SquareImage.vue";
@@ -17,29 +17,45 @@ import ShowGiftModal from "@/components/ShowGiftModal.vue";
 
 const route = useRoute();
 
-const username: Ref<string> = ref((route.params as { name: string }).name);
-const wishList: Ref<OneFriendCategory[]> = ref([]);
+const friendName: Ref<string> = ref((route.params as { name: string }).name);
+const friendId: Ref<number> = ref(-1);
+
+watch(route.params, () => {
+  console.log(route.params);
+});
+
+const wishList: Ref<FriendWishlist> = ref({ categories: [] });
 
 const giftModal: Ref<Gift | null> = ref(null);
-const categoryModal: Ref<Category | null> = ref(null);
+const categoryModal: Ref<number | null> = ref(null);
 const giftActionModal: Ref<GiftModalAction> = ref(GiftModalAction.Add);
 const giftIdToImageUrl: Ref<Record<number, string>> = ref({});
 const reserved: Ref<boolean> = ref(false);
 
 const hoveredGift: Ref<number | null> = ref(null);
 
+async function getFriendDetails() {
+  const response = await make_authorized_request(`/friends/${friendName.value}`);
+  if (response !== null) {
+    const friend: { id: number } = await response.json();
+    friendId.value = friend.id;
+  }
+}
+
 async function getGifts() {
-  const response = await make_authorized_request(`/gifts/${username.value}`);
+  if (friendId.value === -1) {
+    await getFriendDetails();
+  }
+  const response = await make_authorized_request(`/wishlist/friend/${friendId.value}`);
   if (response !== null) {
     wishList.value = await response.json();
   }
 }
 
-//TODO: make no sense that it returns a reserve list...
-async function reserve(id: number, currentReserveList: string[]) {
+async function reserve(id: number, reservedBy: number | null) {
   const response = await make_authorized_request(
-    `/gifts/${id}/reserve`,
-    currentReserveList.length === 0 ? "POST" : "DELETE",
+    `/wishlist/friend/${friendId.value}/gifts/${id}`,
+    reservedBy === null ? "POST" : "DELETE",
   );
   if (response !== null) {
     getGifts();
@@ -49,14 +65,17 @@ async function reserve(id: number, currentReserveList: string[]) {
 function getCardClasses(gift: FriendGift): string {
   let classes = "";
 
-  if (gift.reservedBy.length !== 0) classes += "gift-already-bought";
+  if (gift.reserved_by !== null) classes += "gift-already-bought";
   if (gift.secret) classes += " gift-secret";
 
   return classes;
 }
 
-async function deleteGift(gift: Gift) {
-  const response = await make_authorized_request(`/gifts/${gift.id}?status=RECEIVED`, "DELETE");
+async function deleteGift(category: FriendCategory, gift: FriendGift) {
+  const response = await make_authorized_request(
+    `/wishlist/friend/${friendId.value}/categories/${category.id}/gifts/${gift.id}`,
+    "DELETE",
+  );
   if (response !== null) {
     getGifts();
   }
@@ -74,11 +93,11 @@ watch(
 
 <template>
   <div class="container-fluid mt-3">
-    <h1>{{ useLanguageStore().language.messages.friendlist__title + username }}</h1>
+    <h1>{{ useLanguageStore().language.messages.friendlist__title + friendName }}</h1>
     <button
       type="button"
       class="btn btn-outline-dark me-2 mt-2"
-      :disabled="wishList.length === 0"
+      :disabled="wishList.categories.length === 0"
       data-bs-toggle="modal"
       data-bs-target="#giftModal"
       @click="
@@ -90,16 +109,16 @@ watch(
       {{ useLanguageStore().language.messages.friendlist__addGiftButton }}
     </button>
     <div class="mt-4">
-      <template v-for="category in wishList" :key="'c' + category.category.id">
+      <template v-for="category in wishList.categories" :key="'c' + category.id">
         <h5 class="mt-4">
-          {{ category.category.name }}
+          {{ category.name }}
         </h5>
         <div class="d-flex flex-row flex-wrap gap-4">
           <template v-for="gift in category.gifts" :key="'g' + gift.id">
             <div
               class="card gift-card"
               :class="getCardClasses(gift)"
-              @mouseenter="hoveredGift = gift.gift.id"
+              @mouseenter="hoveredGift = gift.id"
               @mouseleave="hoveredGift = null"
             >
               <div class="p-2 d-flex flex-row justify-content-between align-items-center">
@@ -107,24 +126,24 @@ watch(
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
                   height="16"
-                  :fill="gift.gift.heart ? 'red' : 'black'"
+                  :fill="gift.heart ? 'red' : 'black'"
                   viewBox="0 0 16 16"
                   class="clickable"
-                  :data-bs-toggle="gift.reservedBy.length === 0 ? 'modal' : ''"
+                  :data-bs-toggle="gift.secret && gift.reserved_by === null ? 'modal' : ''"
                   data-bs-target="#giftModal"
                   @click="
                     () => {
-                      if (gift.reservedBy.length === 0) {
-                        categoryModal = category.category;
-                        giftModal = gift.gift;
+                      if (gift.reserved_by === null) {
+                        categoryModal = category.id;
+                        giftModal = gift;
                         giftActionModal = GiftModalAction.EditSecret;
                       } else {
-                        deleteGift(gift.gift);
+                        deleteGift(category, gift);
                       }
                     }
                   "
                 >
-                  <template v-if="gift.secret && gift.reservedBy.length === 0">
+                  <template v-if="gift.secret && gift.reserved_by === null">
                     <path
                       fill-rule="evenodd"
                       d="M11.013 1.427a1.75 1.75 0 012.474 0l1.086 1.086a1.75 1.75 0 010 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 01-.927-.928l.929-3.25a1.75 1.75 0 01.445-.758l8.61-8.61zm1.414 1.06a.25.25 0 00-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 000-.354l-1.086-1.086zM11.189 6.25L9.75 4.81l-6.286 6.287a.25.25 0 00-.064.108l-.558 1.953 1.953-.558a.249.249 0 00.108-.064l6.286-6.286z"
@@ -157,18 +176,16 @@ watch(
                   viewBox="0 0 16 16"
                   class="clickable"
                   :fill="
-                    gift.reservedBy.length !== 0 &&
-                    gift.reservedBy[0] === useUserStore().user?.username
+                    gift.reserved_by !== null && gift.reserved_by === useUserStore().user?.id
                       ? '#007bff'
                       : 'black'
                   "
                   :visibility="
-                    gift.reservedBy.length !== 0 &&
-                    gift.reservedBy[0] !== useUserStore().user?.username
+                    gift.reserved_by !== null && gift.reserved_by !== useUserStore().user?.id
                       ? 'collapse'
                       : 'visible'
                   "
-                  @click="reserve(gift.gift.id, gift.reservedBy)"
+                  @click="reserve(gift.id, gift.reserved_by)"
                 >
                   <path
                     fill-rule="evenodd"
@@ -182,29 +199,29 @@ watch(
                 data-bs-target="#showGiftModal"
                 @click="
                   () => {
-                    giftModal = gift.gift;
-                    reserved = gift.reservedBy.length > 0;
+                    giftModal = gift;
+                    reserved = gift.reserved_by !== null;
                   }
                 "
               >
                 <SquareImage
-                  :image-name="gift.gift.picture"
+                  :image-name="gift.picture"
                   :size="150"
                   :alternate-image="blank_gift"
                   @image-loaded="
                     (url) => {
-                      giftIdToImageUrl[gift.gift.id] = url;
+                      giftIdToImageUrl[gift.id] = url;
                     }
                   "
                   :withTopRound="false"
                 />
                 <div class="card-body text-center">
-                  <template v-if="hoveredGift === gift.gift.id">
-                    <p class="text-gift">{{ gift.gift.description }}</p>
+                  <template v-if="hoveredGift === gift.id">
+                    <p class="text-gift">{{ gift.description }}</p>
                   </template>
                   <template v-else>
-                    <p class="title-gift">{{ gift.gift.name }}</p>
-                    <p class="text-truncate">{{ gift.gift.price }}</p>
+                    <p class="title-gift">{{ gift.name }}</p>
+                    <p class="text-truncate">{{ gift.price }}</p>
                   </template>
                 </div>
               </div>
@@ -224,14 +241,14 @@ watch(
           ? null
           : giftIdToImageUrl[giftModal.id]
     "
-    :category="categoryModal === null ? null : categoryModal.id"
-    :categories="wishList.map((c) => c.category)"
+    :category="categoryModal"
+    :categories="wishList.categories"
     :action="giftActionModal"
-    :secretUser="username"
+    :secretUser="friendId"
   />
   <ShowGiftModal
     @refresh-wishlist="getGifts"
-    :gift="giftModal"
+    :gift="giftModal!"
     :giftUrl="
       giftModal === null
         ? blank_gift
@@ -240,6 +257,7 @@ watch(
           : giftIdToImageUrl[giftModal.id]
     "
     :reserved="reserved"
+    :friend-id="friendId"
   />
 </template>
 

@@ -12,7 +12,7 @@ import { onMounted, ref, useTemplateRef, watch, type Ref } from "vue";
 import { make_authorized_request } from "./helpers/make_request";
 import { Modal } from "bootstrap";
 import { useLanguageStore } from "@/stores/language";
-import type { Category, FileUpload, Gift } from "./helpers/common_json";
+import type { FileUpload, Gift } from "./helpers/common_json";
 import { Cropper } from "vue-advanced-cropper";
 import "vue-advanced-cropper/dist/style.css";
 
@@ -21,8 +21,8 @@ const props = defineProps<{
   category: number | null;
   gift: Gift | null;
   giftUrl: string | null;
-  categories: Category[];
-  secretUser: string | null;
+  categories: { id: number; name: string }[];
+  secretUser: number | null;
 }>();
 
 const modal = useTemplateRef("giftModal");
@@ -46,11 +46,11 @@ const giftRef: Ref<Gift> = ref({
   name: "",
   description: "",
   price: "",
-  whereToBuy: "",
+  where_to_buy: "",
   picture: "",
   heart: false,
 });
-const secretUserRef: Ref<string | null> = ref(null);
+const secretUserRef: Ref<number | null> = ref(null);
 
 watch(props, () => {
   if (props.categories.length === 0) {
@@ -70,7 +70,7 @@ watch(props, () => {
       name: "",
       description: "",
       price: "",
-      whereToBuy: "",
+      where_to_buy: "",
       picture: "",
       heart: false,
     };
@@ -84,7 +84,7 @@ watch(props, () => {
     giftRef.value = props.gift!;
     categoryRef.value = props.category!;
     pictureUrl.value = props.giftUrl;
-    secretUserRef.value = null;
+    secretUserRef.value = actionRef.value === GiftModalAction.EditSecret ? props.secretUser : null;
     pictureLoaded.value = pictureUrl.value != null;
   }
   pictureHasChanged.value = false;
@@ -112,13 +112,16 @@ async function clickButton(event: Event) {
   let endpoint = "";
   let method = "";
   if (actionRef.value === GiftModalAction.Add) {
-    endpoint = "/gifts";
-    method = "PUT";
+    endpoint = `/wishlist/categories/${categoryRef.value}/gifts`;
+    method = "POST";
   } else if (actionRef.value === GiftModalAction.AddSecret) {
-    endpoint = `/gifts?forUser=${secretUserRef.value}`;
-    method = "PUT";
+    endpoint = `/wishlist/friend/${secretUserRef.value}/categories/${categoryRef.value}/gifts`;
+    method = "POST";
+  } else if (actionRef.value === GiftModalAction.EditSecret) {
+    endpoint = `/wishlist/friend/${secretUserRef.value}/categories/${categoryRef.value}/gifts/${giftRef.value.id}`;
+    method = "PATCH";
   } else {
-    endpoint = `/gifts/${giftRef.value.id}`;
+    endpoint = `/wishlist/categories/${categoryRef.value}/gifts/${giftRef.value.id}`;
     method = "PATCH";
   }
 
@@ -129,9 +132,8 @@ async function clickButton(event: Event) {
       name: giftRef.value.name,
       description: giftRef.value.description,
       price: giftRef.value.price,
-      whereToBuy: giftRef.value.whereToBuy,
+      where_to_buy: giftRef.value.where_to_buy,
       picture: picture,
-      categoryId: categoryRef.value,
     }),
   );
   if (response !== null) {
@@ -149,7 +151,7 @@ async function clickButton(event: Event) {
 async function deleteGift() {
   if (giftRef.value !== null) {
     const response = await make_authorized_request(
-      `/gifts/${giftRef.value.id}?status=RECEIVED`,
+      `/wishlist/categories/${categoryRef.value}/gifts/${giftRef.value.id}`,
       "DELETE",
     );
     if (response !== null) {
@@ -285,7 +287,7 @@ onMounted(() => {
                 class="form-control"
                 id="whereToBuy"
                 :placeholder="useLanguageStore().language.messages.global__whereToBuy"
-                v-model="giftRef.whereToBuy"
+                v-model="giftRef.where_to_buy"
               />
             </div>
             <div class="mb-3">
@@ -293,7 +295,7 @@ onMounted(() => {
                 useLanguageStore().language.messages.global__category
               }}</label>
               <select class="form-select" v-model="categoryRef">
-                <template v-for="category in props.categories" :key="'gsc-' + category">
+                <template v-for="category in props.categories" :key="'gsc-' + category.id">
                   <option :value="category.id">{{ category.name }}</option>
                 </template>
               </select>

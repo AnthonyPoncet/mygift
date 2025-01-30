@@ -1,0 +1,5 @@
+- Change password hashing to RSA256
+- Session should be encrypted
+- router push fail on request fail sometimes...
+- impossible to delete gift
+- How to make cookies work on dev

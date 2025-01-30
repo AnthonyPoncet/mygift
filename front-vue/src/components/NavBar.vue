@@ -201,7 +201,7 @@ function collapse() {
                         :alternate-image="blank_profile_picture"
                         :withTopRound="false"
                       />
-                      <span class="ms-2">{{ otherUser.username }}</span>
+                      <span class="ms-2">{{ otherUser.name }}</span>
                     </div>
                   </template>
                 </li>

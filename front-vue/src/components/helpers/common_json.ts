@@ -2,52 +2,68 @@ export interface ErrorJson {
   error: string;
 }
 
-export interface OneCategory {
-  category: Category;
-  gifts: Gift[];
-}
-
-export interface OneFriendCategory {
-  category: Category;
-  gifts: FriendGift[];
+export interface Wishlist {
+  categories: Category[];
 }
 
 export interface Category {
   id: number;
   name: string;
-  share: string[];
+  share_with: number[];
+  gifts: Gift[];
 }
 
 export interface Gift {
   id: number;
   name: string;
-  description: string;
-  price: string;
-  whereToBuy: string;
-  picture: string;
+  description: string | null;
+  price: string | null;
+  where_to_buy: string | null;
+  picture: string | null;
   heart: boolean;
 }
 
+export interface FriendWishlist {
+  categories: FriendCategory[];
+}
+
+export interface FriendCategory {
+  id: number;
+  name: string;
+  gifts: FriendGift[];
+}
+
 export interface FriendGift {
-  gift: Gift;
-  reservedBy: string[]; //TODO: make no sense that it returns a reserve list...
+  id: number;
+  name: string;
+  description: string | null;
+  price: string | null;
+  where_to_buy: string | null;
+  picture: string | null;
+  heart: boolean;
   secret: boolean;
+  reserved_by: number | null;
+}
+
+export interface Friends {
+  friends: Friend[];
+}
+
+export interface Friend {
+  id: number;
+  name: string;
+  picture: string | null;
+  date_of_birth: number | null;
+}
+
+export interface PendingFriendRequests {
+  sent: FriendRequest[];
+  received: FriendRequest[];
 }
 
 export interface FriendRequest {
   id: number;
-  otherUser: Friend;
-}
-
-export interface Friend {
-  name: string;
-  picture: string | null;
-  dateOfBirth: number | null;
-}
-
-export interface PendingFriendRequest {
-  sent: FriendRequest[];
-  received: FriendRequest[];
+  other_user: Friend;
 }
 
 export interface FileUpload {
@@ -55,10 +71,8 @@ export interface FileUpload {
 }
 
 export enum EventKind {
-  BIRTHDAY = "BIRTHDAY",
-  CHRISTMAS = "CHRISTMAS",
-  MOTHER_DAY = "MOTHER_DAY",
-  FATHER_DAY = "FATHER_DAY",
+  BIRTHDAY = "Birthday",
+  CHRISTMAS = "Christmas",
 }
 
 export interface EventJson {

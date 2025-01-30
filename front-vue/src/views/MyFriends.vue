@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Friend, FriendRequest, PendingFriendRequest } from "@/components/helpers/common_json";
+import type { Friend, Friends, PendingFriendRequests } from "@/components/helpers/common_json";
 import { make_authorized_request } from "@/components/helpers/make_request";
 import { useLanguageStore } from "@/stores/language";
 import { ref, watch, type Ref } from "vue";
@@ -12,49 +12,46 @@ import { useUserStore } from "@/stores/user";
 const router = useRouter();
 
 const friends: Ref<Friend[]> = ref([]);
-const pendingfriendRequests: Ref<PendingFriendRequest> = ref({ sent: [], received: [] });
+const pendingfriendRequests: Ref<PendingFriendRequests> = ref({ sent: [], received: [] });
 
 async function getFriends() {
   const response = await make_authorized_request("/friends");
   if (response !== null) {
-    const firendRequests: FriendRequest[] = await response.json();
-
-    friends.value = firendRequests.map((fr) => fr.otherUser);
+    const friendsJson: Friends = await response.json();
+    friends.value = friendsJson.friends;
   }
 }
 
 async function getFriendRequests() {
-  const response = await make_authorized_request("/friend-requests/pending");
+  const response = await make_authorized_request("/friends/requests");
   if (response !== null) {
     pendingfriendRequests.value = await response.json();
   }
 }
 
-async function acceptFriendRequests(userId: number) {
-  const response = await make_authorized_request(`/friend-requests/${userId}/accept`);
+async function acceptFriendRequests(requestId: number) {
+  const response = await make_authorized_request(`/friends/requests/${requestId}/accept`);
   if (response !== null) {
     getFriends();
     getFriendRequests();
   }
 }
-async function declineFriendRequests(userId: number) {
-  const response = await make_authorized_request(
-    `/friend-requests/${userId}/decline?blockUser=true`,
-    "post",
-  );
-  if (response !== null) {
-    getFriendRequests();
-  }
-}
-async function cancelFriendRequests(userId: number) {
-  const response = await make_authorized_request(`/friend-requests/${userId}`, "DELETE");
+async function declineFriendRequests(requestId: number) {
+  const response = await make_authorized_request(`/friends/requests/${requestId}/decline`);
   if (response !== null) {
     getFriendRequests();
   }
 }
 
-function openFriendList(username: string) {
-  router.push({ name: "friend", params: { name: username } });
+async function cancelFriendRequests(requestId: number) {
+  const response = await make_authorized_request(`/friend/requests/${requestId}`, "DELETE");
+  if (response !== null) {
+    getFriendRequests();
+  }
+}
+
+function openFriendList(friend: Friend) {
+  router.push({ name: "friend", params: { name: friend.name } });
 }
 
 getFriends();
@@ -83,7 +80,7 @@ watch(
     <h2 class="mt-2">{{ useLanguageStore().language.messages.myfriends__friend_list }}</h2>
     <div class="d-flex flex-row flex-wrap gap-4">
       <template v-for="friend in friends" :key="friend.name">
-        <div class="card clickable" @click="openFriendList(friend.name)">
+        <div class="card clickable" @click="openFriendList(friend)">
           <SquareImage
             :image-name="friend.picture === undefined ? null : friend.picture"
             :size="150"
@@ -100,16 +97,18 @@ watch(
     <template v-if="pendingfriendRequests.received.length > 0">
       <h2 class="mt-2">{{ useLanguageStore().language.messages.myfriends__friend_requests }}</h2>
       <div class="d-flex flex-row flex-wrap gap-4">
-        <template v-for="friend in pendingfriendRequests.received" :key="friend.name">
+        <template v-for="friend in pendingfriendRequests.received" :key="friend.otherUser.name">
           <div class="card">
             <SquareImage
-              :image-name="friend.otherUser.picture === undefined ? null : friend.otherUser.picture"
+              :image-name="
+                friend.other_user.picture === undefined ? null : friend.other_user.picture
+              "
               :size="150"
               :alternate-image="blank_profile_picture"
               :withTopRound="true"
             />
             <div class="card-body text-center">
-              <p class="card-text">{{ friend.otherUser.name }}</p>
+              <p class="card-text">{{ friend.other_user.name }}</p>
               <div>
                 <button
                   type="button"
@@ -137,16 +136,18 @@ watch(
     <template v-if="pendingfriendRequests.sent.length > 0">
       <h2 class="mt-2">{{ useLanguageStore().language.messages.myfriends__my_friend_requests }}</h2>
       <div class="d-flex flex-row flex-wrap gap-4">
-        <template v-for="friend in pendingfriendRequests.sent" :key="friend.name">
+        <template v-for="friend in pendingfriendRequests.sent" :key="friend.otherUser.name">
           <div class="card">
             <SquareImage
-              :image-name="friend.otherUser.picture === undefined ? null : friend.otherUser.picture"
+              :image-name="
+                friend.other_user.picture === undefined ? null : friend.other_user.picture
+              "
               :size="150"
               :alternate-image="blank_profile_picture"
               :withTopRound="true"
             />
             <div class="card-body text-center">
-              <p class="card-text">{{ friend.otherUser.name }}</p>
+              <p class="card-text">{{ friend.other_user.name }}</p>
               <button
                 type="button"
                 class="btn btn-secondary w-100"

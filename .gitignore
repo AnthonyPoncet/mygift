@@ -1,10 +1,6 @@
-.gradle
 .idea
-build
-build_packageJS
-out
-forTest
 test-files
 *.exe
 *.pdf
 target
+test_databases

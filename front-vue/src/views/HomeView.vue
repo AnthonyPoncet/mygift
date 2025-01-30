@@ -15,7 +15,9 @@ const router = useRouter();
 watch(
   () => useUserStore().user,
   () => {
-    getEvents();
+    if (useUserStore().user != null) {
+      getEvents();
+    }
   },
 );
 
@@ -26,7 +28,9 @@ async function getEvents() {
   }
 }
 
-getEvents();
+if (useUserStore().user != null) {
+  getEvents();
+}
 
 function getYears(eventDate: number, birthDate: number) {
   return new Date(eventDate).getFullYear() - new Date(birthDate).getFullYear();
@@ -75,8 +79,8 @@ function getYears(eventDate: number, birthDate: number) {
                 >
                   {{
                     getYears(
-                      next.date + new Date().getTimezoneOffset() * 60000,
-                      next.birth! + new Date().getTimezoneOffset() * 60000,
+                      next.date * 1000 + new Date().getTimezoneOffset() * 60000,
+                      next.birth! * 1000 + new Date().getTimezoneOffset() * 60000,
                     ) +
                     " " +
                     useLanguageStore().language.messages.home__years_old
@@ -85,7 +89,7 @@ function getYears(eventDate: number, birthDate: number) {
                 <div class="text-center">
                   {{
                     new Date(
-                      next.date + new Date().getTimezoneOffset() * 60000,
+                      next.date * 1000 + new Date().getTimezoneOffset() * 60000,
                     ).toLocaleDateString()
                   }}
                 </div>

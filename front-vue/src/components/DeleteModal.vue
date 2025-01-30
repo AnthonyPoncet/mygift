@@ -12,11 +12,6 @@ import { Modal } from "bootstrap";
 import { useLanguageStore } from "@/stores/language";
 import type { Category, Gift } from "./helpers/common_json";
 
-enum GiftDeleteReason {
-  Received = "RECEIVED",
-  NotWanted = "NOT_WANTED",
-}
-
 const props = defineProps<{
   action: DeleteModalAction;
   category: Category | null;
@@ -54,7 +49,10 @@ onMounted(() => {
 
 async function deleteCategory() {
   if (categoryRef.value !== null) {
-    const response = await make_authorized_request(`/categories/${categoryRef.value.id}`, "DELETE");
+    const response = await make_authorized_request(
+      `/wishlist/categories/${categoryRef.value.id}`,
+      "DELETE",
+    );
     if (response !== null) {
       bootstrapModal.value.hide();
       emit("refresh-wishlist");
@@ -62,10 +60,10 @@ async function deleteCategory() {
   }
 }
 
-async function deleteGift(deleteReason: GiftDeleteReason) {
-  if (giftRef.value !== null) {
+async function deleteGift() {
+  if (giftRef.value !== null && categoryRef.value !== null) {
     const response = await make_authorized_request(
-      `/gifts/${giftRef.value.id}?status=${deleteReason}`,
+      `/wishlist/categories/${categoryRef.value.id}/gifts/${giftRef.value.id}`,
       "DELETE",
     );
     if (response !== null) {
@@ -110,7 +108,11 @@ async function deleteGift(deleteReason: GiftDeleteReason) {
                 d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"
               />
             </svg>
-            {{ useLanguageStore().language.messages.delete_modal__category_hint }}
+            {{
+              categoryRef?.share_with.length === 0
+                ? useLanguageStore().language.messages.delete_modal__category_hint
+                : useLanguageStore().language.messages.delete_modal__category_shared_hint
+            }}
           </div>
         </div>
         <div class="modal-footer">
@@ -120,19 +122,8 @@ async function deleteGift(deleteReason: GiftDeleteReason) {
             </button>
           </template>
           <template v-else-if="action === DeleteModalAction.Gift">
-            <button
-              type="submit"
-              class="btn btn-primary"
-              @click="deleteGift(GiftDeleteReason.Received)"
-            >
-              {{ useLanguageStore().language.messages.delete_modal__delete_gift_i_got_it }}
-            </button>
-            <button
-              type="submit"
-              class="btn btn-primary"
-              @click="deleteGift(GiftDeleteReason.NotWanted)"
-            >
-              {{ useLanguageStore().language.messages.delete_modal__delete_gift_dont_want_it }}
+            <button type="submit" class="btn btn-primary w-100" @click="deleteGift()">
+              {{ useLanguageStore().language.messages.global__delete }}
             </button>
           </template>
         </div>

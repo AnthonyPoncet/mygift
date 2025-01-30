@@ -5,12 +5,12 @@ export function getBaseUrl(): string {
   if (import.meta.env.PROD) {
     port = window.location.port;
   } else {
-    port = "8080";
+    port = "4242";
   }
 
   if (port.length !== 0) {
     port = ":" + port;
   }
 
-  return protocol + "//" + hostname + port;
+  return protocol + "//" + hostname + port + "/api";
 }

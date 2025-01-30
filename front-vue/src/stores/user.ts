@@ -4,26 +4,28 @@ import { defineStore } from "pinia";
 const STORE_NAME = "users";
 
 interface State {
+  id: number;
+  name: string;
   token: string;
-  username: string;
   picture: string | null;
   dateOfBirth: number | null;
   otherUsers: OtherUser[];
 }
 
 export interface OtherUser {
+  id: number;
+  name: string;
   token: string;
-  username: string;
   picture: string | null;
   dateOfBirth: number | null;
 }
 
 export interface SignInUser {
-  token: string;
-  session: string;
+  id: number;
   name: string;
+  token: string;
   picture: string | null;
-  dateOfBirth: number | null;
+  date_of_birth: number | null;
 }
 
 export const useUserStore = defineStore(STORE_NAME, () => {
@@ -40,10 +42,11 @@ export const useUserStore = defineStore(STORE_NAME, () => {
 
   function updateUser(signedUser: SignInUser) {
     user.value = {
+      id: signedUser.id,
+      name: signedUser.name,
       token: signedUser.token,
-      username: signedUser.name,
       picture: signedUser.picture,
-      dateOfBirth: signedUser.dateOfBirth,
+      dateOfBirth: signedUser.date_of_birth,
       otherUsers: [],
     };
     localStorage.setItem(STORE_NAME, JSON.stringify(user.value));
@@ -51,16 +54,18 @@ export const useUserStore = defineStore(STORE_NAME, () => {
 
   function logMultiAccount(signedUser: SignInUser) {
     const currentUser = {
+      id: user.value!.id,
+      name: user.value!.name,
       token: user.value!.token,
-      username: user.value!.username,
       picture: user.value!.picture,
       dateOfBirth: user.value!.dateOfBirth,
     };
     user.value = {
+      id: signedUser.id,
+      name: signedUser.name,
       token: signedUser.token,
-      username: signedUser.name,
       picture: signedUser.picture,
-      dateOfBirth: signedUser.dateOfBirth,
+      dateOfBirth: signedUser.date_of_birth,
       otherUsers: user.value!.otherUsers,
     };
     user.value.otherUsers.push(currentUser);
@@ -69,17 +74,19 @@ export const useUserStore = defineStore(STORE_NAME, () => {
 
   function changeAccount(nextUser: OtherUser) {
     const currentUser = {
+      id: user.value!.id,
+      name: user.value!.name,
       token: user.value!.token,
-      username: user.value!.username,
       picture: user.value!.picture,
       dateOfBirth: user.value!.dateOfBirth,
     };
-    const newOtherUsers = user.value!.otherUsers.filter((u) => u.username !== nextUser.username);
+    const newOtherUsers = user.value!.otherUsers.filter((u) => u.name !== nextUser.name);
     newOtherUsers.push(currentUser);
 
     user.value = {
+      id: nextUser.id,
+      name: nextUser.name,
       token: nextUser.token,
-      username: nextUser.username,
       picture: nextUser.picture,
       dateOfBirth: nextUser.dateOfBirth,
       otherUsers: newOtherUsers,
