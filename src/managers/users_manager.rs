@@ -109,9 +109,11 @@ impl UsersManager {
         (Self::encode_password(password, &salt), salt)
     }
 
-    pub fn create_password_reset_request(&self, user_id: i64) -> Result<String, UsersManagerError> {
+    pub fn create_password_reset_request(&self, user_name: &str) -> Result<String, UsersManagerError> {
+        let user = self.get_user(user_name)?;
+        
         let connection = self.connection.lock().unwrap();
-        connection.execute("DELETE FROM reset_password WHERE userId=?", [user_id])?;
+        connection.execute("DELETE FROM reset_password WHERE userId=?", [user.id])?;
 
         let uuid = Uuid::new_v4().to_string();
         let expiry = SystemTime::now()
@@ -122,7 +124,7 @@ impl UsersManager {
             .as_secs();
         connection.execute(
             "INSERT INTO reset_password(userId, uuid, expiry) VALUES (?,?,?)",
-            params![user_id, &uuid, expiry],
+            params![user.id, &uuid, expiry],
         )?;
         Ok(uuid)
     }
