@@ -1,0 +1,31 @@
+name: Main workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - *
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run Rust tests
+        run: cargo test
+      - name: Run Clippy
+        run: cargo clippy
+      - name: Run build
+        run: cargo build
+      - name: Run front install
+        working-directory: ./front-vue
+        run: npm install
+      - name: Run front build
+        working-directory: ./front-vue
+        run: npm run build
+      - name: Run front type check
+        working-directory: ./front-vue
+        run: npm run type-check
