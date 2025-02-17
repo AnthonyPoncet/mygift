@@ -307,7 +307,7 @@ mod test {
         assert!(user.test_eq(1, "test", None, None), "Got: {user:?}");
         assert!(users_manager.check_password("test", "strong_pwd").is_ok());
 
-        let uuid = users_manager.create_password_reset_request(1).unwrap();
+        let uuid = users_manager.create_password_reset_request("test").unwrap();
 
         users_manager
             .change_user_password(id, &uuid, "new_strong")
