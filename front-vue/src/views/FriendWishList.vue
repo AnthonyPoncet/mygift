@@ -126,19 +126,22 @@ watch(
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
                   height="16"
-                  :fill="gift.heart ? 'red' : 'black'"
+                  :fill="gift.secret ? 'black' : 'red'"
                   viewBox="0 0 16 16"
                   class="clickable"
-                  :data-bs-toggle="gift.secret && gift.reserved_by === null ? 'modal' : ''"
-                  data-bs-target="#giftModal"
+                  :data-bs-toggle="(!gift.secret && !gift.heart) || (gift.secret && gift.reserved_by !== null) ? '' : 'modal'"
+                  :visibility="!gift.secret && !gift.heart ? 'collapse' : 'visible'"
+                  :data-bs-target="!gift.secret ? '#showGiftModal' : '#giftModal'"
                   @click="
                     () => {
                       if (gift.reserved_by === null) {
                         categoryModal = category.id;
                         giftModal = gift;
                         giftActionModal = GiftModalAction.EditSecret;
-                      } else {
+                      } else if (gift.secret) {
                         deleteGift(category, gift);
+                      } else {
+                        
                       }
                     }
                   "

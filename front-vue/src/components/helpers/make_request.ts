@@ -11,7 +11,6 @@ export async function make_authorized_request(
   const router = useRouter();
   const userStore = useUserStore();
   const user = userStore.user;
-  console.debug(`Make request ${path} for user ${user} with router ${router}`);
   if (user !== null) {
     const headers: Record<string, string> = { Authorization: `Bearer ${user.token}` };
     if (body !== null && isJson) {
