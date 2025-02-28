@@ -20,8 +20,8 @@ async function addFriend(event: Event) {
   }
 
   const response = await make_authorized_request(
-    "/friend-requests",
-    "PUT",
+    "/friends",
+    "POST",
     JSON.stringify({ name: username.value }),
   );
   if (response !== null) {

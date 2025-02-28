@@ -18,13 +18,9 @@ async function signin(e: Event) {
   e.preventDefault();
   logining.value = true;
 
-  console.debug(e);
-  console.debug(e.target);
-  const form: HTMLFormElement =
-    (e.target as HTMLBaseElement).tagName === "DIV"
-      ? ((e.target as HTMLDivElement).parentElement?.parentElement as HTMLFormElement)
-      : ((e.target as HTMLButtonElement).parentElement as HTMLFormElement);
-  console.debug(form);
+  const form: HTMLFormElement = (e.target as HTMLBaseElement).tagName === "DIV" ? 
+    (e.target as HTMLDivElement).parentElement?.parentElement as HTMLFormElement : 
+    (e.target as HTMLButtonElement).parentElement as HTMLFormElement;
   if (!form.checkValidity()) {
     form.classList.add("was-validated");
     logining.value = false;

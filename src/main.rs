@@ -15,6 +15,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
+use axum::extract::DefaultBodyLimit;
 use axum::http::header::{ACCESS_CONTROL_ALLOW_ORIGIN, AUTHORIZATION, CONTENT_TYPE};
 use axum::http::Method;
 use tower_http::cors::CorsLayer;
@@ -183,6 +184,7 @@ async fn main() {
         .with_state(app_state)
         .layer(TraceLayer::new_for_http())
         .layer(cors_layer)
+        .layer(DefaultBodyLimit::disable())
         .nest_service("/signin", serve_dir.clone())
         .nest_service("/signup", serve_dir.clone())
         .nest_service("/mywishlist", serve_dir.clone())

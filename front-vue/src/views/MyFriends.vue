@@ -97,7 +97,7 @@ watch(
     <template v-if="pendingfriendRequests.received.length > 0">
       <h2 class="mt-2">{{ useLanguageStore().language.messages.myfriends__friend_requests }}</h2>
       <div class="d-flex flex-row flex-wrap gap-4">
-        <template v-for="friend in pendingfriendRequests.received" :key="friend.otherUser.name">
+        <template v-for="friend in pendingfriendRequests.received" :key="friend.other_user.name">
           <div class="card">
             <SquareImage
               :image-name="
@@ -136,7 +136,7 @@ watch(
     <template v-if="pendingfriendRequests.sent.length > 0">
       <h2 class="mt-2">{{ useLanguageStore().language.messages.myfriends__my_friend_requests }}</h2>
       <div class="d-flex flex-row flex-wrap gap-4">
-        <template v-for="friend in pendingfriendRequests.sent" :key="friend.otherUser.name">
+        <template v-for="friend in pendingfriendRequests.sent" :key="friend.other_user.name">
           <div class="card">
             <SquareImage
               :image-name="
