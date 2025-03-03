@@ -93,7 +93,7 @@ pub(crate) fn create_api_routes(
 ) -> Router<AppState> {
     Router::new()
         .route("/events", get(get_events))
-        .route("/users/change-account", get(change_account))
+        .route("/users/change-account", post(change_account))
         .route("/users/logout", get(logout))
         .route("/users", patch(edit_user))
         .route("/friends", post(add_friend))
