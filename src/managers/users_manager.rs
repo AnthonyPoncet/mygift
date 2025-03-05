@@ -109,9 +109,12 @@ impl UsersManager {
         (Self::encode_password(password, &salt), salt)
     }
 
-    pub fn create_password_reset_request(&self, user_name: &str) -> Result<String, UsersManagerError> {
+    pub fn create_password_reset_request(
+        &self,
+        user_name: &str,
+    ) -> Result<String, UsersManagerError> {
         let user = self.get_user(user_name)?;
-        
+
         let connection = self.connection.lock().unwrap();
         connection.execute("DELETE FROM reset_password WHERE userId=?", [user.id])?;
 

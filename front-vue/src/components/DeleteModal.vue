@@ -11,12 +11,15 @@ import { make_authorized_request } from "./helpers/make_request";
 import { Modal } from "bootstrap";
 import { useLanguageStore } from "@/stores/language";
 import type { Category, Gift } from "./helpers/common_json";
+import { useRouter } from "vue-router";
 
 const props = defineProps<{
   action: DeleteModalAction;
   category: Category | null;
   gift: Gift | null;
 }>();
+
+const router = useRouter();
 
 const modal = useTemplateRef("deleteModal");
 const bootstrapModal = ref();
@@ -50,6 +53,7 @@ onMounted(() => {
 async function deleteCategory() {
   if (categoryRef.value !== null) {
     const response = await make_authorized_request(
+      router,
       `/wishlist/categories/${categoryRef.value.id}`,
       "DELETE",
     );
@@ -63,6 +67,7 @@ async function deleteCategory() {
 async function deleteGift() {
   if (giftRef.value !== null && categoryRef.value !== null) {
     const response = await make_authorized_request(
+      router,
       `/wishlist/categories/${categoryRef.value.id}/gifts/${giftRef.value.id}`,
       "DELETE",
     );

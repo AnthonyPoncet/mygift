@@ -9,9 +9,13 @@ import { useLanguageStore } from "@/stores/language";
 import DeleteModal, { DeleteModalAction } from "@/components/DeleteModal.vue";
 import GiftModal, { GiftModalAction } from "@/components/GiftModal.vue";
 import { useUserStore } from "@/stores/user";
+import draggable from "vuedraggable";
+import { useRouter } from "vue-router";
+import { isMobile } from "@/components/helpers/is_mobile";
+
+const router = useRouter();
 
 const wishList: Ref<Wishlist> = ref({ categories: [] });
-const editMode: Ref<boolean> = ref(false);
 const pdfDownloadMode: Ref<boolean> = ref(false);
 
 const categoryActionModal: Ref<CategoryModalAction> = ref(CategoryModalAction.Add);
@@ -23,18 +27,8 @@ const giftIdToImageUrl: Ref<Record<number, string>> = ref({});
 
 const hoveredGift: Ref<number | null> = ref(null);
 
-enum Rank {
-  Down = "down",
-  Up = "up",
-}
-
-enum Kind {
-  Category = "categories",
-  Gift = "gifts",
-}
-
 async function getWishlist() {
-  const response = await make_authorized_request("/wishlist");
+  const response = await make_authorized_request(router, "/wishlist");
   if (response !== null) {
     wishList.value = await response.json();
   }
@@ -44,6 +38,7 @@ async function heartGift(categoryId: number, giftId: number) {
   if (pdfDownloadMode.value) return;
 
   const response = await make_authorized_request(
+    router,
     `/wishlist/categories/${categoryId}/gifts/${giftId}/change_like`,
   );
   if (response !== null) {
@@ -51,16 +46,9 @@ async function heartGift(categoryId: number, giftId: number) {
   }
 }
 
-async function rank(kind: Kind, id: number, rank: Rank) {
-  const response = await make_authorized_request(`/${kind}/${id}/rank-actions/${rank}`, "POST");
-  if (response !== null) {
-    await getWishlist();
-  }
-}
-
 async function getPdf() {
   pdfDownloadMode.value = true;
-  const response = await make_authorized_request(`/gifts/pdf`);
+  const response = await make_authorized_request(router, `/gifts/pdf`);
   if (response != null) {
     const blob = await response.blob();
     const url = window.URL.createObjectURL(new Blob([blob]));
@@ -88,6 +76,52 @@ watch(
     getWishlist();
   },
 );
+
+async function reorder_categories(e: { oldIndex: number; newIndex: number }) {
+  if (e.newIndex !== e.oldIndex) {
+    const [first, second] =
+      e.newIndex < e.oldIndex ? [e.newIndex, e.oldIndex] : [e.oldIndex, e.newIndex];
+    const toSend = wishList.value.categories
+      .slice(first, second + 1)
+      .map((category) => category.id);
+
+    const response = await make_authorized_request(
+      router,
+      `/wishlist/categories/reorder`,
+      "PATCH",
+      JSON.stringify({
+        starting_rank: first,
+        categories: toSend,
+      }),
+    );
+    if (response !== null) {
+      await getWishlist();
+    }
+  }
+}
+
+async function reorder_gifts(categoryIndex: number, e: { oldIndex: number; newIndex: number }) {
+  if (e.newIndex !== e.oldIndex) {
+    const category = wishList.value.categories[categoryIndex];
+
+    const [first, second] =
+      e.newIndex < e.oldIndex ? [e.newIndex, e.oldIndex] : [e.oldIndex, e.newIndex];
+    const toSend = category.gifts.slice(first, second + 1).map((gift) => gift.id);
+
+    const response = await make_authorized_request(
+      router,
+      `/wishlist/categories/${category.id}/reorder`,
+      "PATCH",
+      JSON.stringify({
+        starting_rank: first,
+        gifts: toSend,
+      }),
+    );
+    if (response !== null) {
+      await getWishlist();
+    }
+  }
+}
 </script>
 
 <template>
@@ -96,7 +130,7 @@ watch(
       <button
         type="button"
         class="btn btn-outline-dark me-2"
-        :disabled="editMode || pdfDownloadMode || wishList.categories.length === 0"
+        :disabled="pdfDownloadMode || wishList.categories.length === 0"
         data-bs-toggle="modal"
         data-bs-target="#giftModal"
         @click="
@@ -110,7 +144,7 @@ watch(
       <button
         type="button"
         class="btn btn-outline-dark me-2"
-        :disabled="editMode || pdfDownloadMode"
+        :disabled="pdfDownloadMode"
         data-bs-toggle="modal"
         data-bs-target="#categoryModal"
         @click="
@@ -121,15 +155,6 @@ watch(
         "
       >
         {{ useLanguageStore().language.messages.mywishlist__addCategoryButton }}
-      </button>
-      <button
-        type="button"
-        class="btn btn-outline-dark me-2"
-        data-bs-toggle="button"
-        disabled="true"
-        @click="editMode = !editMode"
-      >
-        {{ useLanguageStore().language.messages.mywishlist__reorderButton }}
       </button>
       <button type="button" class="btn btn-outline-dark me-2" disabled="true" @click="getPdf">
         <div class="d-flex align-items-center justify-content-center">
@@ -143,45 +168,19 @@ watch(
         </div>
       </button>
     </div>
-    <div class="mt-4">
-      <template v-for="(category, categoryIndex) in wishList.categories" :key="'c' + category.id">
-        <h5 class="mt-4">
-          {{ category.name }}
-          <template v-if="editMode">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              fill="black"
-              viewBox="0 0 16 16"
-              :visibility="categoryIndex === 0 ? 'collapse' : 'visible'"
-              :class="categoryIndex === 0 ? 'collapse' : ''"
-              class="clickable-icon ms-1"
-              @click="rank(Kind.Category, category.id, Rank.Down)"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M3.47 7.78a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 01-1.06 1.06L9 4.81v7.44a.75.75 0 01-1.5 0V4.81L4.53 7.78a.75.75 0 01-1.06 0z"
-              ></path>
-            </svg>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              fill="black"
-              viewBox="0 0 16 16"
-              :visibility="categoryIndex === wishList.categories.length - 1 ? 'hidden' : 'visible'"
-              :class="categoryIndex === 0 ? 'ms-1' : 'ms-2'"
-              class="clickable-icon"
-              @click="rank(Kind.Category, category.id, Rank.Up)"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M13.03 8.22a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06 0L3.47 9.28a.75.75 0 011.06-1.06l2.97 2.97V3.75a.75.75 0 011.5 0v7.44l2.97-2.97a.75.75 0 011.06 0z"
-              ></path>
-            </svg>
-          </template>
-          <template v-else>
+
+    <draggable
+      v-model="wishList.categories"
+      group="main"
+      @end="(e) => reorder_categories(e)"
+      item-key="id"
+      class="mt-4"
+      handle=".category-handle"
+    >
+      <template #item="{ element: category, index: categoryIndex }">
+        <div>
+          <h5 class="mt-4">
+            <span class="category-handle">{{ category.name }}</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"
@@ -228,49 +227,23 @@ watch(
                 d="M6.5 1.75a.25.25 0 01.25-.25h2.5a.25.25 0 01.25.25V3h-3V1.75zm4.5 0V3h2.25a.75.75 0 010 1.5H2.75a.75.75 0 010-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM4.496 6.675a.75.75 0 10-1.492.15l.66 6.6A1.75 1.75 0 005.405 15h5.19c.9 0 1.652-.681 1.741-1.576l.66-6.6a.75.75 0 00-1.492-.149l-.66 6.6a.25.25 0 01-.249.225h-5.19a.25.25 0 01-.249-.225l-.66-6.6z"
               ></path>
             </svg>
-          </template>
-        </h5>
-        <div class="d-flex flex-row flex-wrap gap-4">
-          <template v-for="(gift, giftIndex) in category.gifts" :key="'g' + gift.id">
-            <div
-              class="card gift-card"
-              @mouseenter="hoveredGift = gift.id"
-              @mouseleave="hoveredGift = null"
-            >
-              <div class="p-2 d-flex flex-row justify-content-between">
-                <template v-if="editMode">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    fill="black"
-                    viewBox="0 0 16 16"
-                    :visibility="giftIndex === 0 ? 'hidden' : 'visible'"
-                    class="clickable-icon"
-                    @click="rank(Kind.Gift, gift.id, Rank.Down)"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z"
-                    ></path>
-                  </svg>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    fill="black"
-                    viewBox="0 0 16 16"
-                    :visibility="giftIndex === category.gifts.length - 1 ? 'hidden' : 'visible'"
-                    class="clickable-icon"
-                    @click="rank(Kind.Gift, gift.id, Rank.Up)"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M8.22 2.97a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06l2.97-2.97H3.75a.75.75 0 010-1.5h7.44L8.22 4.03a.75.75 0 010-1.06z"
-                    ></path>
-                  </svg>
-                </template>
-                <template v-else>
+          </h5>
+
+          <draggable
+            v-model="category.gifts"
+            :group="category.name"
+            @end="(e) => reorder_gifts(categoryIndex, e)"
+            item-key="id"
+            class="d-flex flex-row flex-wrap gap-4"
+            :handle="isMobile ? '.gift-handle' : ''"
+          >
+            <template #item="{ element: gift }">
+              <div
+                class="card gift-card"
+                @mouseenter="hoveredGift = gift.id"
+                @mouseleave="hoveredGift = null"
+              >
+                <div class="p-2 d-flex flex-row justify-content-between">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
@@ -308,43 +281,43 @@ watch(
                       d="M6.5 1.75a.25.25 0 01.25-.25h2.5a.25.25 0 01.25.25V3h-3V1.75zm4.5 0V3h2.25a.75.75 0 010 1.5H2.75a.75.75 0 010-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM4.496 6.675a.75.75 0 10-1.492.15l.66 6.6A1.75 1.75 0 005.405 15h5.19c.9 0 1.652-.681 1.741-1.576l.66-6.6a.75.75 0 00-1.492-.149l-.66 6.6a.25.25 0 01-.249.225h-5.19a.25.25 0 01-.249-.225l-.66-6.6z"
                     ></path>
                   </svg>
-                </template>
-              </div>
-              <div
-                :class="editMode || pdfDownloadMode ? '' : 'clickable-icon'"
-                :data-bs-toggle="editMode || pdfDownloadMode ? '' : 'modal'"
-                data-bs-target="#giftModal"
-                @click="
-                  () => {
-                    if (editMode || pdfDownloadMode) return;
-                    categoryModal = category;
-                    giftModal = gift;
-                    giftActionModal = GiftModalAction.Edit;
-                  }
-                "
-              >
-                <SquareImage
-                  :image-name="gift.picture"
-                  :size="150"
-                  :alternate-image="blank_gift"
-                  @image-loaded="
-                    (url) => {
-                      giftIdToImageUrl[gift.id] = url;
+                </div>
+                <div
+                  :class="pdfDownloadMode ? '' : 'clickable-icon'"
+                  :data-bs-toggle="pdfDownloadMode ? '' : 'modal'"
+                  data-bs-target="#giftModal"
+                  @click="
+                    () => {
+                      if (pdfDownloadMode) return;
+                      categoryModal = category;
+                      giftModal = gift;
+                      giftActionModal = GiftModalAction.Edit;
                     }
                   "
-                  :withTopRound="false"
-                />
-                <div class="card-body text-center">
-                  <p class="text-gift">
-                    {{ hoveredGift === gift.id ? gift.description : gift.name }}
-                  </p>
+                >
+                  <SquareImage
+                    :image-name="gift.picture"
+                    :size="150"
+                    :alternate-image="blank_gift"
+                    @image-loaded="
+                      (url) => {
+                        giftIdToImageUrl[gift.id] = url;
+                      }
+                    "
+                    :withTopRound="false"
+                  />
+                  <div class="card-body text-center">
+                    <p class="text-gift gift-handle">
+                      {{ !isMobile && hoveredGift === gift.id ? gift.description : gift.name }}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </template>
+            </template>
+          </draggable>
         </div>
       </template>
-    </div>
+    </draggable>
   </div>
   <CategoryModal
     @refresh-wishlist="getWishlist"

@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use crate::commands::{Cli, Commands};
 use crate::configuration::Configuration;
 use crate::managers::events_manager::EventsManager;
 use crate::managers::friends_manager::FriendsManager;
@@ -8,38 +8,39 @@ use crate::managers::users_manager::UsersManager;
 use crate::managers::wishlist_manager::WishlistManager;
 use crate::routes::files::resize_file;
 use crate::routes::{create_api_routes, AppState};
+use axum::extract::DefaultBodyLimit;
+use axum::http::header::{ACCESS_CONTROL_ALLOW_ORIGIN, AUTHORIZATION, CONTENT_TYPE};
+use axum::http::Method;
 use axum::Router;
 use axum_server::tls_rustls::RustlsConfig;
+use clap::Parser;
+use rusqlite::params;
+use std::collections::HashSet;
 use std::fs;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
-use axum::extract::DefaultBodyLimit;
-use axum::http::header::{ACCESS_CONTROL_ALLOW_ORIGIN, AUTHORIZATION, CONTENT_TYPE};
-use axum::http::Method;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use tracing::{debug, info};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use crate::commands::{Cli, Commands};
-use clap::Parser;
-use rusqlite::params;
 
 mod auth_middleware;
+mod commands;
 mod configuration;
 mod error_catcher;
 mod managers;
 mod routes;
-mod commands;
 
 #[tokio::main()]
 async fn main() {
     let cli = Cli::parse();
 
-    let configuration_file = fs::read_to_string(cli.config.unwrap_or("configuration.json".into())).unwrap();
+    let configuration_file =
+        fs::read_to_string(cli.config.unwrap_or("configuration.json".into())).unwrap();
     let configuration: Configuration = serde_json::from_str(&configuration_file).unwrap();
 
     let filter = tracing_subscriber::EnvFilter::builder()
@@ -49,26 +50,33 @@ async fn main() {
         .with(filter)
         .with(tracing_subscriber::fmt::layer())
         .init();
-    
+
     match cli.command {
         Some(Commands::CleanPictures) => {
             debug!("Cleaning pictures");
             let connection = rusqlite::Connection::open(&configuration.database).unwrap();
             let mut pictures = HashSet::new();
-            let mut statement = connection.prepare("SELECT picture FROM users WHERE picture IS NOT NULL").unwrap();
+            let mut statement = connection
+                .prepare("SELECT picture FROM users WHERE picture IS NOT NULL")
+                .unwrap();
             let mut rows = statement.query(params![]).unwrap();
             while let Some(row) = rows.next().unwrap() {
                 pictures.insert(row.get::<_, String>(0).unwrap());
             }
-            let mut statement = connection.prepare("SELECT picture FROM gifts WHERE picture IS NOT NULL").unwrap();
+            let mut statement = connection
+                .prepare("SELECT picture FROM gifts WHERE picture IS NOT NULL")
+                .unwrap();
             let mut rows = statement.query(params![]).unwrap();
             while let Some(row) = rows.next().unwrap() {
                 pictures.insert(row.get::<_, String>(0).unwrap());
             }
-            
+
             debug!("All used pictures:({}) {pictures:?}", pictures.len());
             let mut to_delete = Vec::new();
-            for file in PathBuf::from(&configuration.upload_file_storage).read_dir().unwrap() {
+            for file in PathBuf::from(&configuration.upload_file_storage)
+                .read_dir()
+                .unwrap()
+            {
                 let file = file.unwrap();
                 let file_path = file.path();
                 let file_name = file_path.file_name().unwrap().to_str().unwrap();
@@ -77,8 +85,14 @@ async fn main() {
                 }
             }
             debug!("All missing pictures: ({}) {pictures:?}", pictures.len());
-            debug!("All to delete pictures: ({}) {to_delete:?}", to_delete.len());
-            let tmp_path = PathBuf::from(configuration.upload_file_storage).parent().unwrap().join("tmp_rs");
+            debug!(
+                "All to delete pictures: ({}) {to_delete:?}",
+                to_delete.len()
+            );
+            let tmp_path = PathBuf::from(configuration.upload_file_storage)
+                .parent()
+                .unwrap()
+                .join("tmp_rs");
             for file in to_delete {
                 let stem = file.file_stem().unwrap().to_str().unwrap().to_lowercase();
                 let extension = file.extension().unwrap().to_str().unwrap().to_lowercase();
@@ -121,6 +135,31 @@ async fn main() {
             let user_id = row.get::<_, i64>(0).unwrap();
             connection.execute("UPDATE gifts SET reservedBy=? WHERE id=?", params![user_id, gift_id]).unwrap();
         }
+    }*/
+
+    /*{
+        let connection = rusqlite::Connection::open(&configuration.database).unwrap();
+        let mut statement = connection.prepare("SELECT distinct(categoryId) FROM gifts order by categoryId").unwrap();
+        let rows: Vec<_> = statement.query_map(params![], |r| r.get::<_, i64>(0)).unwrap().collect();
+        let mut statement_not_secret = connection.prepare("SELECT id FROM gifts where categoryId=? AND secret=FALSE order by rank").unwrap();
+        let mut statement_secret = connection.prepare("SELECT id FROM gifts where categoryId=? AND secret=TRUE order by rank").unwrap();
+        for row in rows {
+            let category = row.unwrap();
+            debug!("Reorder category {category}");
+            let rows = statement_not_secret.query_map(params![category], |r| r.get::<_, i64>(0)).unwrap();
+            for (count, row) in rows.enumerate() {
+                let gift = row.unwrap();
+                debug!("Update not secret {gift} to {count}");
+                connection.execute("UPDATE gifts SET rank=? WHERE id=?", params![count, gift]).unwrap();
+            }
+            let rows = statement_secret.query_map(params![category], |r| r.get::<_, i64>(0)).unwrap();
+            for (count, row) in rows.enumerate() {
+                let gift = row.unwrap();
+                debug!("Update secret {gift} to {}", count+100001);
+                connection.execute("UPDATE gifts SET rank=? WHERE id=?", params![count+100001, gift]).unwrap();
+            }
+        }
+        return;
     }*/
 
     //Should it be done at starts ?
@@ -170,7 +209,13 @@ async fn main() {
         CorsLayer::permissive()
     } else {
         CorsLayer::new()
-            .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::PATCH, Method::PUT])
+            .allow_methods([
+                Method::GET,
+                Method::POST,
+                Method::DELETE,
+                Method::PATCH,
+                Method::PUT,
+            ])
             .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCESS_CONTROL_ALLOW_ORIGIN])
             .allow_credentials(true)
             .allow_origin(["https://www.druponps.fr".parse().unwrap()])

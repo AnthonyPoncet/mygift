@@ -11,11 +11,14 @@ import { make_authorized_request } from "./helpers/make_request";
 import { Modal } from "bootstrap";
 import { useLanguageStore } from "@/stores/language";
 import type { Category, Friends } from "./helpers/common_json";
+import { useRouter } from "vue-router";
 
 const props = defineProps<{
   action: CategoryModalAction;
   category: Category | null;
 }>();
+
+const router = useRouter();
 
 const modal = useTemplateRef("categoryModal");
 const form = useTemplateRef("categoryModalForm");
@@ -49,7 +52,7 @@ watch(props, () => {
 });
 
 async function getFriends() {
-  const response = await make_authorized_request("/friends");
+  const response = await make_authorized_request(router, "/friends");
   if (response !== null) {
     friends.value = await response.json();
   }
@@ -80,6 +83,7 @@ async function clickButton(event: Event) {
   }
 
   const response = await make_authorized_request(
+    router,
     endpoint,
     method,
     JSON.stringify({

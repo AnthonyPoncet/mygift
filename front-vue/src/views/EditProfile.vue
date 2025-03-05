@@ -6,6 +6,9 @@ import { useUserStore } from "@/stores/user";
 import { ref, useTemplateRef, watch, type Ref } from "vue";
 import { Cropper } from "vue-advanced-cropper";
 import "vue-advanced-cropper/dist/style.css";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 
 function humanReadableDateOfBirth(): string | null {
   const unixTime = useUserStore().user!.dateOfBirth;
@@ -22,7 +25,6 @@ const ready: Ref<boolean> = ref(false);
 
 const cropper = useTemplateRef("cropper");
 const form = useTemplateRef("editProfileForm");
-const dateOfBirthInput = useTemplateRef("dateOfBirthInput");
 
 const modifying: Ref<boolean> = ref(false);
 
@@ -33,7 +35,7 @@ async function getImage() {
   pictureLoaded.value = true;
   ready.value = false;
 
-  const response = await make_authorized_request(`/files/${picture}`);
+  const response = await make_authorized_request(router, `/files/${picture}`);
   if (response !== null) {
     const blob = await response.blob();
     pictureUrl.value = window.URL.createObjectURL(blob);
@@ -72,7 +74,7 @@ async function storeImage(): Promise<string> {
     if (blob) {
       formData.append("file", blob, "image.png");
     }
-    const response = await make_authorized_request("/files", "post", formData, false);
+    const response = await make_authorized_request(router, "/files", "post", formData, false);
     if (response != null) {
       const fileUpload: FileUpload = await response.json();
       return fileUpload.name;
@@ -117,6 +119,7 @@ async function editProfile(event: Event) {
   }
 
   const response = await make_authorized_request(
+    router,
     "/users",
     "PATCH",
     JSON.stringify({
@@ -185,7 +188,6 @@ watch(
           id="dateOfBirth"
           :placeholder="useLanguageStore().language.messages.global__dateOfBirth"
           v-model="dateOfBirth"
-          ref="dateOfBirthInput"
           aria-describedby="dateOfBirthFeedback"
         />
         <div class="invalid-feedback" id="dateOfBirthFeedback">

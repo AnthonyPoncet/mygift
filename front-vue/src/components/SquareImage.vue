@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watchEffect } from "vue";
 import { make_authorized_request } from "./helpers/make_request";
+import { useRouter } from "vue-router";
 
 const props = defineProps<{
   imageName: string | null;
@@ -9,6 +10,8 @@ const props = defineProps<{
   withTopRound: boolean;
 }>();
 
+const router = useRouter();
+
 const emit = defineEmits(["image-loaded"]);
 
 const source = ref(props.alternateImage);
@@ -16,7 +19,7 @@ const source = ref(props.alternateImage);
 watchEffect(() => {
   if (props.imageName !== null && props.imageName !== "") {
     const fetchImage = async () => {
-      const response = await make_authorized_request(`/files/${props.imageName}`);
+      const response = await make_authorized_request(router, `/files/${props.imageName}`);
       if (response !== null) {
         const blob = await response.blob();
         source.value = window.URL.createObjectURL(blob);

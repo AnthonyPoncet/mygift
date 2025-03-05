@@ -9,13 +9,14 @@ import { make_authorized_request } from "@/components/helpers/make_request";
 import SquareImage from "@/components/SquareImage.vue";
 import { useLanguageStore } from "@/stores/language";
 import { ref, watch, type Ref } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import blank_gift from "@/assets/images/blank_gift.png";
 import { useUserStore } from "@/stores/user";
 import GiftModal, { GiftModalAction } from "@/components/GiftModal.vue";
 import ShowGiftModal from "@/components/ShowGiftModal.vue";
 
 const route = useRoute();
+const router = useRouter();
 
 const friendName: Ref<string> = ref((route.params as { name: string }).name);
 const friendId: Ref<number> = ref(-1);
@@ -35,7 +36,7 @@ const reserved: Ref<boolean> = ref(false);
 const hoveredGift: Ref<number | null> = ref(null);
 
 async function getFriendDetails() {
-  const response = await make_authorized_request(`/friends/${friendName.value}`);
+  const response = await make_authorized_request(router, `/friends/${friendName.value}`);
   if (response !== null) {
     const friend: { id: number } = await response.json();
     friendId.value = friend.id;
@@ -46,7 +47,7 @@ async function getGifts() {
   if (friendId.value === -1) {
     await getFriendDetails();
   }
-  const response = await make_authorized_request(`/wishlist/friend/${friendId.value}`);
+  const response = await make_authorized_request(router, `/wishlist/friend/${friendId.value}`);
   if (response !== null) {
     wishList.value = await response.json();
   }
@@ -54,6 +55,7 @@ async function getGifts() {
 
 async function reserve(id: number, reservedBy: number | null) {
   const response = await make_authorized_request(
+    router,
     `/wishlist/friend/${friendId.value}/gifts/${id}`,
     reservedBy === null ? "POST" : "DELETE",
   );
@@ -73,6 +75,7 @@ function getCardClasses(gift: FriendGift): string {
 
 async function deleteGift(category: FriendCategory, gift: FriendGift) {
   const response = await make_authorized_request(
+    router,
     `/wishlist/friend/${friendId.value}/categories/${category.id}/gifts/${gift.id}`,
     "DELETE",
   );
@@ -129,7 +132,11 @@ watch(
                   :fill="gift.secret ? 'black' : 'red'"
                   viewBox="0 0 16 16"
                   class="clickable"
-                  :data-bs-toggle="(!gift.secret && !gift.heart) || (gift.secret && gift.reserved_by !== null) ? '' : 'modal'"
+                  :data-bs-toggle="
+                    (!gift.secret && !gift.heart) || (gift.secret && gift.reserved_by !== null)
+                      ? ''
+                      : 'modal'
+                  "
                   :visibility="!gift.secret && !gift.heart ? 'collapse' : 'visible'"
                   :data-bs-target="!gift.secret ? '#showGiftModal' : '#giftModal'"
                   @click="
@@ -141,7 +148,6 @@ watch(
                       } else if (gift.secret) {
                         deleteGift(category, gift);
                       } else {
-                        
                       }
                     }
                   "

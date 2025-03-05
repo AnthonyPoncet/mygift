@@ -3,6 +3,9 @@ import { onMounted, ref, useTemplateRef, type Ref } from "vue";
 import { make_authorized_request } from "./helpers/make_request";
 import { Modal } from "bootstrap";
 import { useLanguageStore } from "@/stores/language";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 
 const modal = useTemplateRef("friendModal");
 const form = useTemplateRef("friendModalForm");
@@ -20,6 +23,7 @@ async function addFriend(event: Event) {
   }
 
   const response = await make_authorized_request(
+    router,
     "/friends",
     "POST",
     JSON.stringify({ name: username.value }),

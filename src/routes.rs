@@ -17,7 +17,7 @@ use crate::routes::users::{create_user, edit_user};
 use crate::routes::wishlist::{
     add_category, add_gift, add_secret_gift, change_heart_gift, delete_category, delete_gift,
     delete_secret_gift, edit_category, edit_gift, edit_secret_gift, get_friend_wishlist,
-    get_my_wishlist, reserve_gift, unreserve_gift,
+    get_my_wishlist, reorder_categories, reorder_gifts, reserve_gift, unreserve_gift,
 };
 use axum::extract::FromRef;
 use axum::routing::{delete, get, patch, post, put};
@@ -108,7 +108,12 @@ pub(crate) fn create_api_routes(
         .route("/friends/requests/{request_id}", delete(cancel_request))
         .route("/wishlist", get(get_my_wishlist))
         .route("/wishlist/categories", post(add_category))
+        .route("/wishlist/categories/reorder", patch(reorder_categories))
         .route("/wishlist/categories/{category_id}", patch(edit_category))
+        .route(
+            "/wishlist/categories/{category_id}/reorder",
+            patch(reorder_gifts),
+        )
         .route(
             "/wishlist/categories/{category_id}",
             delete(delete_category),
