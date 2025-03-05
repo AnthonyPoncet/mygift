@@ -5,6 +5,7 @@ import SquareImage from "./SquareImage.vue";
 import { make_authorized_request } from "./helpers/make_request";
 import { onMounted, ref, useTemplateRef } from "vue";
 import { Modal } from "bootstrap";
+import { useRouter } from "vue-router";
 
 const props = defineProps<{
   gift: Gift;
@@ -12,6 +13,8 @@ const props = defineProps<{
   reserved: boolean;
   friendId: number;
 }>();
+
+const router = useRouter();
 
 const modal = useTemplateRef("showGiftModal");
 const bootstrapModal = ref();
@@ -24,6 +27,7 @@ function truncateWebsites(whereToBuy: string): string {
 
 async function reserve() {
   const response = await make_authorized_request(
+    router,
     `/wishlist/friend/${props.friendId}/gifts/${props.gift.id}`,
     "POST",
   );

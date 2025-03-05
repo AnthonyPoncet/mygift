@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -19,5 +19,5 @@ pub enum Commands {
     ResetPassword {
         #[arg(short, long)]
         name: String,
-    }
+    },
 }

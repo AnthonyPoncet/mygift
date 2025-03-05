@@ -45,6 +45,30 @@ pub async fn edit_category(
     Ok(StatusCode::OK)
 }
 
+#[derive(Deserialize)]
+pub(crate) struct ReorderCategories {
+    starting_rank: usize,
+    categories: Vec<i64>,
+}
+pub async fn reorder_categories(
+    State(wishlist_manager): State<WishlistManager>,
+    auth_user: AuthUser,
+    Json(reorder_categories): Json<ReorderCategories>,
+) -> Result<StatusCode, AppError> {
+    for category in &reorder_categories.categories {
+        if !wishlist_manager.is_my_category(auth_user.id, *category)? {
+            return Err(AppError::Unauthorized);
+        }
+    }
+
+    wishlist_manager.reorder_categories(
+        auth_user.id,
+        reorder_categories.starting_rank,
+        &reorder_categories.categories,
+    )?;
+    Ok(StatusCode::OK)
+}
+
 pub async fn delete_category(
     State(wishlist_manager): State<WishlistManager>,
     auth_user: AuthUser,
@@ -161,6 +185,31 @@ pub async fn edit_gift(
     )?;
     Ok(StatusCode::OK)
 }
+
+#[derive(Deserialize)]
+pub(crate) struct ReorderGifts {
+    starting_rank: usize,
+    gifts: Vec<i64>,
+}
+pub async fn reorder_gifts(
+    State(wishlist_manager): State<WishlistManager>,
+    auth_user: AuthUser,
+    Path(category_id): Path<i64>,
+    Json(reorder_gifts): Json<ReorderGifts>,
+) -> Result<StatusCode, AppError> {
+    if !wishlist_manager.is_my_category(auth_user.id, category_id)? {
+        return Err(AppError::Unauthorized);
+    }
+    for gift in &reorder_gifts.gifts {
+        if !wishlist_manager.is_my_gift(auth_user.id, category_id, *gift)? {
+            return Err(AppError::Unauthorized);
+        }
+    }
+
+    wishlist_manager.reorder_gifts(reorder_gifts.starting_rank, &reorder_gifts.gifts)?;
+    Ok(StatusCode::OK)
+}
+
 pub async fn edit_secret_gift(
     State(wishlist_manager): State<WishlistManager>,
     State(friends_manager): State<FriendsManager>,

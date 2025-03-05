@@ -15,6 +15,7 @@ import { useLanguageStore } from "@/stores/language";
 import type { FileUpload, Gift } from "./helpers/common_json";
 import { Cropper } from "vue-advanced-cropper";
 import "vue-advanced-cropper/dist/style.css";
+import { useRouter } from "vue-router";
 
 const props = defineProps<{
   action: GiftModalAction;
@@ -24,6 +25,8 @@ const props = defineProps<{
   categories: { id: number; name: string }[];
   secretUser: number | null;
 }>();
+
+const router = useRouter();
 
 const modal = useTemplateRef("giftModal");
 const form = useTemplateRef("giftModalForm");
@@ -126,6 +129,7 @@ async function clickButton(event: Event) {
   }
 
   const response = await make_authorized_request(
+    router,
     endpoint,
     method,
     JSON.stringify({
@@ -151,6 +155,7 @@ async function clickButton(event: Event) {
 async function deleteGift() {
   if (giftRef.value !== null) {
     const response = await make_authorized_request(
+      router,
       `/wishlist/categories/${categoryRef.value}/gifts/${giftRef.value.id}`,
       "DELETE",
     );
@@ -197,7 +202,7 @@ async function storeImage(): Promise<string> {
     if (blob) {
       formData.append("file", blob, "image.png");
     }
-    const response = await make_authorized_request("/files", "post", formData, false);
+    const response = await make_authorized_request(router, "/files", "post", formData, false);
     if (response != null) {
       const fileUpload: FileUpload = await response.json();
       return fileUpload.name;

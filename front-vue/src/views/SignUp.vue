@@ -17,9 +17,10 @@ async function signup(e: Event) {
   e.preventDefault();
   creating.value = true;
 
-  const form: HTMLFormElement = (e.target as HTMLBaseElement).tagName === "DIV" ? 
-    (e.target as HTMLDivElement).parentElement?.parentElement as HTMLFormElement : 
-    (e.target as HTMLButtonElement).parentElement as HTMLFormElement;
+  const form: HTMLFormElement =
+    (e.target as HTMLBaseElement).tagName === "DIV"
+      ? ((e.target as HTMLDivElement).parentElement?.parentElement as HTMLFormElement)
+      : ((e.target as HTMLButtonElement).parentElement as HTMLFormElement);
   if (!form.checkValidity()) {
     form.classList.add("was-validated");
     creating.value = false;

@@ -15,7 +15,7 @@ const friends: Ref<Friend[]> = ref([]);
 const pendingfriendRequests: Ref<PendingFriendRequests> = ref({ sent: [], received: [] });
 
 async function getFriends() {
-  const response = await make_authorized_request("/friends");
+  const response = await make_authorized_request(router, "/friends");
   if (response !== null) {
     const friendsJson: Friends = await response.json();
     friends.value = friendsJson.friends;
@@ -23,28 +23,28 @@ async function getFriends() {
 }
 
 async function getFriendRequests() {
-  const response = await make_authorized_request("/friends/requests");
+  const response = await make_authorized_request(router, "/friends/requests");
   if (response !== null) {
     pendingfriendRequests.value = await response.json();
   }
 }
 
 async function acceptFriendRequests(requestId: number) {
-  const response = await make_authorized_request(`/friends/requests/${requestId}/accept`);
+  const response = await make_authorized_request(router, `/friends/requests/${requestId}/accept`);
   if (response !== null) {
     getFriends();
     getFriendRequests();
   }
 }
 async function declineFriendRequests(requestId: number) {
-  const response = await make_authorized_request(`/friends/requests/${requestId}/decline`);
+  const response = await make_authorized_request(router, `/friends/requests/${requestId}/decline`);
   if (response !== null) {
     getFriendRequests();
   }
 }
 
 async function cancelFriendRequests(requestId: number) {
-  const response = await make_authorized_request(`/friend/requests/${requestId}`, "DELETE");
+  const response = await make_authorized_request(router, `/friend/requests/${requestId}`, "DELETE");
   if (response !== null) {
     getFriendRequests();
   }

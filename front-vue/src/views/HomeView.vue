@@ -22,7 +22,7 @@ watch(
 );
 
 async function getEvents() {
-  const response = await make_authorized_request("/events");
+  const response = await make_authorized_request(router, "/events");
   if (response !== null) {
     nextEvents.value = await response.json();
   }

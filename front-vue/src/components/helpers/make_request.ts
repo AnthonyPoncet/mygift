@@ -1,14 +1,14 @@
 import { useUserStore } from "@/stores/user";
-import { useRouter } from "vue-router";
+import type { Router } from "vue-router";
 import { getBaseUrl } from "@/components/helpers/base_url";
 
 export async function make_authorized_request(
+  router: Router,
   path: string,
   method: string = "get",
   body: BodyInit | null = null,
   isJson: boolean = true,
 ): Promise<Response | null> {
-  const router = useRouter();
   const userStore = useUserStore();
   const user = userStore.user;
   if (user !== null) {

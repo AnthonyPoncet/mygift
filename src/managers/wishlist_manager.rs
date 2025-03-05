@@ -111,6 +111,25 @@ impl WishlistManager {
         Ok(())
     }
 
+    pub fn reorder_categories(
+        &self,
+        user_id: i64,
+        starting_rank: usize,
+        categories: &[i64],
+    ) -> Result<(), WishlistManagerError> {
+        let mut connection = self.connection.lock().unwrap();
+        let transaction = connection.transaction()?;
+        for (index, category) in categories.iter().enumerate() {
+            transaction.execute(
+                "UPDATE joinUserAndCategory SET rank=? WHERE userId=? AND categoryId=?",
+                params![index + starting_rank, user_id, category],
+            )?;
+        }
+        transaction.commit()?;
+
+        Ok(())
+    }
+
     pub fn delete_category(
         &self,
         user_id: i64,
@@ -148,14 +167,20 @@ impl WishlistManager {
         category_id: i64,
     ) -> Result<(), WishlistManagerError> {
         let connection = self.connection.lock().unwrap();
+        
+        let sql = if secret {
+            "SELECT MAX(rank) FROM gifts WHERE categoryId=?"
+        } else {
+            "SELECT MAX(rank) FROM gifts WHERE categoryId=? AND rank < 100000"
+        };
 
-        let rank = connection
-            .query_row(
-                "SELECT MAX(rank) FROM gifts WHERE categoryId=?",
-                params![category_id],
-                |row| row.get::<_, Option<i64>>(0),
-            )?
+        let mut rank = connection
+            .query_row(sql, params![category_id], |row| row.get::<_, Option<i64>>(0))?
             .unwrap_or(-1);
+        
+        if secret && rank < 100000 {
+            rank = 100000;
+        }
 
         connection.execute("INSERT INTO gifts (name, description, price, whereToBuy, picture, rank, secret, heart, categoryId) VALUES (?,?,?,?,?,?,?,FALSE,?)", params![name, description, price, where_to_buy, picture, rank+1, secret, category_id])?;
 
@@ -174,6 +199,24 @@ impl WishlistManager {
     ) -> Result<(), WishlistManagerError> {
         let connection = self.connection.lock().unwrap();
         connection.execute("UPDATE gifts SET name=?, description=?, price=?, whereToBuy=?, picture=?, categoryId=? WHERE id=?", params![name, description, price, where_to_buy, picture, category_id, gift_id])?;
+
+        Ok(())
+    }
+
+    pub fn reorder_gifts(
+        &self,
+        starting_rank: usize,
+        gifts: &[i64],
+    ) -> Result<(), WishlistManagerError> {
+        let mut connection = self.connection.lock().unwrap();
+        let transaction = connection.transaction()?;
+        for (index, gift) in gifts.iter().enumerate() {
+            transaction.execute(
+                "UPDATE gifts SET rank=? WHERE id=?",
+                params![index + starting_rank, gift],
+            )?;
+        }
+        transaction.commit()?;
 
         Ok(())
     }
@@ -593,6 +636,110 @@ mod test {
     }
 
     #[test]
+    fn test_reorder_categories() {
+        let connection = Arc::new(Mutex::new(create_test_database("test_reorder_categories")));
+        let users_manager = UsersManager::new(connection.clone()).unwrap();
+        let one = users_manager.add_user("one", "pwd").unwrap();
+        let two = users_manager.add_user("two", "pwd").unwrap();
+
+        let wishlist_manager = WishlistManager::new(connection).unwrap();
+        wishlist_manager
+            .add_category("OneCategory", HashSet::from([one]))
+            .unwrap();
+        wishlist_manager
+            .add_category("TwoCategory", HashSet::from([two]))
+            .unwrap();
+        wishlist_manager
+            .add_category("TwoCategory2", HashSet::from([two]))
+            .unwrap();
+        wishlist_manager
+            .add_category("SharedCategory", HashSet::from([one, two]))
+            .unwrap();
+
+        //Reorder first and second of user two
+        wishlist_manager
+            .reorder_categories(two, 0, &[3, 2])
+            .unwrap();
+        let wishlist = wishlist_manager.get_my_wishlist(two).unwrap();
+        assert_eq!(
+            wishlist,
+            WishList {
+                categories: vec![
+                    Category {
+                        id: 3,
+                        name: "TwoCategory2".to_string(),
+                        share_with: Vec::new(),
+                        gifts: Vec::new()
+                    },
+                    Category {
+                        id: 2,
+                        name: "TwoCategory".to_string(),
+                        share_with: Vec::new(),
+                        gifts: Vec::new()
+                    },
+                    Category {
+                        id: 4,
+                        name: "SharedCategory".to_string(),
+                        share_with: vec![one],
+                        gifts: Vec::new()
+                    }
+                ]
+            }
+        );
+
+        //Reorder share does not affect user one
+        wishlist_manager
+            .reorder_categories(two, 1, &[4, 2])
+            .unwrap();
+        let wishlist = wishlist_manager.get_my_wishlist(two).unwrap();
+        assert_eq!(
+            wishlist,
+            WishList {
+                categories: vec![
+                    Category {
+                        id: 3,
+                        name: "TwoCategory2".to_string(),
+                        share_with: Vec::new(),
+                        gifts: Vec::new()
+                    },
+                    Category {
+                        id: 4,
+                        name: "SharedCategory".to_string(),
+                        share_with: vec![one],
+                        gifts: Vec::new()
+                    },
+                    Category {
+                        id: 2,
+                        name: "TwoCategory".to_string(),
+                        share_with: Vec::new(),
+                        gifts: Vec::new()
+                    }
+                ]
+            }
+        );
+        let wishlist = wishlist_manager.get_my_wishlist(one).unwrap();
+        assert_eq!(
+            wishlist,
+            WishList {
+                categories: vec![
+                    Category {
+                        id: 1,
+                        name: "OneCategory".to_string(),
+                        share_with: Vec::new(),
+                        gifts: Vec::new()
+                    },
+                    Category {
+                        id: 4,
+                        name: "SharedCategory".to_string(),
+                        share_with: vec![two],
+                        gifts: Vec::new()
+                    }
+                ]
+            }
+        );
+    }
+
+    #[test]
     fn test_add_gift() {
         let connection = Arc::new(Mutex::new(create_test_database("test_add_gift")));
         let users_manager = UsersManager::new(connection.clone()).unwrap();
@@ -742,6 +889,62 @@ mod test {
                         picture: Some("pic".to_string()),
                         heart: false
                     }]
+                }]
+            }
+        );
+    }
+
+    #[test]
+    fn test_reorder_gifts() {
+        let connection = Arc::new(Mutex::new(create_test_database("test_reorder_gifts")));
+        let users_manager = UsersManager::new(connection.clone()).unwrap();
+        let one = users_manager.add_user("one", "pwd").unwrap();
+
+        let wishlist_manager = WishlistManager::new(connection).unwrap();
+        wishlist_manager
+            .add_category("OneCategory", HashSet::from([one]))
+            .unwrap();
+
+        wishlist_manager
+            .add_gift("Gift", None, None, None, None, false, 1)
+            .unwrap();
+        wishlist_manager
+            .add_gift("Secret", None, None, None, None, true, 1)
+            .unwrap();
+        wishlist_manager
+            .add_gift("Gift2", None, None, None, None, false, 1)
+            .unwrap();
+        
+        //Reorder from the user that can only see gift 1 and 3 
+        wishlist_manager.reorder_gifts(0, &[3, 1]).unwrap();
+        let wishlist = wishlist_manager.get_my_wishlist(one).unwrap();
+        assert_eq!(
+            wishlist,
+            WishList {
+                categories: vec![Category {
+                    id: 1,
+                    name: "OneCategory".to_string(),
+                    share_with: Vec::new(),
+                    gifts: vec![
+                        Gift {
+                            id: 3,
+                            name: "Gift2".to_string(),
+                            description: None,
+                            price: None,
+                            where_to_buy: None,
+                            picture: None,
+                            heart: false
+                        },
+                        Gift {
+                            id: 1,
+                            name: "Gift".to_string(),
+                            description: None,
+                            price: None,
+                            where_to_buy: None,
+                            picture: None,
+                            heart: false
+                        }
+                    ]
                 }]
             }
         );
