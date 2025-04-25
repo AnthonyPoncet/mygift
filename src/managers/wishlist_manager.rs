@@ -167,7 +167,7 @@ impl WishlistManager {
         category_id: i64,
     ) -> Result<(), WishlistManagerError> {
         let connection = self.connection.lock().unwrap();
-        
+
         let sql = if secret {
             "SELECT MAX(rank) FROM gifts WHERE categoryId=?"
         } else {
@@ -175,9 +175,11 @@ impl WishlistManager {
         };
 
         let mut rank = connection
-            .query_row(sql, params![category_id], |row| row.get::<_, Option<i64>>(0))?
+            .query_row(sql, params![category_id], |row| {
+                row.get::<_, Option<i64>>(0)
+            })?
             .unwrap_or(-1);
-        
+
         if secret && rank < 100000 {
             rank = 100000;
         }
@@ -384,26 +386,26 @@ impl WishlistManager {
 #[derive(Serialize)]
 #[cfg_attr(test, derive(PartialEq, Eq, Debug))]
 pub struct WishList {
-    categories: Vec<Category>,
+    pub categories: Vec<Category>,
 }
 #[derive(Serialize)]
 #[cfg_attr(test, derive(PartialEq, Eq, Debug))]
 pub struct Category {
     id: i64,
-    name: String,
+    pub name: String,
     share_with: Vec<i64>,
-    gifts: Vec<Gift>,
+    pub gifts: Vec<Gift>,
 }
 #[derive(Serialize)]
 #[cfg_attr(test, derive(PartialEq, Eq, Debug))]
 pub struct Gift {
     id: i64,
-    name: String,
-    description: Option<String>,
-    price: Option<String>,
-    where_to_buy: Option<String>,
-    picture: Option<String>,
-    heart: bool,
+    pub name: String,
+    pub description: Option<String>,
+    pub price: Option<String>,
+    pub where_to_buy: Option<String>,
+    pub picture: Option<String>,
+    pub heart: bool,
 }
 impl<'a> TryFrom<&Row<'a>> for Category {
     type Error = rusqlite::Error;
@@ -484,6 +486,33 @@ impl<'a> TryFrom<&Row<'a>> for FriendGift {
             secret: row.get(7)?,
             reserved_by: row.get(8)?,
         })
+    }
+}
+impl Into<WishList> for FriendWishList {
+    fn into(self) -> WishList {
+        WishList {
+            categories: self.categories
+                .into_iter()
+                .map(|c| Category {
+                    id: c.id,
+                    name: c.name,
+                    share_with: Vec::new(),
+                    gifts: c.gifts
+                        .into_iter()
+                        .filter(|g| g.reserved_by.is_none())
+                        .map(|g| Gift {
+                            id: g.id,
+                            name: g.name,
+                            description: g.description,
+                            price: g.price,
+                            where_to_buy: g.where_to_buy,
+                            picture: g.picture,
+                            heart: g.heart,
+                        })
+                        .collect()
+                })
+                .collect()
+        }
     }
 }
 
@@ -914,8 +943,8 @@ mod test {
         wishlist_manager
             .add_gift("Gift2", None, None, None, None, false, 1)
             .unwrap();
-        
-        //Reorder from the user that can only see gift 1 and 3 
+
+        //Reorder from the user that can only see gift 1 and 3
         wishlist_manager.reorder_gifts(0, &[3, 1]).unwrap();
         let wishlist = wishlist_manager.get_my_wishlist(one).unwrap();
         assert_eq!(

@@ -21,11 +21,8 @@ const router = useRouter();
 const friendName: Ref<string> = ref((route.params as { name: string }).name);
 const friendId: Ref<number> = ref(-1);
 
-watch(route.params, () => {
-  console.log(route.params);
-});
-
 const wishList: Ref<FriendWishlist> = ref({ categories: [] });
+const pdfDownloadMode: Ref<boolean> = ref(false);
 
 const giftModal: Ref<Gift | null> = ref(null);
 const categoryModal: Ref<number | null> = ref(null);
@@ -84,6 +81,28 @@ async function deleteGift(category: FriendCategory, gift: FriendGift) {
   }
 }
 
+async function getPdf() {
+  pdfDownloadMode.value = true;
+  const response = await make_authorized_request(router, `/wishlist/${friendId.value}/pdf`);
+  if (response != null) {
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(new Blob([blob]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `mygift_${friendName.value}.pdf`);
+
+    // Append to html link element page
+    document.body.appendChild(link);
+
+    // Start download
+    link.click();
+
+    // Clean up and remove the link
+    link.parentNode!.removeChild(link);
+  }
+  pdfDownloadMode.value = false;
+}
+
 getGifts();
 
 watch(
@@ -97,20 +116,33 @@ watch(
 <template>
   <div class="container-fluid mt-3">
     <h1>{{ useLanguageStore().language.messages.friendlist__title + friendName }}</h1>
-    <button
-      type="button"
-      class="btn btn-outline-dark me-2 mt-2"
-      :disabled="wishList.categories.length === 0"
-      data-bs-toggle="modal"
-      data-bs-target="#giftModal"
-      @click="
-        () => {
-          giftActionModal = GiftModalAction.AddSecret;
-        }
-      "
-    >
-      {{ useLanguageStore().language.messages.friendlist__addGiftButton }}
-    </button>
+    <div class="d-flex flex-row flex-wrap gap-2">
+      <button
+        type="button"
+        class="btn btn-outline-dark me-2 mt-2"
+        :disabled="wishList.categories.length === 0"
+        data-bs-toggle="modal"
+        data-bs-target="#giftModal"
+        @click="
+          () => {
+            giftActionModal = GiftModalAction.AddSecret;
+          }
+        "
+      >
+        {{ useLanguageStore().language.messages.friendlist__addGiftButton }}
+      </button>
+      <button type="button" class="btn btn-outline-dark me-2 mt-2" @click="getPdf">
+        <div class="d-flex align-items-center justify-content-center">
+          {{ useLanguageStore().language.messages.mywishlist__downloadPdfButton }}
+          <div
+            v-if="pdfDownloadMode"
+            class="spinner-border ms-2"
+            role="status"
+            aria-hidden="true"
+          ></div>
+        </div>
+      </button>
+    </div>
     <div class="mt-4">
       <template v-for="category in wishList.categories" :key="'c' + category.id">
         <h5 class="mt-4">

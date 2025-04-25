@@ -48,7 +48,7 @@ async function heartGift(categoryId: number, giftId: number) {
 
 async function getPdf() {
   pdfDownloadMode.value = true;
-  const response = await make_authorized_request(router, `/gifts/pdf`);
+  const response = await make_authorized_request(router, `/wishlist/${useUserStore().user?.id}/pdf`);
   if (response != null) {
     const blob = await response.blob();
     const url = window.URL.createObjectURL(new Blob([blob]));
@@ -156,7 +156,7 @@ async function reorder_gifts(categoryIndex: number, e: { oldIndex: number; newIn
       >
         {{ useLanguageStore().language.messages.mywishlist__addCategoryButton }}
       </button>
-      <button type="button" class="btn btn-outline-dark me-2" disabled="true" @click="getPdf">
+      <button type="button" class="btn btn-outline-dark me-2" @click="getPdf">
         <div class="d-flex align-items-center justify-content-center">
           {{ useLanguageStore().language.messages.mywishlist__downloadPdfButton }}
           <div
