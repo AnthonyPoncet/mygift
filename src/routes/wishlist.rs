@@ -5,10 +5,15 @@ use crate::managers::wishlist_manager::{
     FriendWishList, WishList, WishlistManager, WishlistManagerError,
 };
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
+use axum::http::{header, StatusCode};
 use axum::Json;
 use serde::Deserialize;
 use std::collections::HashSet;
+use std::sync::Arc;
+use axum::body::Body;
+use axum::response::IntoResponse;
+use crate::configuration::Configuration;
+use crate::managers::pdf_generator::get_pdf;
 
 #[derive(Deserialize)]
 pub(crate) struct AddCategory {
@@ -331,4 +336,26 @@ pub async fn get_friend_wishlist(
     }
     let wishlist = wishlist_manager.get_friend_wishlist(auth_user.id, friend_id)?;
     Ok((StatusCode::OK, Json(wishlist)))
+}
+
+pub async fn get_wishlist_pdf(
+    State(wishlist_manager): State<WishlistManager>,
+    State(friends_manager): State<FriendsManager>,
+    State(configuration): State<Arc<Configuration>>,
+    auth_user: AuthUser,
+    Path(user_id): Path<i64>,
+) -> impl IntoResponse {
+    let pdf = if auth_user.id == user_id {
+        let wishlist = wishlist_manager.get_my_wishlist(auth_user.id)?;
+        get_pdf(wishlist, configuration)
+    } else if friends_manager.is_my_friend(auth_user.id, user_id)? { 
+        let wishlist = wishlist_manager.get_friend_wishlist(auth_user.id, user_id)?.into();
+        get_pdf(wishlist, configuration)
+    } else {
+        return Err(AppError::Unauthorized);
+    };
+    
+    let body = Body::from(pdf);
+    let headers = [(header::CONTENT_TYPE, "application/pdf")];
+    Ok((headers, body))
 }
