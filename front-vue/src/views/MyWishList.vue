@@ -48,7 +48,10 @@ async function heartGift(categoryId: number, giftId: number) {
 
 async function getPdf() {
   pdfDownloadMode.value = true;
-  const response = await make_authorized_request(router, `/wishlist/${useUserStore().user?.id}/pdf`);
+  const response = await make_authorized_request(
+    router,
+    `/wishlist/${useUserStore().user?.id}/pdf`,
+  );
   if (response != null) {
     const blob = await response.blob();
     const url = window.URL.createObjectURL(new Blob([blob]));

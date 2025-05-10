@@ -154,11 +154,14 @@ async function clickButton(event: Event) {
 //TODO: need to ask why deleted
 async function deleteGift() {
   if (giftRef.value !== null) {
-    const response = await make_authorized_request(
-      router,
-      `/wishlist/categories/${categoryRef.value}/gifts/${giftRef.value.id}`,
-      "DELETE",
-    );
+    let endpoint = "";
+    if (actionRef.value === GiftModalAction.Edit) {
+      endpoint = `/wishlist/categories/${categoryRef.value}/gifts/${giftRef.value.id}`;
+    } else {
+      endpoint = `/wishlist/friend/${secretUserRef.value}/categories/${categoryRef.value}/gifts/${giftRef.value.id}`;
+    }
+
+    const response = await make_authorized_request(router, endpoint, "DELETE");
     if (response !== null) {
       bootstrapModal.value.hide();
       emit("refresh-wishlist");
