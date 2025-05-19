@@ -1,9 +1,13 @@
-use std::path::PathBuf;
-use std::sync::Arc;
-use printpdf::{Actions, BorderArray, Color, ColorArray, FontId, HighlightingMode, LinePoint, LinkAnnotation, Mm, Op, PaintMode, PdfDocument, PdfPage, PdfSaveOptions, Point, Polygon, PolygonRing, Pt, RawImage, Rect, Rgb, Svg, TextAlign, TextShapingOptions, WindingOrder, XObjectTransform};
 use crate::configuration::Configuration;
 use crate::managers::wishlist_manager::WishList;
 use crate::routes::files::resize_file;
+use printpdf::{
+    Actions, BorderArray, Color, ColorArray, FontId, HighlightingMode, LinePoint, LinkAnnotation,
+    Mm, Op, PaintMode, PdfDocument, PdfPage, PdfSaveOptions, Point, Polygon, PolygonRing, Pt,
+    RawImage, Rect, Rgb, Svg, TextAlign, TextShapingOptions, WindingOrder, XObjectTransform,
+};
+use std::path::PathBuf;
+use std::sync::Arc;
 
 const PAGE_WIDTH: Mm = Mm(525.0);
 const PAGE_HEIGHT: Mm = Mm(286.0);
@@ -25,8 +29,7 @@ pub fn get_pdf(wishlist: WishList, configuration: Arc<Configuration>) -> Vec<u8>
         include_bytes!("../../resource/Roboto-Regular.ttf"),
         &mut doc,
     );
-    let roboto_bold_font_id =
-        get_font(include_bytes!("../../resource/Roboto-Bold.ttf"), &mut doc);
+    let roboto_bold_font_id = get_font(include_bytes!("../../resource/Roboto-Bold.ttf"), &mut doc);
 
     let category_name_options = TextShapingOptions {
         font_size: Pt(36.0),
@@ -76,7 +79,10 @@ pub fn get_pdf(wishlist: WishList, configuration: Arc<Configuration>) -> Vec<u8>
                 let shaped_text = doc
                     .shape_text(&category.name, &roboto_bold_font_id, &category_name_options)
                     .unwrap();
-                let origin = Point { x: Pt(0.0), y: (PAGE_HEIGHT - Mm(10.0)).into_pt() };
+                let origin = Point {
+                    x: Pt(0.0),
+                    y: (PAGE_HEIGHT - Mm(10.0)).into_pt(),
+                };
                 ops.extend(shaped_text.get_ops(origin));
             }
 
@@ -344,12 +350,10 @@ pub fn get_pdf(wishlist: WishList, configuration: Arc<Configuration>) -> Vec<u8>
         if !ops.is_empty() {
             let page = PdfPage::new(PAGE_WIDTH, PAGE_HEIGHT, ops);
             pages.push(page);
-
         }
     }
 
-    doc
-        .with_pages(pages)
+    doc.with_pages(pages)
         .save(&PdfSaveOptions::default(), &mut Vec::new())
 }
 

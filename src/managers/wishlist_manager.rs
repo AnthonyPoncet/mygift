@@ -37,7 +37,7 @@ impl WishlistManager {
         &self,
         name: &str,
         user_ids: HashSet<i64>,
-    ) -> Result<(), WishlistManagerError> {
+    ) -> Result<i64, WishlistManagerError> {
         let mut connection = self.connection.lock().unwrap();
 
         let transaction = connection.transaction()?;
@@ -47,7 +47,7 @@ impl WishlistManager {
         Self::add_user_to_category(&transaction, category_id, user_ids)?;
         transaction.commit()?;
 
-        Ok(())
+        Ok(category_id)
     }
 
     fn add_user_to_category(
@@ -165,7 +165,7 @@ impl WishlistManager {
         picture: Option<String>,
         secret: bool,
         category_id: i64,
-    ) -> Result<(), WishlistManagerError> {
+    ) -> Result<i64, WishlistManagerError> {
         let connection = self.connection.lock().unwrap();
 
         let sql = if secret {
@@ -185,8 +185,8 @@ impl WishlistManager {
         }
 
         connection.execute("INSERT INTO gifts (name, description, price, whereToBuy, picture, rank, secret, heart, categoryId) VALUES (?,?,?,?,?,?,?,FALSE,?)", params![name, description, price, where_to_buy, picture, rank+1, secret, category_id])?;
-
-        Ok(())
+        let gift_id = connection.last_insert_rowid();
+        Ok(gift_id)
     }
 
     pub fn edit_gift(
@@ -491,13 +491,15 @@ impl<'a> TryFrom<&Row<'a>> for FriendGift {
 impl Into<WishList> for FriendWishList {
     fn into(self) -> WishList {
         WishList {
-            categories: self.categories
+            categories: self
+                .categories
                 .into_iter()
                 .map(|c| Category {
                     id: c.id,
                     name: c.name,
                     share_with: Vec::new(),
-                    gifts: c.gifts
+                    gifts: c
+                        .gifts
                         .into_iter()
                         .filter(|g| g.reserved_by.is_none())
                         .map(|g| Gift {
@@ -509,9 +511,9 @@ impl Into<WishList> for FriendWishList {
                             picture: g.picture,
                             heart: g.heart,
                         })
-                        .collect()
+                        .collect(),
                 })
-                .collect()
+                .collect(),
         }
     }
 }

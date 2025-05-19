@@ -3,6 +3,7 @@ use crate::configuration::Configuration;
 use crate::managers::events_manager::EventsManager;
 use crate::managers::friends_manager::FriendsManager;
 use crate::managers::jwt_manager::JwtManager;
+use crate::managers::notifications_manager::NotificationsManager;
 use crate::managers::session_manager::SessionManager;
 use crate::managers::users_manager::UsersManager;
 use crate::managers::wishlist_manager::WishlistManager;
@@ -13,8 +14,14 @@ use crate::routes::friends::{
     accept_request, add_friend, cancel_request, decline_request, get_friend_id, get_friends,
     get_requests,
 };
+use crate::routes::notifications::{get_notifications, read_notification};
 use crate::routes::users::{create_user, edit_user};
-use crate::routes::wishlist::{add_category, add_gift, add_secret_gift, change_heart_gift, delete_category, delete_gift, delete_secret_gift, edit_category, edit_gift, edit_secret_gift, get_friend_wishlist, get_my_wishlist, get_wishlist_pdf, reorder_categories, reorder_gifts, reserve_gift, unreserve_gift};
+use crate::routes::wishlist::{
+    add_category, add_gift, add_secret_gift, change_heart_gift, delete_category, delete_gift,
+    delete_secret_gift, edit_category, edit_gift, edit_secret_gift, get_friend_wishlist,
+    get_my_wishlist, get_wishlist_pdf, reorder_categories, reorder_gifts, reserve_gift,
+    unreserve_gift,
+};
 use axum::extract::FromRef;
 use axum::routing::{delete, get, patch, post, put};
 use axum::Router;
@@ -25,6 +32,7 @@ mod connection;
 mod events;
 pub mod files;
 mod friends;
+mod notifications;
 mod users;
 mod wishlist;
 
@@ -36,6 +44,7 @@ pub(crate) struct AppState {
     pub(crate) events_manager: EventsManager,
     pub(crate) friends_manager: FriendsManager,
     pub(crate) wishlist_manager: WishlistManager,
+    pub(crate) notifications_manager: NotificationsManager,
 
     pub(crate) configuration: Arc<Configuration>,
 }
@@ -73,6 +82,12 @@ impl FromRef<AppState> for FriendsManager {
 impl FromRef<AppState> for WishlistManager {
     fn from_ref(app_state: &AppState) -> WishlistManager {
         app_state.wishlist_manager.clone()
+    }
+}
+
+impl FromRef<AppState> for NotificationsManager {
+    fn from_ref(app_state: &AppState) -> NotificationsManager {
+        app_state.notifications_manager.clone()
     }
 }
 
@@ -151,6 +166,8 @@ pub(crate) fn create_api_routes(
         .route("/wishlist/{user_id}/pdf", get(get_wishlist_pdf))
         .route("/files/{file_name}", get(get_file))
         .route("/files", post(upload_file))
+        .route("/notifications", get(get_notifications))
+        .route("/notifications/{notification_id}", post(read_notification))
         .layer(AuthLayer {
             session_manager,
             jwt_manager,

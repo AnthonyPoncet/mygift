@@ -1,19 +1,20 @@
 use crate::auth_middleware::AuthUser;
+use crate::configuration::Configuration;
 use crate::error_catcher::AppError;
 use crate::managers::friends_manager::FriendsManager;
+use crate::managers::notifications_manager::{NotificationEvent, NotificationsManager};
+use crate::managers::pdf_generator::get_pdf;
 use crate::managers::wishlist_manager::{
     FriendWishList, WishList, WishlistManager, WishlistManagerError,
 };
+use axum::body::Body;
 use axum::extract::{Path, State};
 use axum::http::{header, StatusCode};
+use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::sync::Arc;
-use axum::body::Body;
-use axum::response::IntoResponse;
-use crate::configuration::Configuration;
-use crate::managers::pdf_generator::get_pdf;
 
 #[derive(Deserialize)]
 pub(crate) struct AddCategory {
@@ -24,18 +25,22 @@ pub(crate) struct AddCategory {
 pub async fn add_category(
     State(wishlist_manager): State<WishlistManager>,
     State(friends_manager): State<FriendsManager>,
+    State(notification_manager): State<NotificationsManager>,
     auth_user: AuthUser,
     Json(add_category): Json<AddCategory>,
 ) -> Result<StatusCode, AppError> {
     let all_users =
         build_category_user_list(auth_user.id, add_category.share_with, &friends_manager)?;
-    wishlist_manager.add_category(&add_category.name, all_users)?;
+    let category_id = wishlist_manager.add_category(&add_category.name, all_users)?;
+    notification_manager
+        .add_notification(auth_user.id, NotificationEvent::CreateCategory(category_id))?;
     Ok(StatusCode::OK)
 }
 
 pub async fn edit_category(
     State(wishlist_manager): State<WishlistManager>,
     State(friends_manager): State<FriendsManager>,
+    State(notification_manager): State<NotificationsManager>,
     auth_user: AuthUser,
     Path(category_id): Path<i64>,
     Json(add_category): Json<AddCategory>,
@@ -47,6 +52,8 @@ pub async fn edit_category(
     let all_users =
         build_category_user_list(auth_user.id, add_category.share_with, &friends_manager)?;
     wishlist_manager.edit_category(category_id, &add_category.name, all_users)?;
+    notification_manager
+        .add_notification(auth_user.id, NotificationEvent::UpdateCategory(category_id))?;
     Ok(StatusCode::OK)
 }
 
@@ -76,6 +83,7 @@ pub async fn reorder_categories(
 
 pub async fn delete_category(
     State(wishlist_manager): State<WishlistManager>,
+    State(notification_manager): State<NotificationsManager>,
     auth_user: AuthUser,
     Path(category_id): Path<i64>,
 ) -> Result<StatusCode, AppError> {
@@ -83,6 +91,8 @@ pub async fn delete_category(
         return Err(AppError::Unauthorized);
     }
     wishlist_manager.delete_category(auth_user.id, category_id)?;
+    notification_manager
+        .add_notification(auth_user.id, NotificationEvent::DeleteCategory(category_id))?;
     Ok(StatusCode::OK)
 }
 
@@ -123,6 +133,7 @@ pub(crate) struct AddGift {
 
 pub async fn add_gift(
     State(wishlist_manager): State<WishlistManager>,
+    State(notification_manager): State<NotificationsManager>,
     auth_user: AuthUser,
     Path(category_id): Path<i64>,
     Json(add_gift): Json<AddGift>,
@@ -130,7 +141,7 @@ pub async fn add_gift(
     if !wishlist_manager.is_my_category(auth_user.id, category_id)? {
         return Err(AppError::Unauthorized);
     }
-    wishlist_manager.add_gift(
+    let gift_id = wishlist_manager.add_gift(
         &add_gift.name,
         add_gift.description,
         add_gift.price,
@@ -139,6 +150,7 @@ pub async fn add_gift(
         false,
         category_id,
     )?;
+    notification_manager.add_notification(auth_user.id, NotificationEvent::CreateGift(gift_id))?;
     Ok(StatusCode::OK)
 }
 
@@ -169,6 +181,7 @@ pub async fn add_secret_gift(
 
 pub async fn edit_gift(
     State(wishlist_manager): State<WishlistManager>,
+    State(notification_manager): State<NotificationsManager>,
     auth_user: AuthUser,
     Path((category_id, gift_id)): Path<(i64, i64)>,
     Json(add_gift): Json<AddGift>,
@@ -188,6 +201,7 @@ pub async fn edit_gift(
         add_gift.picture,
         category_id,
     )?;
+    notification_manager.add_notification(auth_user.id, NotificationEvent::UpdateGift(gift_id))?;
     Ok(StatusCode::OK)
 }
 
@@ -245,6 +259,7 @@ pub async fn edit_secret_gift(
 
 pub async fn delete_gift(
     State(wishlist_manager): State<WishlistManager>,
+    State(notification_manager): State<NotificationsManager>,
     auth_user: AuthUser,
     Path((category_id, gift_id)): Path<(i64, i64)>,
 ) -> Result<StatusCode, AppError> {
@@ -252,6 +267,7 @@ pub async fn delete_gift(
         return Err(AppError::Unauthorized);
     }
     wishlist_manager.delete_gift(gift_id)?;
+    notification_manager.add_notification(auth_user.id, NotificationEvent::DeleteGift(gift_id))?;
     Ok(StatusCode::OK)
 }
 
@@ -348,13 +364,15 @@ pub async fn get_wishlist_pdf(
     let pdf = if auth_user.id == user_id {
         let wishlist = wishlist_manager.get_my_wishlist(auth_user.id)?;
         get_pdf(wishlist, configuration)
-    } else if friends_manager.is_my_friend(auth_user.id, user_id)? { 
-        let wishlist = wishlist_manager.get_friend_wishlist(auth_user.id, user_id)?.into();
+    } else if friends_manager.is_my_friend(auth_user.id, user_id)? {
+        let wishlist = wishlist_manager
+            .get_friend_wishlist(auth_user.id, user_id)?
+            .into();
         get_pdf(wishlist, configuration)
     } else {
         return Err(AppError::Unauthorized);
     };
-    
+
     let body = Body::from(pdf);
     let headers = [(header::CONTENT_TYPE, "application/pdf")];
     Ok((headers, body))

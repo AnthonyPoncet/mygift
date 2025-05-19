@@ -5,13 +5,26 @@ import { useRouter } from "vue-router";
 import SquareImage from "./SquareImage.vue";
 import blank_profile_picture from "@/assets/images/blank_profile_picture.png";
 import { isMobile } from "./helpers/is_mobile";
-import { useTemplateRef } from "vue";
+import { ref, useTemplateRef, watch, type Ref } from "vue";
+import { make_authorized_request } from "./helpers/make_request";
 
 const router = useRouter();
 const languageStore = useLanguageStore();
+const userStore = useUserStore();
 
 const navbarSupportedContent = useTemplateRef("navbarSupportedContent");
 const navButton = useTemplateRef("navButton");
+
+interface Notification {
+  id: number;
+  type: string;
+  detail: string;
+  created_at: number;
+  created_by: string;
+  read: boolean;
+}
+
+const notifications: Ref<Notification[]> = ref([])
 
 function changeLanguage(language: Languages) {
   languageStore.updateLanguage(language);
@@ -20,6 +33,7 @@ function changeLanguage(language: Languages) {
 function logout() {
   useUserStore().logout();
   router.push({ name: "home" });
+  notifications.value = [];
 }
 
 function collapse() {
@@ -28,10 +42,31 @@ function collapse() {
     navbarSupportedContent.value?.classList.remove("show");
   }
 }
+
+async function get_notification() {
+  const response = await make_authorized_request(router, "/notifications");
+  if (response !== null) {
+    notifications.value = await response.json();
+    console.log(notifications);
+  }
+}
+
+watch(() => userStore.user, async () => {
+  get_notification();
+});
+get_notification();
+
+function notification_to_display(notification: Notification): string {
+  let typeText = "";
+  if (notification.type === "CreateGift") {
+    typeText = "à ajouté un cadeau"
+  }
+  return `${notification.created_by} ${typeText}`;
+}
 </script>
 
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <nav class="navbar navbar-expand-lg">
     <div class="container-fluid ms-3 me-3">
       <RouterLink class="navbar-brand" to="/">Mygift</RouterLink>
       <div class="nav-item dropdown ms-auto me-2" v-if="isMobile">
@@ -115,6 +150,32 @@ function collapse() {
           </template>
         </ul>
         <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown" v-if="!isMobile">
+            <a
+              class="nav-link dropdown-toggle"
+              data-bs-toggle="dropdown"
+              href="#"
+              role="button"
+              aria-expanded="false"
+            >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-bell" viewBox="0 0 16 16">
+              <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-3.203-3.92zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6"/>
+            </svg>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <template v-for="notification in notifications" :key="notification.id">
+                <li>
+                  <div class="dropdown-item">
+                    {{ notification_to_display(notification) }} <p class="fw-light">{{
+                    new Date(
+                      notification.created_at * 1000 + new Date().getTimezoneOffset() * 60000,
+                    ).toLocaleString()
+                  }}</p></div>
+                </li>
+              </template>
+            </ul>
+          </li>
+
           <li class="nav-item dropdown" v-if="!isMobile">
             <a
               class="nav-link dropdown-toggle"

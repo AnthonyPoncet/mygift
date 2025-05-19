@@ -217,15 +217,15 @@ impl FriendsManager {
 #[derive(Serialize)]
 #[cfg_attr(test, derive(PartialEq, Eq, Debug))]
 pub struct FriendRequest {
-    id: i64,
-    other_user: CleanUser,
+    pub id: i64,
+    pub other_user: CleanUser,
 }
 
 #[derive(Serialize)]
 #[cfg_attr(test, derive(PartialEq, Eq, Debug))]
 pub struct Requests {
-    sent: Vec<FriendRequest>,
-    received: Vec<FriendRequest>,
+    pub sent: Vec<FriendRequest>,
+    pub received: Vec<FriendRequest>,
 }
 
 pub enum RequestStatus {

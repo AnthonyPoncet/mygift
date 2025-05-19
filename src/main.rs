@@ -3,6 +3,7 @@ use crate::configuration::Configuration;
 use crate::managers::events_manager::EventsManager;
 use crate::managers::friends_manager::FriendsManager;
 use crate::managers::jwt_manager::JwtManager;
+use crate::managers::notifications_manager::NotificationsManager;
 use crate::managers::session_manager::SessionManager;
 use crate::managers::users_manager::UsersManager;
 use crate::managers::wishlist_manager::WishlistManager;
@@ -191,6 +192,8 @@ async fn main() {
     let events_manager = EventsManager {
         friends_manager: friends_manager.clone(),
     };
+    let notifications_manager =
+        NotificationsManager::new(connection.clone(), friends_manager.clone()).unwrap();
     let wishlist_manager = WishlistManager::new(connection.clone()).unwrap();
     let serve_dir = ServeDir::new(&configuration.front_dir);
     let configuration = Arc::new(configuration);
@@ -202,6 +205,7 @@ async fn main() {
         events_manager,
         friends_manager,
         wishlist_manager,
+        notifications_manager,
         configuration: configuration.clone(),
     };
 

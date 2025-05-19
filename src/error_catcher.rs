@@ -1,6 +1,7 @@
 use crate::managers::events_manager::EventsManagerError;
 use crate::managers::friends_manager::FriendsManagerError;
 use crate::managers::jwt_manager::JwtManagerError;
+use crate::managers::notifications_manager::NotificationsManagerError;
 use crate::managers::users_manager::UsersManagerError;
 use crate::managers::wishlist_manager::WishlistManagerError;
 use axum::http::StatusCode;
@@ -17,6 +18,7 @@ pub(crate) enum AppError {
     EventsManager(#[from] EventsManagerError),
     FriendsManager(#[from] FriendsManagerError),
     WishlistManager(#[from] WishlistManagerError),
+    NotificationsManagerError(#[from] NotificationsManagerError),
     #[error("Unauthorized")]
     Unauthorized,
     #[error("Conflict")]
