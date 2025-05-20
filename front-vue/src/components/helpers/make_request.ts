@@ -31,12 +31,12 @@ export async function make_authorized_request(
 
     if (response.status === 401) {
       userStore.logout();
-      router.push({ name: "home" });
+      await router.push({ name: "home" });
     } else if (response.ok) {
       return response;
     }
   } else {
-    router.push({ name: "home" });
+    await router.push({ name: "home" });
   }
 
   return null;

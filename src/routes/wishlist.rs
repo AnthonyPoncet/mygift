@@ -1,19 +1,17 @@
 use crate::auth_middleware::AuthUser;
+use crate::configuration::Configuration;
 use crate::error_catcher::AppError;
 use crate::managers::friends_manager::FriendsManager;
-use crate::managers::wishlist_manager::{
-    FriendWishList, WishList, WishlistManager, WishlistManagerError,
-};
+use crate::managers::pdf_generator::get_pdf;
+use crate::managers::wishlist_manager::{EditGift, FriendWishList, ShowingFriendGift, WishList, WishlistManager, WishlistManagerError};
+use axum::body::Body;
 use axum::extract::{Path, State};
 use axum::http::{header, StatusCode};
+use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::sync::Arc;
-use axum::body::Body;
-use axum::response::IntoResponse;
-use crate::configuration::Configuration;
-use crate::managers::pdf_generator::get_pdf;
 
 #[derive(Deserialize)]
 pub(crate) struct AddCategory {
@@ -140,6 +138,35 @@ pub async fn add_gift(
         category_id,
     )?;
     Ok(StatusCode::OK)
+}
+
+
+pub async fn get_gift(
+    State(wishlist_manager): State<WishlistManager>,
+    auth_user: AuthUser,
+    Path(gift_id): Path<i64>,
+) -> Result<(StatusCode, Json<EditGift>), AppError> {
+    if !wishlist_manager.is_friend_gift(auth_user.id, gift_id)? {
+        return Err(AppError::Unauthorized);
+    }
+    let gift = wishlist_manager.get_gift(gift_id)?;
+    Ok((StatusCode::OK, Json(gift)))
+}
+
+pub async fn get_friend_gift(
+    State(wishlist_manager): State<WishlistManager>,
+    State(friends_manager): State<FriendsManager>,
+    auth_user: AuthUser,
+    Path((friend_id, gift_id)): Path<(i64, i64)>,
+) -> Result<(StatusCode, Json<ShowingFriendGift>), AppError> {
+    if !friends_manager.is_my_friend(auth_user.id, friend_id)? {
+        return Err(AppError::Unauthorized);
+    }
+    if !wishlist_manager.is_friend_gift(friend_id, gift_id)? {
+        return Err(AppError::Unauthorized);
+    }
+    let gift = wishlist_manager.get_friend_gift(gift_id)?;
+    Ok((StatusCode::OK, Json(gift)))
 }
 
 pub async fn add_secret_gift(
@@ -348,13 +375,15 @@ pub async fn get_wishlist_pdf(
     let pdf = if auth_user.id == user_id {
         let wishlist = wishlist_manager.get_my_wishlist(auth_user.id)?;
         get_pdf(wishlist, configuration)
-    } else if friends_manager.is_my_friend(auth_user.id, user_id)? { 
-        let wishlist = wishlist_manager.get_friend_wishlist(auth_user.id, user_id)?.into();
+    } else if friends_manager.is_my_friend(auth_user.id, user_id)? {
+        let wishlist = wishlist_manager
+            .get_friend_wishlist(auth_user.id, user_id)?
+            .into();
         get_pdf(wishlist, configuration)
     } else {
         return Err(AppError::Unauthorized);
     };
-    
+
     let body = Body::from(pdf);
     let headers = [(header::CONTENT_TYPE, "application/pdf")];
     Ok((headers, body))

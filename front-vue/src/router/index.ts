@@ -30,6 +30,26 @@ const router = createRouter({
       component: () => import("../views/MyWishList.vue"),
     },
     {
+      path: "/mywishlist/add-gift",
+      name: "mywishlistaddgift",
+      component: () => import("../views/AddGift.vue"),
+    },
+    {
+      path: "/mywishlist/add-category",
+      name: "mywishlistaddcategory",
+      component: () => import("../views/AddCategory.vue"),
+    },
+    {
+      path: "/mywishlist/categories/:id/edit",
+      name: "mywishlisteditcategory",
+      component: () => import("../views/EditCategory.vue"),
+    },
+    {
+      path: "/mywishlist/gifts/:id/edit",
+      name: "mywishlisteditgift",
+      component: () => import("../views/EditGift.vue"),
+    },
+    {
       path: "/myfriends",
       name: "myfriends",
       component: () => import("../views/MyFriends.vue"),
@@ -40,11 +60,30 @@ const router = createRouter({
       component: () => import("../views/FriendWishList.vue"),
     },
     {
+      path: "/friend/:name/add-gift",
+      name: "friendaddgift",
+      component: () => import("../views/AddGift.vue"),
+    },
+    {
+      path: "/friend/:name/gifts/:id/edit",
+      name: "friendeditgift",
+      component: () => import("../views/EditGift.vue"),
+    },
+    {
+      path: "/friend/:name/gifts/:id",
+      name: "showgift",
+      component: () => import("../views/ShowGift.vue"),
+    },
+    {
       path: "/manageaccount",
       name: "manageaccount",
       component: () => import("../views/EditProfile.vue"),
     },
   ],
+  scrollBehavior(to, from, savedPosition) {
+    // always scroll to top
+    return { top: 0 };
+  },
 });
 
 export default router;

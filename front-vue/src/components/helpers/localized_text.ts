@@ -30,10 +30,13 @@ export interface Messages {
 
   signup__title: string;
   signup__button: string;
+  signup__hasAccount: string;
+  signup__connect: string;
   signin__title: string;
   signin__button: string;
   signin__newAccount: string;
-  signin__creatAccount: string;
+  signin__createAccount: string;
+  signin__errorLogin: string;
 
   mywishlist__addGiftButton: string;
   mywishlist__addCategoryButton: string;
@@ -44,7 +47,9 @@ export interface Messages {
   category_modal__updateCategoryTitle: string;
 
   gift_modal__addGiftTitle: string;
+  gift_modal__addSecretGiftTitle: string;
   gift_modal__updateGiftTitle: string;
+  gift_modal__updateSecretGiftTitle: string;
 
   delete_modal__pre_text: string;
   delete_modal__pre_text_category: string;
@@ -57,14 +62,24 @@ export interface Messages {
   myfriends__friend_list: string;
   myfriends__friend_requests: string;
   myfriends__my_friend_requests: string;
+  myfriends__unknown_pseudo: string;
 
   friend_modal__title: string;
 
   friendlist__title: string;
   friendlist__addGiftButton: string;
 
+  showgift__gift_of: string;
+  showgift__buy_here: string;
+  showgift__favorite: string;
+  showgift__secret: string;
+  showgift__cancel_reserve: string;
+  showgift__already_reserved: string;
+
+  home__next_events: string;
   home__years_old: string;
   home__special_event: Record<EventKind, string>;
+  home__months: string[];
 }
 
 export const fr: Messages = {
@@ -84,7 +99,7 @@ export const fr: Messages = {
   global__delete: "Supprimer",
   global__accept: "Accepter",
   global__cancel: "Annuler",
-  global__reserve: "Reserver",
+  global__reserve: "Réserver",
 
   nav_bar__signin: "Se connecter",
   nav_bar__signup: "S'inscrire",
@@ -97,10 +112,13 @@ export const fr: Messages = {
 
   signup__title: "S'inscrire à MyGift",
   signup__button: "S'inscrire",
+  signup__hasAccount: "Déjà inscrit ?",
+  signup__connect: "Se connecter",
   signin__title: "Se connecter à MyGift",
   signin__button: "Se connecter",
-  signin__newAccount: "Nouveau sur MyGift?",
-  signin__creatAccount: "Créer un compte",
+  signin__newAccount: "Nouveau sur MyGift ?",
+  signin__createAccount: "Créer un compte",
+  signin__errorLogin: "Pseudo ou mot de passe incorrect",
 
   mywishlist__addGiftButton: "Ajouter un cadeau",
   mywishlist__addCategoryButton: "Ajouter une catégorie",
@@ -111,31 +129,55 @@ export const fr: Messages = {
   category_modal__updateCategoryTitle: "Modifier cette catégorie",
 
   gift_modal__addGiftTitle: "Ajouter un nouveau cadeau",
+  gift_modal__addSecretGiftTitle: "Ajouter un nouveau cadeau secret",
   gift_modal__updateGiftTitle: "Modifier ce cadeau",
+  gift_modal__updateSecretGiftTitle: "Modifier ce cadeau secret",
 
   delete_modal__pre_text: "Voulez-vous vraiment supprimer ",
   delete_modal__pre_text_category: "la catégorie ",
   delete_modal__pre_text_gift: "le cadeau ",
-  delete_modal__post_text_friend: "de vos amis?",
+  delete_modal__post_text_friend: "de vos amis ?",
   delete_modal__category_hint: "Ceci supprimera aussi tous les cadeaux de cette catégorie.",
   delete_modal__category_shared_hint:
-    "Ceci ne supprimera pas la categorie partagée de la liste de vos amis.",
+    "Ceci ne supprimera pas la catégorie de la liste de vos amis.",
 
   myfriends__add_friend: "Ajouter un ami",
   myfriends__friend_list: "Amis",
   myfriends__friend_requests: "Demande d'amis",
   myfriends__my_friend_requests: "Mes demandes d'amis",
+  myfriends__unknown_pseudo: " n'existe pas, merci de vérifier le pseudo",
 
   friend_modal__title: "Ajouter un nouvel ami",
-
   friendlist__title: "Liste de ",
   friendlist__addGiftButton: "Ajouter un cadeau secret",
 
+  showgift__gift_of: "Cadeau de ",
+  showgift__buy_here: "À acheter sur",
+  showgift__favorite: "Ce cadeau est un favori de ",
+  showgift__secret: "Chut ! Ceci est un cadeau secret, n'en parlez pas à ",
+  showgift__cancel_reserve: "Ne plus réserver",
+  showgift__already_reserved: "Déjà réservé par ",
+
+  home__next_events: "Prochain événements",
   home__years_old: "ans",
   home__special_event: {
     [EventKind.BIRTHDAY]: "",
     [EventKind.CHRISTMAS]: "Noël",
   },
+  home__months: [
+    "Janvier",
+    "Février",
+    "Mars",
+    "Avril",
+    "Mai",
+    "Juin",
+    "Juillet",
+    "Août",
+    "Septembre",
+    "Octobre",
+    "Novembre",
+    "Décembre",
+  ],
 };
 
 export const en: Messages = {
@@ -148,7 +190,7 @@ export const en: Messages = {
   global__whereToBuy: "Where to buy",
   global__category: "Category",
   global__picture: "Picture",
-  global__share_with: "Share with",
+  global__share_with: "In common with",
   global__form_validation_start: "Please provide a ",
   global__add: "Add",
   global__update: "Modify",
@@ -168,10 +210,13 @@ export const en: Messages = {
 
   signup__title: "Sign up to MyGift",
   signup__button: "Sign up",
+  signup__hasAccount: "Already have an account?",
+  signup__connect: "Sign in",
   signin__title: "Sign in to MyGift",
   signin__button: "Sign in",
   signin__newAccount: "New to MyGift?",
-  signin__creatAccount: "Crate an account",
+  signin__createAccount: "Create an account",
+  signin__errorLogin: "Incorrect username or password",
 
   mywishlist__addGiftButton: "Add a gift",
   mywishlist__addCategoryButton: "Add a category",
@@ -182,29 +227,53 @@ export const en: Messages = {
   category_modal__updateCategoryTitle: "Modify category",
 
   gift_modal__addGiftTitle: "Add a new gift",
+  gift_modal__addSecretGiftTitle: "Add a new secret gift",
   gift_modal__updateGiftTitle: "Modify gift",
+  gift_modal__updateSecretGiftTitle: "Modify secret gift",
 
   delete_modal__pre_text: "Do you really want to remove ",
   delete_modal__pre_text_category: "the category ",
   delete_modal__pre_text_gift: "the gift ",
   delete_modal__category_hint: "This will also delete all gifts of this category.",
-  delete_modal__category_shared_hint:
-    "This will not delete the shared category from your friends list.",
+  delete_modal__category_shared_hint: "This will not delete the category from your friends list.",
   delete_modal__post_text_friend: " of your firend list?",
 
   myfriends__add_friend: "Add friend",
   myfriends__friend_list: "Friends",
   myfriends__friend_requests: "Friend requests",
   myfriends__my_friend_requests: "My friend requests",
+  myfriends__unknown_pseudo: " does not exist, please do check the username",
 
   friend_modal__title: "Add a new friend",
 
   friendlist__title: "List of ",
   friendlist__addGiftButton: "Add a secret gift",
 
+  showgift__gift_of: "Gift of ",
+  showgift__buy_here: "To buy at",
+  showgift__favorite: "This gift is a favorite of ",
+  showgift__secret: "Hush! This gift is secret, do not tell ",
+  showgift__cancel_reserve: "Unreserve",
+  showgift__already_reserved: "Already reserved by ",
+
+  home__next_events: "Upcoming events",
   home__years_old: "years old",
   home__special_event: {
     [EventKind.BIRTHDAY]: "",
     [EventKind.CHRISTMAS]: "Christmas",
   },
+  home__months: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ],
 };

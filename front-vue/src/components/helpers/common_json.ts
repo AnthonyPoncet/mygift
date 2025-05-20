@@ -23,6 +23,16 @@ export interface Gift {
   heart: boolean;
 }
 
+export interface EditGift {
+  id: number;
+  name: string;
+  description: string | null;
+  price: string | null;
+  where_to_buy: string | null;
+  category: number;
+  picture: string | null;
+}
+
 export interface FriendWishlist {
   categories: FriendCategory[];
 }
@@ -43,6 +53,17 @@ export interface FriendGift {
   heart: boolean;
   secret: boolean;
   reserved_by: number | null;
+}
+export interface ShowingFriendGift {
+  category_name: string;
+  gift_name: string;
+  description: string | null;
+  price: string | null;
+  where_to_buy: string | null;
+  picture: string | null;
+  heart: boolean;
+  secret: boolean;
+  reserved_by: string | null;
 }
 
 export interface Friends {

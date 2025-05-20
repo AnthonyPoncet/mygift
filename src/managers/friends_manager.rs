@@ -81,7 +81,7 @@ impl FriendsManager {
             "WITH friends AS (SELECT userTwo as user_id FROM friendRequests WHERE userOne=? and status=?
             UNION ALL 
             SELECT userOne as user_id FROM friendRequests WHERE userTwo=? and status=?)
-            SELECT id, name, picture, dateOfBirth FROM users WHERE id IN (SELECT user_id FROM friends)")?;
+            SELECT id, name, picture, dateOfBirth FROM users WHERE id IN (SELECT user_id FROM friends) ORDER BY name")?;
 
         let rows = statement.query_map(
             params![

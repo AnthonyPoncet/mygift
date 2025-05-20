@@ -14,6 +14,8 @@ pub(crate) enum WishlistManagerError {
     Sqlite(#[from] rusqlite::Error),
     #[error("Unknown user {0}")]
     UnknownUser(i64),
+    #[error("Unknown gift {0}")]
+    UnknownGift(i64),
 }
 
 impl WishlistManager {
@@ -189,6 +191,34 @@ impl WishlistManager {
         Ok(())
     }
 
+    pub fn get_gift(&self, id: i64) -> Result<EditGift, WishlistManagerError> {
+        let connection = self.connection.lock().unwrap();
+
+        let Some(gift) = connection.query_row(
+            "SELECT id, name, description, price, whereToBuy, picture, categoryId FROM gifts WHERE id=?",
+            params![id],
+            |row| <_>::try_from(row))
+            .optional()?
+        else {
+            return Err(WishlistManagerError::UnknownGift(id))
+        };
+        Ok(gift)
+    }
+
+    pub fn get_friend_gift(&self, id: i64) -> Result<ShowingFriendGift, WishlistManagerError> {
+        let connection = self.connection.lock().unwrap();
+
+        let Some(gift) = connection.query_row(
+            "SELECT C.name, G.name, description, price, whereToBuy, G.picture, heart, secret, U.name FROM gifts G LEFT JOIN categories C on C.id=G.categoryId LEFT JOIN users U on U.id=G.reservedBy WHERE G.id=?",
+            params![id],
+            |row| <_>::try_from(row))
+            .optional()?
+        else {
+            return Err(WishlistManagerError::UnknownGift(id))
+        };
+        Ok(gift)
+    }
+
     pub fn edit_gift(
         &self,
         gift_id: i64,
@@ -283,6 +313,25 @@ impl WishlistManager {
         }
 
         self.is_my_category(user_id, category_id)
+    }
+
+    pub fn is_friend_gift(&self, user_id: i64, gift_id: i64) -> Result<bool, WishlistManagerError> {
+        let connection = self.connection.lock().unwrap();
+        let Some(category_id) = connection
+            .query_row(
+                "SELECT categoryId FROM gifts WHERE id=?",
+                params![gift_id],
+                |row| row.get::<_, i64>(0),
+            )
+            .optional()?
+        else {
+            return Ok(false);
+        };
+
+        let mut statement = connection.prepare(
+            "SELECT categoryId FROM joinUserAndCategory WHERE userId=? AND categoryId=?",
+        )?;
+        Ok(statement.exists(params![user_id, category_id])?)
     }
 
     pub fn is_my_gift_for_edit(
@@ -434,6 +483,33 @@ impl<'a> TryFrom<&Row<'a>> for Gift {
         })
     }
 }
+#[derive(Serialize)]
+#[cfg_attr(test, derive(PartialEq, Eq, Debug))]
+pub struct EditGift {
+    id: i64,
+    name: String,
+    description: Option<String>,
+    price: Option<String>,
+    where_to_buy: Option<String>,
+    category: i64,
+    picture: Option<String>,
+}
+impl<'a> TryFrom<&Row<'a>> for EditGift {
+    type Error = rusqlite::Error;
+
+    fn try_from(row: &Row<'a>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            description: row.get(2)?,
+            price: row.get(3)?,
+            where_to_buy: row.get(4)?,
+            picture: row.get(5)?,
+            category: row.get(6)?,
+        })
+    }
+}
+
 
 #[derive(Serialize)]
 #[cfg_attr(test, derive(PartialEq, Eq, Debug))]
@@ -460,6 +536,7 @@ pub struct FriendGift {
     secret: bool,
     reserved_by: Option<i64>,
 }
+
 impl<'a> TryFrom<&Row<'a>> for FriendCategory {
     type Error = rusqlite::Error;
 
@@ -491,13 +568,15 @@ impl<'a> TryFrom<&Row<'a>> for FriendGift {
 impl Into<WishList> for FriendWishList {
     fn into(self) -> WishList {
         WishList {
-            categories: self.categories
+            categories: self
+                .categories
                 .into_iter()
                 .map(|c| Category {
                     id: c.id,
                     name: c.name,
                     share_with: Vec::new(),
-                    gifts: c.gifts
+                    gifts: c
+                        .gifts
                         .into_iter()
                         .filter(|g| g.reserved_by.is_none())
                         .map(|g| Gift {
@@ -509,10 +588,41 @@ impl Into<WishList> for FriendWishList {
                             picture: g.picture,
                             heart: g.heart,
                         })
-                        .collect()
+                        .collect(),
                 })
-                .collect()
+                .collect(),
         }
+    }
+}
+
+#[derive(Serialize)]
+#[cfg_attr(test, derive(PartialEq, Eq, Debug))]
+pub struct ShowingFriendGift {
+    category_name: String,
+    gift_name: String,
+    description: Option<String>,
+    price: Option<String>,
+    where_to_buy: Option<String>,
+    picture: Option<String>,
+    heart: bool,
+    secret: bool,
+    reserved_by: Option<String>,
+}
+impl<'a> TryFrom<&Row<'a>> for ShowingFriendGift {
+    type Error = rusqlite::Error;
+
+    fn try_from(row: &Row<'a>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            category_name: row.get(0)?,
+            gift_name: row.get(1)?,
+            description: row.get(2)?,
+            price: row.get(3)?,
+            where_to_buy: row.get(4)?,
+            picture: row.get(5)?,
+            heart: row.get(6)?,
+            secret: row.get(7)?,
+            reserved_by: row.get(8)?,
+        })
     }
 }
 

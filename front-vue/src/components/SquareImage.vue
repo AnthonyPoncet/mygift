@@ -5,9 +5,8 @@ import { useRouter } from "vue-router";
 
 const props = defineProps<{
   imageName: string | null;
-  size: number;
+  extraClasses: string;
   alternateImage: string;
-  withTopRound: boolean;
 }>();
 
 const router = useRouter();
@@ -34,21 +33,5 @@ watchEffect(() => {
 </script>
 
 <template>
-  <img
-    :height="props.size"
-    :width="props.size"
-    :src="source"
-    alt="Nothing"
-    :class="withTopRound ? 'top-round' : ''"
-  />
+  <img :src="source" alt="Nothing" class="object-contain" :class="extraClasses" />
 </template>
-
-<style lang="css" scoped>
-img {
-  object-fit: scale-down;
-}
-
-.top-round {
-  border-radius: 0.375rem 0.375rem 0 0;
-}
-</style>

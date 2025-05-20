@@ -14,7 +14,12 @@ use crate::routes::friends::{
     get_requests,
 };
 use crate::routes::users::{create_user, edit_user};
-use crate::routes::wishlist::{add_category, add_gift, add_secret_gift, change_heart_gift, delete_category, delete_gift, delete_secret_gift, edit_category, edit_gift, edit_secret_gift, get_friend_wishlist, get_my_wishlist, get_wishlist_pdf, reorder_categories, reorder_gifts, reserve_gift, unreserve_gift};
+use crate::routes::wishlist::{
+    add_category, add_gift, add_secret_gift, change_heart_gift, delete_category, delete_gift,
+    delete_secret_gift, edit_category, edit_gift, edit_secret_gift, get_friend_gift,
+    get_friend_wishlist, get_gift, get_my_wishlist, get_wishlist_pdf, reorder_categories,
+    reorder_gifts, reserve_gift, unreserve_gift,
+};
 use axum::extract::FromRef;
 use axum::routing::{delete, get, patch, post, put};
 use axum::Router;
@@ -115,6 +120,7 @@ pub(crate) fn create_api_routes(
             delete(delete_category),
         )
         .route("/wishlist/categories/{category_id}/gifts", post(add_gift))
+        .route("/wishlist/gifts/{gift_id}", get(get_gift))
         .route(
             "/wishlist/categories/{category_id}/gifts/{gift_id}",
             patch(edit_gift),
@@ -139,6 +145,10 @@ pub(crate) fn create_api_routes(
         .route(
             "/wishlist/friend/{friend_id}/categories/{category_id}/gifts/{gift_id}",
             delete(delete_secret_gift),
+        )
+        .route(
+            "/wishlist/friend/{friend_id}/gifts/{gift_id}",
+            get(get_friend_gift),
         )
         .route(
             "/wishlist/friend/{friend_id}/gifts/{gift_id}",
