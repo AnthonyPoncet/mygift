@@ -61,79 +61,63 @@ async function signin(e: Event) {
 </script>
 
 <template>
-  <div class="container-fluid d-grid justify-content-center mt-3">
-    <h1>{{ useLanguageStore().language.messages.signin__title }}</h1>
+  <div class="grid grid-cols-1 mt-5 justify-items-center">
+    <h1 class="font-normal text-4xl mb-5">{{ useLanguageStore().language.messages.signin__title }}</h1>
     <template v-if="error !== null">
-      <div class="alert alert-danger mt-3" role="alert">{{ error }}</div>
+      <div class="" role="alert">{{ error }}</div>
     </template>
-    <form class="mt-3">
-      <div class="mb-3">
-        <label for="username" class="form-label">{{
-          useLanguageStore().language.messages.global__username
-        }}</label>
+    <form class="border rounded-md p-5 min-w-sm">
+      <div class="flex flex-col mb-3">
+        <label for="username" class="mb-2">{{ useLanguageStore().language.messages.global__username }}</label>
         <input
           type="text"
-          class="form-control"
+          class="border rounded-md p-2"
           id="username"
           :placeholder="useLanguageStore().language.messages.global__username"
           v-model="username"
           autocomplete="username"
           required
         />
-        <div class="invalid-feedback">
+        <div class="hidden">
           {{
             useLanguageStore().language.messages.global__form_validation_start +
             useLanguageStore().language.messages.global__username.toLowerCase()
           }}
         </div>
       </div>
-      <div class="mb-3">
-        <label for="password" class="form-label">{{
+      <div class="flex flex-col mb-10">
+        <label for="password" class="mb-2">{{
           useLanguageStore().language.messages.global__password
         }}</label>
         <input
           type="password"
-          class="form-control"
+          class="border rounded-md p-2"
           id="password"
           :placeholder="useLanguageStore().language.messages.global__password"
           v-model="password"
           autocomplete="current-password"
           required
         />
-        <div class="invalid-feedback">
+        <div class="hidden">
           {{
             useLanguageStore().language.messages.global__form_validation_start +
             useLanguageStore().language.messages.global__password.toLowerCase()
           }}
         </div>
       </div>
-      <button type="submit" class="btn btn-primary w-100" @click="signin" :disabled="logining">
-        <div class="d-flex align-items-center justify-content-center">
+      <button type="submit" class="rounded-md text-white bg-red-700 hover:bg-red-600 px-3 py-2 font-semibold shadow-xs w-full" @click="signin" :disabled="logining">
+        <div class="">
           {{ useLanguageStore().language.messages.signin__button }}
           <div v-if="logining" class="spinner-border ms-2" role="status" aria-hidden="true"></div>
         </div>
       </button>
     </form>
 
-    <div v-if="route.path !== '/changeaccount'" class="account-instead mt-2 p-3 text-center">
+    <div v-if="route.path !== '/changeaccount'" class="border rounded-md mt-4 p-3 text-center min-w-sm">
       <span class="me-2">{{ useLanguageStore().language.messages.signin__newAccount }}</span>
-      <RouterLink to="/signup">{{
+      <RouterLink to="/signup" class="underline font-semibold hover:text-black dark:hover:text-white">{{
         useLanguageStore().language.messages.signin__creatAccount
       }}</RouterLink>
     </div>
   </div>
 </template>
-
-<style lang="css" scoped>
-form {
-  border: 1px;
-  border-style: solid;
-  border-radius: 5px;
-  padding: 20px;
-}
-.account-instead {
-  border: 1px;
-  border-style: solid;
-  border-radius: 5px;
-}
-</style>
