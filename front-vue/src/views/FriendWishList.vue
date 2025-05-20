@@ -156,7 +156,7 @@ watch(
               @mouseenter="hoveredGift = gift.id"
               @mouseleave="hoveredGift = null"
             >
-              <div class="p-2 d-flex flex-row justify-content-between align-items-center">
+              <div class="d-flex justify-content-between align-items-center flex-row p-2">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"

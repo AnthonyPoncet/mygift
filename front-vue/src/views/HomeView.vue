@@ -59,7 +59,7 @@ function getYears(eventDate: number, birthDate: number) {
                 }
               "
             >
-              <div class="text-center fw-bold p-2">
+              <div class="fw-bold p-2 text-center">
                 {{
                   next.name === undefined
                     ? useLanguageStore().language.messages.home__special_event[next.kind]
@@ -74,7 +74,7 @@ function getYears(eventDate: number, birthDate: number) {
               />
               <div class="card-body text-center">
                 <div
-                  class="text-center fw-bold"
+                  class="fw-bold text-center"
                   :class="next.kind === EventKind.BIRTHDAY ? '' : 'hidden'"
                 >
                   {{

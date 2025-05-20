@@ -106,7 +106,7 @@ async function deleteGift() {
               width="32"
               height="32"
               fill="currentColor"
-              class="bi bi-exclamation-triangle-fill flex-shrink-0 me-3"
+              class="bi bi-exclamation-triangle-fill me-3 flex-shrink-0"
               viewBox="0 0 16 16"
             >
               <path

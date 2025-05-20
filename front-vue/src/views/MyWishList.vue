@@ -246,7 +246,7 @@ async function reorder_gifts(categoryIndex: number, e: { oldIndex: number; newIn
                 @mouseenter="hoveredGift = gift.id"
                 @mouseleave="hoveredGift = null"
               >
-                <div class="p-2 d-flex flex-row justify-content-between">
+                <div class="d-flex justify-content-between flex-row p-2">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"

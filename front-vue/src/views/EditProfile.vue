@@ -253,7 +253,7 @@ watch(
         </div>
         <button
           type="submit"
-          class="btn btn-primary w-100 mt-3"
+          class="btn btn-primary mt-3 w-100"
           @click="editProfile"
           :disabled="modifying"
         >
