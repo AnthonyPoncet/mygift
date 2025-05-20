@@ -1,12 +1,12 @@
 <script lang="ts" setup>
 import { useLanguageStore, Languages } from "@/stores/language";
 import { useUserStore } from "@/stores/user";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import SquareImage from "./SquareImage.vue";
 import blank_profile_picture from "@/assets/images/blank_profile_picture.png";
-import { isMobile } from "./helpers/is_mobile";
-import { onMounted, ref, useTemplateRef } from "vue";
+import { onUnmounted, ref } from "vue";
 
+const route = useRoute();
 const router = useRouter();
 const languageStore = useLanguageStore();
 
@@ -21,20 +21,25 @@ function logout() {
   router.push({ name: "home" });
 }
 
-function collapse() {
-  if (isMobile) {
-    navButton.value?.classList.add("collapsed");
-    navbarSupportedContent.value?.classList.remove("show");
+function triggerLanguageMenu() {
+  if (languageMenuVisible.value) {
+    hideMenuListener();
+  } else {
+    languageMenuVisible.value = true;
+    window.addEventListener("click", hideMenuListener);
   }
 }
 
-function triggerLanguageMenu() {
-  languageMenuVisible.value = true
-  window.addEventListener('click', () => {
+function hideMenuListener() {
+  if (languageMenuVisible.value) {
     languageMenuVisible.value = false;
-});
+    window.removeEventListener("click", hideMenuListener);
+  }
 }
 
+onUnmounted(() => {
+  hideMenuListener();
+});
 </script>
 
 <template>
@@ -42,27 +47,133 @@ function triggerLanguageMenu() {
     <div class="mx-auto px-3 sm:px-6 lg:px-8">
       <div class="flex h-16 items-center justify-between">
         <div class="flex shrink-0">
-          <RouterLink class="cursor-pointer text-xl font-normal hover:text-black dark:hover:text-white" to="/">MyGift</RouterLink>
+          <RouterLink
+            class="cursor-pointer text-xl font-normal hover:text-black dark:hover:text-white"
+            to="/"
+            >MyGift</RouterLink
+          >
         </div>
 
-        <div class="relative flex grow justify-end">
-          <button class="relative cursor-pointer rounded-full p-1 hover:text-black dark:hover:text-white" @click="triggerLanguageMenu">
+        <div class="hidden h-full grow justify-center sm:flex">
+          <div class="mr-10 flex h-full">
+            <div class="flex w-full flex-col items-center">
+              <template v-if="useUserStore().user === null">
+                <RouterLink
+                  :class="
+                    route.name === 'home' || route.name === 'signin'
+                      ? 'flex h-full w-full cursor-pointer items-center justify-center text-xl font-bold'
+                      : 'text-grey-700 flex h-full w-full cursor-pointer items-center justify-center text-base font-normal hover:text-black dark:text-gray-300 dark:hover:text-white'
+                  "
+                  to="/signin"
+                  >{{ useLanguageStore().language.messages.nav_bar__signin }}</RouterLink
+                >
+              </template>
+              <div
+                v-if="route.name === 'home' || route.name === 'signin'"
+                class="mb-1 h-1 w-30 rounded-md bg-red-500"
+              ></div>
+            </div>
+          </div>
+          <div class="flex h-full">
+            <div class="flex w-full flex-col items-center">
+              <template v-if="useUserStore().user === null">
+                <RouterLink
+                  :class="
+                    route.name === 'signup'
+                      ? 'flex h-full w-full cursor-pointer items-center justify-center text-xl font-bold'
+                      : 'text-grey-700 flex h-full w-full cursor-pointer items-center justify-center text-base font-normal hover:text-black dark:text-gray-300 dark:hover:text-white'
+                  "
+                  to="/signup"
+                  >{{ useLanguageStore().language.messages.nav_bar__signup }}</RouterLink
+                >
+              </template>
+              <div v-if="route.name === 'signup'" class="mb-1 h-1 w-30 rounded-md bg-red-500"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative flex shrink justify-end">
+          <button
+            class="relative cursor-pointer p-1 hover:text-black dark:hover:text-white"
+            @click.stop="triggerLanguageMenu"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="size-6"
               fill="currentColor"
+              class="size-6"
               viewBox="0 0 16 16"
             >
               <path
-                d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.5-6.923c-.67.204-1.335.82-1.887 1.855A8 8 0 0 0 5.145 4H7.5zM4.09 4a9.3 9.3 0 0 1 .64-1.539 7 7 0 0 1 .597-.933A7.03 7.03 0 0 0 2.255 4zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a7 7 0 0 0-.656 2.5zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5zM8.5 5v2.5h2.99a12.5 12.5 0 0 0-.337-2.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5zM5.145 12q.208.58.468 1.068c.552 1.035 1.218 1.65 1.887 1.855V12zm.182 2.472a7 7 0 0 1-.597-.933A9.3 9.3 0 0 1 4.09 12H2.255a7 7 0 0 0 3.072 2.472M3.82 11a13.7 13.7 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5zm6.853 3.472A7 7 0 0 0 13.745 12H11.91a9.3 9.3 0 0 1-.64 1.539 7 7 0 0 1-.597.933M8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855q.26-.487.468-1.068zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.7 13.7 0 0 1-.312 2.5m2.802-3.5a7 7 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7 7 0 0 0-3.072-2.472c.218.284.418.598.597.933M10.855 4a8 8 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4z"
+                d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286zm1.634-.736L5.5 3.956h-.049l-.679 2.022z"
+              />
+              <path
+                d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zm7.138 9.995q.289.451.63.846c-.748.575-1.673 1.001-2.768 1.292.178.217.451.635.555.867 1.125-.359 2.08-.844 2.886-1.494.777.665 1.739 1.165 2.93 1.472.133-.254.414-.673.629-.89-1.125-.253-2.057-.694-2.82-1.284.681-.747 1.222-1.651 1.621-2.757H14V8h-3v1.047h.765c-.318.844-.74 1.546-1.272 2.13a6 6 0 0 1-.415-.492 2 2 0 0 1-.94.31"
               />
             </svg>
           </button>
-          <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
-            <div v-if="languageMenuVisible" class="absolute right-0 z-10 mt-9 w-48 origin-top-right rounded-md bg-white dark:bg-gray-700 py-1 shadow-lg ring-1 ring-black/5 focus:outline-hidden">
-              <button>Your Profile</button>
+          <transition
+            enter-active-class="transition ease-out duration-100"
+            enter-from-class="transform opacity-0 scale-95"
+            enter-to-class="transform opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-75"
+            leave-from-class="transform opacity-100 scale-100"
+            leave-to-class="transform opacity-0 scale-95"
+          >
+            <div
+              v-if="languageMenuVisible"
+              class="absolute right-0 z-10 mt-9 w-auto origin-top-right rounded-md bg-gray-50 py-1 shadow-lg ring-1 ring-black/5 focus:outline-hidden dark:bg-gray-950"
+            >
+              <template v-for="language in Languages" :key="language">
+                <button
+                  class="block w-full px-4 py-2 text-sm hover:bg-gray-100 hover:text-black dark:hover:bg-gray-900 dark:hover:text-white"
+                  @click="changeLanguage(language)"
+                >
+                  {{ language }}
+                </button>
+              </template>
             </div>
           </transition>
+        </div>
+      </div>
+    </div>
+
+    <!--- Mobile menu -->
+    <div class="mx-auto sm:hidden">
+      <div class="flex h-16 items-center justify-between">
+        <div class="flex h-full basis-1/2">
+          <div class="flex w-full flex-col items-center">
+            <template v-if="useUserStore().user === null">
+              <RouterLink
+                :class="
+                  route.name === 'home' || route.name === 'signin'
+                    ? 'flex h-full w-full cursor-pointer items-center justify-center text-xl font-bold'
+                    : 'text-grey-700 flex h-full w-full cursor-pointer items-center justify-center text-base font-normal dark:text-gray-300'
+                "
+                to="/signin"
+                >{{ useLanguageStore().language.messages.nav_bar__signin }}</RouterLink
+              >
+            </template>
+            <div
+              v-if="route.name === 'home' || route.name === 'signin'"
+              class="mb-1 h-1 w-30 rounded-md bg-red-500"
+            ></div>
+          </div>
+        </div>
+        <div class="flex h-full basis-1/2">
+          <div class="flex w-full flex-col items-center">
+            <template v-if="useUserStore().user === null">
+              <RouterLink
+                :class="
+                  route.name === 'signup'
+                    ? 'flex h-full w-full cursor-pointer items-center justify-center text-xl font-bold'
+                    : 'text-grey-700 flex h-full w-full cursor-pointer items-center justify-center text-base font-normal dark:text-gray-300'
+                "
+                to="/signup"
+                >{{ useLanguageStore().language.messages.nav_bar__signup }}</RouterLink
+              >
+            </template>
+            <div v-if="route.name === 'signup'" class="mb-1 h-1 w-30 rounded-md bg-red-500"></div>
+          </div>
         </div>
       </div>
     </div>
