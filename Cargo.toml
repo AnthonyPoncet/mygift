@@ -20,7 +20,7 @@ tokio = { version = "1.43.0", default-features = false, features = ["macros", "r
 tokio-util = "0.7.13"
 futures-util = "0.3.31"
 
-rusqlite = { version = "0.34.0", features = ["bundled"] }
+rusqlite = { version = "0.37.0", features = ["bundled"] }
 
 pbkdf2 = "0.12.2"
 sha1 = "0.10.6"
