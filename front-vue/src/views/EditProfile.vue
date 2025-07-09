@@ -62,8 +62,9 @@ function changeCanvas() {
     //Handle the case when the thing load previous image, this trigger change somehow
     pictureLoaded.value = false;
     return;
+  } else {
+    pictureHasChanged.value = true;
   }
-  pictureHasChanged.value = true;
 }
 
 async function storeImage(): Promise<string> {
@@ -125,7 +126,7 @@ async function editProfile(event: Event) {
     JSON.stringify({
       name: username.value,
       picture: picture,
-      dateOfBirth: sendingDateOfBirth,
+      date_of_birth: sendingDateOfBirth,
     }),
   );
 

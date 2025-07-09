@@ -61,7 +61,7 @@ function getYears(eventDate: number, birthDate: number) {
             >
               <div class="text-center fw-bold p-2">
                 {{
-                  next.name === undefined
+                  next.name === null
                     ? useLanguageStore().language.messages.home__special_event[next.kind]
                     : next.name
                 }}
